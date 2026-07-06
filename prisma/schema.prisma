@@ -1,0 +1,149 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String
+  password  String?
+  googleId  String?  @unique
+  role      String   @default("STUDENT")
+  avatar    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  evaluations   Evaluation[]
+  savedReports  SavedReport[]
+  feedbacks     Feedback[]
+  subscription  Subscription?
+  accounts      Account[]
+  sessions      Session[]
+  questionPapers QuestionPaper[]
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model Evaluation {
+  id               String   @id @default(cuid())
+  userId           String
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  examType         String   @default("MCQ")
+  subject          String
+  grade            String?
+  totalMarks       Int?
+  obtainedMarks    Float?
+  percentage       Float?
+  status           String   @default("IN_PROGRESS")
+
+  originalFileName String?
+  fileUrl          String?
+  fileType         String?
+  ocrText          String?
+
+  aiResponse       String?
+  marksBreakdown   String?
+  aiFeedback       String?
+
+  strengths        String?
+  weaknesses       String?
+  recommendations  String?
+
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  savedReports     SavedReport[]
+  feedbacks        Feedback[]
+
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model SavedReport {
+  id           String     @id @default(cuid())
+  userId       String
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  evaluationId String
+  evaluation   Evaluation @relation(fields: [evaluationId], references: [id], onDelete: Cascade)
+  name         String
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+}
+
+model Feedback {
+  id           String      @id @default(cuid())
+  userId       String
+  user         User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  evaluationId String?
+  evaluation   Evaluation? @relation(fields: [evaluationId], references: [id])
+  rating       Int
+  comment      String?
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+}
+
+model Subscription {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan        String   @default("FREE")
+  credits     Int      @default(10)
+  usedCredits Int      @default(0)
+  validUntil  DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model QuestionPaper {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  subject     String
+  grade       String
+  difficulty  String
+  totalMarks  Int
+  title       String
+  content     String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([userId])
+}
