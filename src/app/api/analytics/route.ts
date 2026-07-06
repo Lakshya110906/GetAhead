@@ -19,10 +19,10 @@ export async function GET(_req: NextRequest) {
     });
 
     // Calculate analytics
-    const completed = evaluations.filter((e) => e.status === "COMPLETED");
+    const completed = evaluations.filter((e: any) => e.status === "COMPLETED");
     const avgPercentage =
       completed.length > 0
-        ? completed.reduce((sum, e) => sum + (e.percentage || 0), 0) / completed.length
+        ? completed.reduce((sum: number, e: any) => sum + (e.percentage || 0), 0) / completed.length
         : 0;
 
     // Group by month for trend data
@@ -40,9 +40,9 @@ export async function GET(_req: NextRequest) {
       const avgScore =
         monthEvals.length > 0
           ? Math.round(
-              monthEvals.reduce((sum, e) => sum + (e.percentage || 0), 0) /
-                monthEvals.length
-            )
+            monthEvals.reduce((sum, e) => sum + (e.percentage || 0), 0) /
+            monthEvals.length
+          )
           : 0;
       return { month, score: avgScore, count: monthEvals.length };
     });
