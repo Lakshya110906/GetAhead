@@ -30,7 +30,7 @@ export async function GET(_req: NextRequest) {
       const date = new Date();
       date.setMonth(date.getMonth() - (5 - i));
       const month = date.toLocaleString("default", { month: "short" });
-      const monthEvals = completed.filter((e) => {
+      const monthEvals = completed.filter((e: any) => {
         const evalDate = new Date(e.createdAt);
         return (
           evalDate.getMonth() === date.getMonth() &&
@@ -40,7 +40,7 @@ export async function GET(_req: NextRequest) {
       const avgScore =
         monthEvals.length > 0
           ? Math.round(
-            monthEvals.reduce((sum, e) => sum + (e.percentage || 0), 0) /
+            monthEvals.reduce((sum: number, e: any) => sum + (e.percentage || 0), 0) /
             monthEvals.length
           )
           : 0;
@@ -49,7 +49,7 @@ export async function GET(_req: NextRequest) {
 
     // Subject performance
     const subjectMap = new Map<string, { total: number; sum: number }>();
-    completed.forEach((e) => {
+    completed.forEach((e: any) => {
       const existing = subjectMap.get(e.subject);
       if (existing) {
         existing.total += 1;
