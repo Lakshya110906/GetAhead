@@ -73,7 +73,7 @@ export async function GET(_req: NextRequest) {
       avgPercentage: Math.round(avgPercentage),
       monthlyTrend: monthlyData,
       subjectPerformance,
-      recentEvaluations: evaluations.slice(0, 5).map((e) => ({
+      recentEvaluations: evaluations.slice(0, 5).map((e: any) => ({
         id: e.id,
         subject: e.subject,
         grade: e.grade,
