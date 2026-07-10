@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import {
   LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip,
   ResponsiveContainer, CartesianGrid, PieChart, Pie, Cell, Legend,
@@ -9,28 +10,13 @@ import { TrendingUp, BarChart3, Target, Award, Loader2 } from "lucide-react";
 
 const COLORS = ["#2563EB", "#14B8A6", "#22C55E", "#F59E0B", "#EF4444", "#8B5CF6"];
 
-const DEMO_MONTHLY = [
-  { month: "Jan", score: 65, evaluations: 2 },
-  { month: "Feb", score: 72, evaluations: 3 },
-  { month: "Mar", score: 68, evaluations: 2 },
-  { month: "Apr", score: 85, evaluations: 5 },
-  { month: "May", score: 78, evaluations: 4 },
-  { month: "Jun", score: 90, evaluations: 6 },
-];
 
-const DEMO_SUBJECTS = [
-  { subject: "Mathematics", avgScore: 82, count: 8 },
-  { subject: "Physics", avgScore: 75, count: 6 },
-  { subject: "Chemistry", avgScore: 88, count: 4 },
-  { subject: "Biology", avgScore: 70, count: 4 },
-  { subject: "English", avgScore: 85, count: 2 },
-];
 
 export default function AnalyticsPage() {
-  const [monthly, setMonthly] = useState(DEMO_MONTHLY);
-  const [subjects, setSubjects] = useState(DEMO_SUBJECTS);
-  const [total, setTotal] = useState(24);
-  const [avgPct, setAvgPct] = useState(78);
+  const [monthly, setMonthly] = useState<Array<{ month: string; score: number; evaluations: number }>>([]);
+  const [subjects, setSubjects] = useState<Array<{ subject: string; avgScore: number; count: number }>>([]);
+  const [total, setTotal] = useState(0);
+  const [avgPct, setAvgPct] = useState(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -38,10 +24,10 @@ export default function AnalyticsPage() {
       .then((r) => r.json())
       .then((d) => {
         if (!d.error) {
-          setMonthly(d.monthlyTrend || DEMO_MONTHLY);
-          setSubjects(d.subjectPerformance?.length ? d.subjectPerformance : DEMO_SUBJECTS);
-          setTotal(d.totalEvaluations || 24);
-          setAvgPct(d.avgPercentage || 78);
+          setMonthly(d.monthlyTrend || []);
+          setSubjects(d.subjectPerformance || []);
+          setTotal(d.totalEvaluations ?? 0);
+          setAvgPct(d.avgPercentage ?? 0);
         }
       })
       .catch(() => {})
@@ -49,6 +35,45 @@ export default function AnalyticsPage() {
   }, []);
 
   const pieData = subjects.map((s) => ({ name: s.subject, value: s.count }));
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <Loader2 className="w-10 h-10 animate-spin text-blue-600" />
+      </div>
+    );
+  }
+
+  if (total === 0) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900" style={{ fontFamily: "var(--font-poppins)" }}>
+            Analytics
+          </h1>
+          <p className="text-gray-500 text-sm">Deep dive into your academic performance</p>
+        </div>
+
+        <div className="bg-white rounded-3xl border border-gray-150 p-12 text-center max-w-lg mx-auto shadow-sm mt-8">
+          <div className="w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <TrendingUp className="w-8 h-8 text-blue-600" />
+          </div>
+          <h3 className="text-lg font-bold text-gray-900 mb-1" style={{ fontFamily: "var(--font-poppins)" }}>
+            No Academic Data Yet
+          </h3>
+          <p className="text-gray-500 text-sm max-w-xs mx-auto mb-6">
+            Complete exam evaluations to generate trend charts, subject performance, and deep analytics.
+          </p>
+          <Link
+            href="/upload"
+            className="inline-flex items-center gap-2 gradient-primary text-white font-semibold px-6 py-3 rounded-xl hover:opacity-90 transition-opacity text-sm shadow-md"
+          >
+            <BarChart3 className="w-4 h-4" /> Start Evaluation
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -75,7 +100,7 @@ export default function AnalyticsPage() {
               </div>
             </div>
             <p className={`text-3xl font-bold ${stat.color}`} style={{ fontFamily: "var(--font-poppins)" }}>
-              {loading ? <Loader2 className="w-6 h-6 animate-spin inline opacity-40" /> : stat.value}
+              {stat.value}
             </p>
           </div>
         ))}

@@ -1,15 +1,51 @@
 "use client";
 
-import { useSession } from "next-auth/react";
+import { useSession, signOut } from "next-auth/react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { Bell, Plus, Search } from "lucide-react";
+import { Bell, Plus, Search, Settings, LogOut } from "lucide-react";
 import { ThemeSlider } from "@/components/ThemeSlider";
+
+interface UserProfile {
+  name: string;
+  email: string;
+  role: string;
+  plan: string;
+  credits: number;
+  usedCredits: number;
+}
 
 export function DashboardHeader({ title, subtitle }: { title?: string; subtitle?: string }) {
   const { data: session } = useSession();
+  const [isOpen, setIsOpen] = useState(false);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (session) {
+      fetch("/api/user/profile")
+        .then((r) => r.json())
+        .then((d) => {
+          if (d.success && d.profile) {
+            setProfile(d.profile);
+          }
+        })
+        .catch(() => {});
+    }
+  }, [session]);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   return (
-    <header className="bg-white border-b border-gray-100 px-6 py-4 flex items-center justify-between gap-4">
+    <header className="bg-white border-b border-gray-100 px-6 py-4 flex items-center justify-between gap-4 z-20">
       <div>
         {title ? (
           <>
@@ -46,8 +82,71 @@ export function DashboardHeader({ title, subtitle }: { title?: string; subtitle?
           <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-blue-500 rounded-full" />
         </button>
 
-        <div className="w-9 h-9 rounded-xl gradient-primary flex items-center justify-center text-white text-sm font-bold">
-          {session?.user?.name?.[0]?.toUpperCase() || "U"}
+        {/* Dropdown Container */}
+        <div className="relative" ref={dropdownRef}>
+          <button
+            onClick={() => setIsOpen(!isOpen)}
+            className="w-9 h-9 rounded-xl gradient-primary flex items-center justify-center text-white text-sm font-bold shadow-sm hover:opacity-95 transition-opacity"
+            title="User Profile Menu"
+          >
+            {session?.user?.name?.[0]?.toUpperCase() || "U"}
+          </button>
+
+          {isOpen && (
+            <div className="absolute right-0 mt-2 w-64 bg-white border border-gray-150 rounded-2xl shadow-xl py-2 z-50 animate-fade-in text-gray-700">
+              <div className="px-4 py-2.5 border-b border-gray-100">
+                <p className="font-bold text-gray-900 truncate" style={{ fontFamily: "var(--font-poppins)" }}>
+                  {profile?.name || session?.user?.name}
+                </p>
+                <p className="text-xs text-gray-500 truncate mt-0.5">
+                  {profile?.email || session?.user?.email}
+                </p>
+              </div>
+
+              {/* Role & Subscription Info */}
+              <div className="px-4 py-2.5 bg-gray-50 border-b border-gray-100 space-y-1.5">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-semibold text-gray-500 uppercase tracking-wide">Role</span>
+                  <span className="bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full font-bold text-xxs uppercase tracking-wider">
+                    {profile?.role || "STUDENT"}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-semibold text-gray-500 uppercase tracking-wide">Plan</span>
+                  <span className="bg-teal-100 text-teal-800 px-2 py-0.5 rounded-full font-bold text-xxs uppercase tracking-wider">
+                    {profile?.plan || "FREE"}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between text-xs pt-0.5">
+                  <span className="font-semibold text-gray-500">Credits Used:</span>
+                  <span className="font-bold text-gray-900">
+                    {profile?.usedCredits ?? 0}/{profile?.credits ?? 10}
+                  </span>
+                </div>
+              </div>
+
+              <div className="p-1.5 space-y-0.5">
+                <Link
+                  href="/settings"
+                  onClick={() => setIsOpen(false)}
+                  className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-semibold hover:bg-gray-50 text-gray-700 hover:text-gray-900 transition-colors w-full"
+                >
+                  <Settings className="w-4 h-4 text-gray-400" />
+                  Settings
+                </Link>
+                <button
+                  onClick={() => {
+                    setIsOpen(false);
+                    signOut({ callbackUrl: "/" });
+                  }}
+                  className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-semibold hover:bg-red-50 text-gray-700 hover:text-red-600 transition-colors w-full text-left"
+                >
+                  <LogOut className="w-4 h-4 text-gray-400 group-hover:text-red-600" />
+                  Sign Out
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </header>

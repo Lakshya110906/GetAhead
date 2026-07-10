@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { useRouter } from "next/navigation";
 import {
   GraduationCap,
   Calendar,
@@ -13,52 +12,14 @@ import {
   CheckCircle,
   Eye,
   Settings,
-  Database,
   ArrowLeft,
   Search,
   Upload,
   X,
   Sparkles,
 } from "lucide-react";
-import { PaperConfig, GeneratedPaper } from "@/lib/question-agents";
-
-const subjects = [
-  // General / School
-  "Mathematics",
-  "Physics",
-  "Chemistry",
-  "Biology",
-  "English",
-  "History",
-  "Geography",
-  "Economics",
-  "Accountancy",
-  "Computer Science",
-
-  // CS Core
-  "Data Structures & Algorithms (DSA)",
-  "Database Management Systems (DBMS)",
-  "Operating Systems (OS)",
-  "Computer Networks (CN)",
-  "Object-Oriented Programming (OOP)",
-  "Software Engineering",
-  "Theory of Computation (TOC)",
-  "Compiler Design",
-  "Computer Architecture & Organization",
-  "Discrete Mathematics",
-
-  // CS Applied
-  "Artificial Intelligence (AI)",
-  "Machine Learning (ML)",
-  "Deep Learning & Neural Networks",
-  "Data Science",
-  "Web Technologies & Development",
-  "Cloud Computing",
-  "Cybersecurity & Cryptography",
-  "Mobile App Development",
-  "Big Data Analytics",
-  "Human-Computer Interaction (HCI)",
-];
+import { GeneratedPaper } from "@/lib/question-agents";
+import { SubjectSelector } from "@/components/SubjectSelector";
 
 const grades = [
   "8th Grade",
@@ -187,7 +148,6 @@ function AgentCard({
 // ─────────────────────────────────────────────────────────────────────────────
 
 export default function GeneratePaperPage() {
-  const router = useRouter();
   const [subject, setSubject] = useState("");
   const [grade, setGrade] = useState("");
   const [topic, setTopic] = useState("");
@@ -545,7 +505,7 @@ ${JSON.stringify(paper, null, 2)}
   };
 
   return (
-    <div className="max-w-5xl mx-auto pb-16">
+    <div className="max-w-5xl mx-auto pb-16 pt-14 lg:pt-0">
       {/* Print-Only Title and Paper Layout CSS overrides */}
       <style jsx global>{`
         @media print {
@@ -601,14 +561,14 @@ ${JSON.stringify(paper, null, 2)}
       `}</style>
 
       {/* Header */}
-      <div className="flex items-center justify-between mb-8 no-print">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6 no-print">
         <div>
-          <h1 className="text-2xl font-extrabold text-gray-900 flex items-center gap-3" style={{ fontFamily: "var(--font-poppins)" }}>
-            <GraduationCap className="w-8 h-8 text-blue-600" />
+          <h1 className="text-xl sm:text-2xl font-extrabold text-gray-900 flex items-center gap-2 sm:gap-3" style={{ fontFamily: "var(--font-poppins)" }}>
+            <GraduationCap className="w-6 h-6 sm:w-8 sm:h-8 text-blue-600 flex-shrink-0" />
             AI Question Paper Generator
           </h1>
-          <p className="text-gray-500 mt-1 text-sm">
-            Leverage collaborative multi-agent reasoning to design and audit complete examination papers.
+          <p className="text-gray-500 mt-1 text-xs sm:text-sm">
+            Collaborative multi-agent AI designs complete exam papers.
           </p>
         </div>
         {paper && (
@@ -629,7 +589,7 @@ ${JSON.stringify(paper, null, 2)}
       </div>
 
       {status === "idle" && (
-        <div className="bg-white rounded-2xl border border-gray-100 card-shadow-md p-8 no-print">
+        <div className="bg-white rounded-2xl border border-gray-100 card-shadow-md p-4 sm:p-8 no-print">
           <form onSubmit={handleGenerate} className="space-y-6">
             {error && (
               <div className="flex items-start gap-3 bg-red-50 text-red-700 p-4 rounded-xl text-sm">
@@ -638,23 +598,15 @@ ${JSON.stringify(paper, null, 2)}
               </div>
             )}
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
               {/* Subject */}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">Subject *</label>
-                <select
+                <SubjectSelector
                   value={subject}
-                  onChange={(e) => setSubject(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 hover:bg-white focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm"
-                  required
-                >
-                  <option value="">Select subject</option>
-                  {subjects.map((sub) => (
-                    <option key={sub} value={sub}>
-                      {sub}
-                    </option>
-                  ))}
-                </select>
+                  onChange={setSubject}
+                  placeholder="Select or type subject..."
+                />
               </div>
 
               {/* Grade */}
@@ -689,7 +641,7 @@ ${JSON.stringify(paper, null, 2)}
               />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
               {/* Difficulty */}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">Cognitive Difficulty *</label>
@@ -838,7 +790,7 @@ ${JSON.stringify(paper, null, 2)}
                 <Printer className="w-4 h-4 text-blue-600" />
                 Academic Printing Layout (Optional)
               </h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-4">
                 <div>
                   <label className="block text-xs font-bold text-gray-500 mb-1.5 uppercase">Institution / School Name</label>
                   <input
@@ -934,7 +886,7 @@ ${JSON.stringify(paper, null, 2)}
           </div>
 
           {/* Agent Cards Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
             {/* ── Planner Agent Card ── */}
             <AgentCard
               icon="📅"
@@ -985,8 +937,8 @@ ${JSON.stringify(paper, null, 2)}
       {status === "complete" && paper && (
         <div className="space-y-6">
           {/* Controls toolbar */}
-          <div className="flex flex-wrap items-center justify-between gap-3 bg-white border border-gray-100 p-4 rounded-2xl shadow-sm no-print">
-            <div className="flex gap-2">
+          <div className="flex flex-col sm:flex-row flex-wrap items-start sm:items-center justify-between gap-2 sm:gap-3 bg-white border border-gray-100 p-3 sm:p-4 rounded-2xl shadow-sm no-print">
+            <div className="flex gap-1.5 sm:gap-2 flex-wrap">
               <button
                 onClick={() => setViewMode("paper")}
                 className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
@@ -1019,7 +971,7 @@ ${JSON.stringify(paper, null, 2)}
               </button>
             </div>
 
-            <div className="flex gap-2">
+            <div className="flex gap-1.5 sm:gap-2">
               <button
                 onClick={handleCopy}
                 className="flex items-center gap-1.5 border border-gray-200 px-4 py-2 rounded-xl text-sm font-semibold bg-white hover:bg-gray-50 text-gray-700 transition-colors"
@@ -1039,7 +991,7 @@ ${JSON.stringify(paper, null, 2)}
           {/* Clean printable exam container */}
           {viewMode !== "logs" ? (
             <>
-              <div className="bg-white rounded-3xl border border-gray-150 shadow-xl p-10 md:p-14 print-content font-serif">
+              <div className="bg-white rounded-3xl border border-gray-150 shadow-xl p-5 sm:p-10 md:p-14 print-content font-serif">
               {/* Header Title */}
               <div className="text-center pb-2 no-print">
                 <input
@@ -1064,7 +1016,7 @@ ${JSON.stringify(paper, null, 2)}
               </div>
 
               {/* Student Identity and Exam Details Grid */}
-              <div className="border-t-2 border-b-2 border-gray-800 py-4 my-6 grid grid-cols-1 md:grid-cols-2 gap-4 text-xs font-medium">
+              <div className="border-t-2 border-b-2 border-gray-800 py-4 my-4 sm:my-6 grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 text-xs font-medium">
                 {/* Left Side: Exam Metadata */}
                 <div className="space-y-1">
                   <div className="flex items-center gap-1.5 no-print">
@@ -1312,7 +1264,7 @@ ${JSON.stringify(paper, null, 2)}
                 </div>
               </div>
 
-              <div className="flex gap-2 items-end">
+              <div className="flex flex-col sm:flex-row gap-2 sm:items-end">
                 <textarea
                   value={aiFeedback}
                   onChange={(e) => setAiFeedback(e.target.value)}

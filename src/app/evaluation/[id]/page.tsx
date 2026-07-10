@@ -24,7 +24,6 @@ import {
   AlertTriangle,
   Lightbulb,
   Brain,
-  Loader2,
   TrendingUp,
   Target,
 } from "lucide-react";
@@ -61,49 +60,12 @@ function getGrade(pct: number) {
   return "F";
 }
 
-// Demo fallback data
-const DEMO: EvaluationData = {
-  id: "demo",
-  subject: "Mathematics",
-  grade: "12th Grade",
-  examType: "Mixed",
-  status: "COMPLETED",
-  totalMarks: 400,
-  obtainedMarks: 330,
-  percentage: 82.5,
-  aiFeedback:
-    "Excellent overall performance! The student demonstrates strong command over algebraic concepts and shows consistent accuracy in problem-solving. Calculus needs focused attention, particularly integration techniques. With targeted practice on weak areas, achieving 90%+ is very achievable.",
-  strengths: [
-    "Strong algebraic reasoning and manipulation",
-    "Excellent performance in Trigonometry (91%)",
-    "Clear and systematic problem-solving approach",
-    "Good conceptual understanding of Statistics",
-  ],
-  weaknesses: [
-    "Calculus integration techniques need improvement (68%)",
-    "Occasional sign errors in complex calculations",
-    "Geometry proof structure needs work",
-  ],
-  recommendations: [
-    "Practice 10 calculus integration problems daily",
-    "Review geometry theorems and proof techniques",
-    "Use past year papers for exam practice",
-    "Focus on showing clear step-by-step working",
-    "Join study group for peer learning on weak topics",
-  ],
-  marksBreakdown: [
-    { topic: "Algebra", obtainedMarks: 87, totalMarks: 100, percentage: 87, feedback: "Excellent" },
-    { topic: "Trigonometry", obtainedMarks: 91, totalMarks: 100, percentage: 91, feedback: "Outstanding" },
-    { topic: "Statistics", obtainedMarks: 84, totalMarks: 100, percentage: 84, feedback: "Very Good" },
-    { topic: "Calculus", obtainedMarks: 68, totalMarks: 100, percentage: 68, feedback: "Needs work on integration" },
-  ],
-  createdAt: new Date().toISOString(),
-};
+
 
 export default function EvaluationPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
-  const [data, setData] = useState<EvaluationData>(DEMO);
+  const [data, setData] = useState<EvaluationData | null>(null);
   const [loading, setLoading] = useState(true);
 
   // Saved, share and print states
@@ -113,8 +75,10 @@ export default function EvaluationPage() {
 
   useEffect(() => {
     if (!id || id === "demo") {
-      const timer = setTimeout(() => setLoading(false), 0);
-      return () => clearTimeout(timer);
+      setTimeout(() => {
+        setLoading(false);
+      }, 0);
+      return;
     }
     
     // Fetch report data
@@ -146,10 +110,7 @@ export default function EvaluationPage() {
   }, [id]);
 
   const handleSave = async () => {
-    if (!id || id === "demo") {
-      setIsSaved(!isSaved);
-      return;
-    }
+    if (!id || !data) return;
 
     setSaveLoading(true);
     try {
@@ -173,6 +134,7 @@ export default function EvaluationPage() {
   };
 
   const handleShare = async () => {
+    if (!data) return;
     const shareUrl = window.location.href;
     const shareData = {
       title: `${data.subject} Evaluation Report`,
@@ -184,7 +146,7 @@ export default function EvaluationPage() {
       try {
         await navigator.share(shareData);
         return;
-      } catch (err) {
+      } catch {
         // Fallback to clipboard
       }
     }
@@ -209,6 +171,28 @@ export default function EvaluationPage() {
           <Brain className="w-12 h-12 text-blue-500 animate-pulse mx-auto mb-4" />
           <p className="text-gray-600 font-medium">Loading evaluation results...</p>
         </div>
+      </div>
+    );
+  }
+
+  if (!data) {
+    return (
+      <div className="max-w-md mx-auto text-center py-20 px-6">
+        <div className="w-16 h-16 bg-red-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+          <AlertTriangle className="w-8 h-8 text-red-500" />
+        </div>
+        <h2 className="text-xl font-bold text-gray-900" style={{ fontFamily: "var(--font-poppins)" }}>
+          Evaluation Not Found
+        </h2>
+        <p className="text-gray-500 text-sm mt-2 mb-6">
+          The evaluation report you are trying to access does not exist or you do not have permission to view it.
+        </p>
+        <button
+          onClick={() => router.push("/dashboard")}
+          className="inline-flex items-center gap-2 gradient-primary text-white font-semibold px-6 py-3 rounded-xl hover:opacity-90 transition-opacity text-sm shadow-md"
+        >
+          <ArrowLeft className="w-4 h-4" /> Back to Dashboard
+        </button>
       </div>
     );
   }
