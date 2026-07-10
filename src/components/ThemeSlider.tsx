@@ -6,7 +6,7 @@ import { Sun, Moon, Leaf, Sunset } from "lucide-react";
 export function ThemeSlider({ compact = false }: { compact?: boolean }) {
   const { theme, setTheme } = useTheme();
 
-  const themes: { id: ThemeType; label: string; icon: React.ComponentType<any> }[] = [
+  const themes: { id: ThemeType; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
     { id: "default", label: "Light", icon: Sun },
     { id: "dark", label: "Dark", icon: Moon },
     { id: "emerald", label: "Emerald", icon: Leaf },

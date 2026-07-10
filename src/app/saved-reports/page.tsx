@@ -29,6 +29,38 @@ interface SavedPaper {
   createdAt: string;
 }
 
+interface SavedReportWithEvaluation {
+  id: string;
+  userId: string;
+  evaluationId: string;
+  name: string;
+  createdAt: string;
+  updatedAt: string;
+  evaluation?: {
+    id: string;
+    userId: string;
+    examType: string;
+    subject: string;
+    grade: string | null;
+    totalMarks: number | null;
+    obtainedMarks: number | null;
+    percentage: number | null;
+    status: string;
+    originalFileName: string | null;
+    fileUrl: string | null;
+    fileType: string | null;
+    ocrText: string | null;
+    aiResponse: string | null;
+    marksBreakdown: string | null;
+    aiFeedback: string | null;
+    strengths: string | null;
+    weaknesses: string | null;
+    recommendations: string | null;
+    createdAt: string;
+    updatedAt: string;
+  };
+}
+
 const DEMO_REPORTS = [
   { id: "demo-1", subject: "Mathematics", grade: "12th Grade", percentage: 85, date: "June 25, 2024", status: "COMPLETED" },
   { id: "demo-2", subject: "Physics", grade: "12th Grade", percentage: 72, date: "June 20, 2024", status: "COMPLETED" },
@@ -42,7 +74,7 @@ export default function SavedReportsPage() {
   const [loadingPapers, setLoadingPapers] = useState(false);
 
   // Real saved reports state
-  const [savedReports, setSavedReports] = useState<any[]>([]);
+  const [savedReports, setSavedReports] = useState<SavedReportWithEvaluation[]>([]);
   const [loadingReports, setLoadingReports] = useState(false);
   
   // Modal Previewer State
