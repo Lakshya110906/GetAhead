@@ -1,7 +1,7 @@
 "use client";
 
 import { useSession } from "next-auth/react";
-import { User, Bell, Shield, CreditCard, Palette, ChevronRight } from "lucide-react";
+import { User, Bell, Shield, Palette, ChevronRight } from "lucide-react";
 import { useState } from "react";
 import { useTheme } from "@/components/ThemeProvider";
 
@@ -9,7 +9,6 @@ const sections = [
   { id: "profile", icon: User, label: "Profile" },
   { id: "notifications", icon: Bell, label: "Notifications" },
   { id: "security", icon: Shield, label: "Security" },
-  { id: "subscription", icon: CreditCard, label: "Subscription" },
   { id: "appearance", icon: Palette, label: "Appearance" },
 ];
 
@@ -113,48 +112,6 @@ export default function SettingsPage() {
             </div>
           )}
 
-          {activeSection === "subscription" && (
-            <div>
-              <h2 className="text-lg font-bold text-gray-900 mb-6" style={{ fontFamily: "var(--font-poppins)" }}>
-                Subscription & Credits
-              </h2>
-
-              <div className="bg-gradient-to-r from-blue-600 to-teal-500 rounded-2xl p-6 text-white mb-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-blue-100 text-sm font-medium mb-1">Current Plan</p>
-                    <p className="text-3xl font-bold" style={{ fontFamily: "var(--font-poppins)" }}>
-                      FREE
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-blue-100 text-sm">Credits Used</p>
-                    <p className="text-2xl font-bold">0/10</p>
-                  </div>
-                </div>
-                <div className="mt-4 h-2 bg-white/20 rounded-full overflow-hidden">
-                  <div className="h-full w-0 bg-white rounded-full" />
-                </div>
-                <p className="text-blue-100 text-xs mt-2">10 evaluations remaining</p>
-              </div>
-
-              <div className="grid sm:grid-cols-2 gap-4">
-                {[
-                  { name: "Pro", price: "₹299/mo", features: "100 evaluations + Advanced analytics", color: "bg-blue-50 border-blue-200" },
-                  { name: "Premium", price: "₹4,999/mo", features: "Unlimited + Batch processing + API", color: "bg-purple-50 border-purple-200" },
-                ].map((plan) => (
-                  <div key={plan.name} className={`rounded-2xl border-2 ${plan.color} p-5`}>
-                    <p className="font-bold text-gray-900 text-lg mb-1">{plan.name}</p>
-                    <p className="text-blue-700 font-semibold text-xl mb-2">{plan.price}</p>
-                    <p className="text-gray-600 text-xs mb-4">{plan.features}</p>
-                    <button className="w-full gradient-primary text-white text-sm font-semibold py-2 rounded-xl hover:opacity-90 transition-opacity">
-                      Upgrade
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
 
           {activeSection === "appearance" && (
             <div>
@@ -229,7 +186,7 @@ export default function SettingsPage() {
             </div>
           )}
 
-          {activeSection !== "profile" && activeSection !== "subscription" && activeSection !== "appearance" && (
+          {activeSection !== "profile" && activeSection !== "appearance" && (
             <div className="text-center py-10">
               <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
                 {(() => {

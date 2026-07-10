@@ -98,58 +98,7 @@ const steps = [
   },
 ];
 
-const pricingPlans = [
-  {
-    name: "Free",
-    price: "₹0",
-    period: "forever",
-    description: "Perfect for students exploring AI evaluation",
-    credits: "10 evaluations",
-    features: [
-      "10 free evaluations",
-      "Basic performance analytics",
-      "Subject-wise breakdown",
-      "PDF report download",
-    ],
-    cta: "Get Started Free",
-    highlighted: false,
-  },
-  {
-    name: "Pro",
-    price: "₹299",
-    period: "per month",
-    description: "For serious students and individual teachers",
-    credits: "100 evaluations/month",
-    features: [
-      "100 evaluations per month",
-      "Advanced analytics dashboard",
-      "Performance trend tracking",
-      "Priority AI processing",
-      "Detailed question-wise feedback",
-      "Export to Excel/PDF",
-    ],
-    cta: "Start Pro Trial",
-    highlighted: true,
-  },
-  {
-    name: "Institution",
-    price: "₹4,999",
-    period: "per month",
-    description: "For schools, colleges and coaching institutes",
-    credits: "Unlimited evaluations",
-    features: [
-      "Unlimited evaluations",
-      "Multi-teacher accounts",
-      "Batch upload & processing",
-      "Admin dashboard",
-      "Custom branding",
-      "API access",
-      "Priority support",
-    ],
-    cta: "Contact Sales",
-    highlighted: false,
-  },
-];
+
 
 const faqs = [
   {
@@ -217,12 +166,7 @@ export default function LandingPage() {
               >
                 How It Works
               </Link>
-              <Link
-                href="#pricing"
-                className={`text-sm font-medium transition-colors ${isDark ? "text-gray-300 hover:text-blue-400" : "text-gray-600 hover:text-blue-600"}`}
-              >
-                Pricing
-              </Link>
+
               <Link
                 href="#faq"
                 className={`text-sm font-medium transition-colors ${isDark ? "text-gray-300 hover:text-blue-400" : "text-gray-600 hover:text-blue-600"}`}
@@ -559,100 +503,29 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Pricing */}
-      <section id="pricing" className="py-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <span className="text-purple-600 font-semibold text-sm uppercase tracking-wider">Pricing</span>
-            <h2
-              className="text-3xl md:text-4xl font-bold text-gray-900 mt-2 mb-4"
-              style={{ fontFamily: "var(--font-poppins)" }}
-            >
-              Simple, Transparent Pricing
-            </h2>
-            <p className="text-gray-600 text-lg">Start free, upgrade as you grow</p>
+      {/* Pricing Banner — Free for Everyone */}
+      <section id="free-tier" className="py-20 bg-gradient-to-r from-blue-900 to-indigo-900 text-white relative overflow-hidden">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(59,130,246,0.15),transparent_60%)] pointer-events-none" />
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
+          <div className="w-16 h-16 bg-blue-500/20 rounded-2xl flex items-center justify-center mx-auto mb-6 border border-blue-500/30">
+            <Sparkles className="w-8 h-8 text-blue-300 animate-pulse" />
           </div>
-
-          <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
-            {pricingPlans.map((plan, i) => (
-              <motion.div
-                key={plan.name}
-                initial={{ opacity: 0, y: 24 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: i * 0.1 }}
-                className={`rounded-2xl p-7 border-2 relative ${
-                  plan.highlighted
-                    ? "border-blue-500 bg-blue-600 text-white shadow-2xl shadow-blue-500/25 scale-105"
-                    : "border-gray-100 bg-white card-shadow-md"
-                }`}
-              >
-                {plan.highlighted && (
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-orange-400 text-white text-xs font-bold px-3 py-1 rounded-full">
-                    Most Popular
-                  </div>
-                )}
-                <p
-                  className={`font-bold text-lg mb-1 ${plan.highlighted ? "text-blue-100" : "text-gray-500"}`}
-                >
-                  {plan.name}
-                </p>
-                <div className="flex items-end gap-1 mb-1">
-                  <span
-                    className={`text-4xl font-bold ${plan.highlighted ? "text-white" : "text-gray-900"}`}
-                    style={{ fontFamily: "var(--font-poppins)" }}
-                  >
-                    {plan.price}
-                  </span>
-                  <span
-                    className={`text-sm mb-1 ${plan.highlighted ? "text-blue-200" : "text-gray-500"}`}
-                  >
-                    /{plan.period}
-                  </span>
-                </div>
-                <p
-                  className={`text-sm mb-6 ${plan.highlighted ? "text-blue-100" : "text-gray-500"}`}
-                >
-                  {plan.description}
-                </p>
-
-                <div
-                  className={`rounded-xl px-3 py-2 text-sm font-semibold mb-6 text-center ${
-                    plan.highlighted ? "bg-white/20 text-white" : "bg-blue-50 text-blue-700"
-                  }`}
-                >
-                  {plan.credits}
-                </div>
-
-                <ul className="space-y-3 mb-7">
-                  {plan.features.map((f) => (
-                    <li key={f} className="flex items-start gap-2.5">
-                      <CheckCircle
-                        className={`w-4 h-4 mt-0.5 flex-shrink-0 ${
-                          plan.highlighted ? "text-teal-300" : "text-green-500"
-                        }`}
-                      />
-                      <span
-                        className={`text-sm ${plan.highlighted ? "text-blue-100" : "text-gray-600"}`}
-                      >
-                        {f}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-
-                <Link
-                  href="/signup"
-                  className={`block text-center py-3 rounded-xl font-semibold text-sm transition-all ${
-                    plan.highlighted
-                      ? "bg-white text-blue-600 hover:bg-blue-50"
-                      : "gradient-primary text-white hover:opacity-90"
-                  }`}
-                >
-                  {plan.cta}
-                </Link>
-              </motion.div>
-            ))}
+          <h2 className="text-3xl md:text-5xl font-extrabold mb-4" style={{ fontFamily: "var(--font-poppins)" }}>
+            100% Free For Everyone
+          </h2>
+          <p className="text-blue-100 text-lg md:text-xl max-w-2xl mx-auto mb-10 leading-relaxed">
+            Get unlimited answer sheet evaluations, academic grading reports, and agentic question paper generation. No billing, subscription plans, or credit constraints.
+          </p>
+          <div className="flex flex-col sm:flex-row justify-center items-center gap-4">
+            <Link
+              href="/signup"
+              className="px-8 py-3.5 bg-white text-blue-900 font-bold rounded-xl shadow-lg hover:bg-blue-50 transition-colors text-base"
+            >
+              Get Started Now
+            </Link>
+            <span className="text-blue-200 text-sm font-semibold sm:border-l sm:border-blue-700/50 sm:pl-4">
+              ExamEval AI is completely free to use.
+            </span>
           </div>
         </div>
       </section>
@@ -756,7 +629,7 @@ export default function LandingPage() {
             {[
               {
                 title: "Product",
-                links: ["Features", "Pricing", "How It Works", "FAQ"],
+                links: ["Features", "How It Works", "FAQ"],
               },
               {
                 title: "For Users",

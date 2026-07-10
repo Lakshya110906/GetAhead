@@ -13,9 +13,6 @@ export async function GET() {
     const userId = (session.user as { id: string }).id;
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      include: {
-        subscription: true,
-      },
     });
 
     if (!user) {
@@ -30,9 +27,6 @@ export async function GET() {
         email: user.email,
         role: user.role,
         avatar: user.avatar,
-        plan: user.subscription?.plan || "FREE",
-        credits: user.subscription?.credits || 10,
-        usedCredits: user.subscription?.usedCredits || 0,
       },
     });
   } catch (error) {

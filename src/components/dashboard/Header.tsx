@@ -103,24 +103,12 @@ export function DashboardHeader({ title, subtitle }: { title?: string; subtitle?
                 </p>
               </div>
 
-              {/* Role & Subscription Info */}
-              <div className="px-4 py-2.5 bg-gray-50 border-b border-gray-100 space-y-1.5">
+              {/* Role Info */}
+              <div className="px-4 py-2.5 bg-gray-50 border-b border-gray-100">
                 <div className="flex items-center justify-between text-xs">
                   <span className="font-semibold text-gray-500 uppercase tracking-wide">Role</span>
                   <span className="bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full font-bold text-xxs uppercase tracking-wider">
                     {profile?.role || "STUDENT"}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between text-xs">
-                  <span className="font-semibold text-gray-500 uppercase tracking-wide">Plan</span>
-                  <span className="bg-teal-100 text-teal-800 px-2 py-0.5 rounded-full font-bold text-xxs uppercase tracking-wider">
-                    {profile?.plan || "FREE"}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between text-xs pt-0.5">
-                  <span className="font-semibold text-gray-500">Credits Used:</span>
-                  <span className="font-bold text-gray-900">
-                    {profile?.usedCredits ?? 0}/{profile?.credits ?? 10}
                   </span>
                 </div>
               </div>

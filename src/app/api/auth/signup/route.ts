@@ -41,26 +41,14 @@ export async function POST(request: NextRequest) {
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 12);
 
-    // Create user and subscription in a transaction
-    const user = await prisma.$transaction(async (tx) => {
-      const newUser = await tx.user.create({
-        data: {
-          name,
-          email,
-          password: hashedPassword,
-          role,
-        },
-      });
-
-      await tx.subscription.create({
-        data: {
-          userId: newUser.id,
-          plan: "FREE",
-          credits: 10,
-        },
-      });
-
-      return newUser;
+    // Create user directly
+    const user = await prisma.user.create({
+      data: {
+        name,
+        email,
+        password: hashedPassword,
+        role,
+      },
     });
 
     return NextResponse.json(

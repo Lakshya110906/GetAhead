@@ -21,17 +21,7 @@ export async function POST(request: NextRequest) {
 
     const userId = (session.user as { id: string }).id;
 
-    // Check subscription credits
-    const subscription = await prisma.subscription.findUnique({
-      where: { userId },
-    });
 
-    if (subscription && subscription.usedCredits >= subscription.credits) {
-      return NextResponse.json(
-        { error: "You have exhausted your evaluation credits. Please upgrade your plan." },
-        { status: 403 }
-      );
-    }
 
     const body = await request.json();
     const parsed = uploadSchema.safeParse(body);
