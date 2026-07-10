@@ -12,7 +12,7 @@ export default async function Layout({ children }: { children: React.ReactNode }
       <DashboardSidebar />
       <div className="flex-1 flex flex-col min-w-0">
         <DashboardHeader />
-        <main className="flex-1 p-6 overflow-auto scrollbar-thin">{children}</main>
+        <main className="flex-1 p-4 sm:p-6 pt-16 lg:pt-6 overflow-auto scrollbar-thin">{children}</main>
       </div>
     </div>
   );

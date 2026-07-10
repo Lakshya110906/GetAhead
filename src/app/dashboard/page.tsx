@@ -13,11 +13,6 @@ import {
   LineChart,
   Line,
   CartesianGrid,
-  RadarChart,
-  Radar,
-  PolarGrid,
-  PolarAngleAxis,
-  PolarRadiusAxis,
 } from "recharts";
 import {
   PlusCircle,
@@ -29,7 +24,7 @@ import {
   Loader2,
 } from "lucide-react";
 
-const COLORS = ["#2563EB", "#14B8A6", "#22C55E", "#F59E0B", "#EF4444"];
+
 
 interface AnalyticsData {
   totalEvaluations: number;
@@ -49,35 +44,18 @@ interface AnalyticsData {
   }>;
 }
 
-// Fallback demo data
-const DEMO_DATA: AnalyticsData = {
-  totalEvaluations: 24,
-  completedEvaluations: 22,
-  avgPercentage: 78,
-  monthlyTrend: [
-    { month: "Jan", score: 65, count: 2 },
-    { month: "Feb", score: 72, count: 3 },
-    { month: "Mar", score: 68, count: 2 },
-    { month: "Apr", score: 85, count: 5 },
-    { month: "May", score: 78, count: 4 },
-    { month: "Jun", score: 90, count: 6 },
-  ],
-  subjectPerformance: [
-    { subject: "Mathematics", avgScore: 82, count: 8 },
-    { subject: "Physics", avgScore: 75, count: 6 },
-    { subject: "Chemistry", avgScore: 88, count: 4 },
-    { subject: "Biology", avgScore: 70, count: 4 },
-  ],
-  recentEvaluations: [
-    { id: "demo-1", subject: "Mathematics", grade: "12th", percentage: 85, obtainedMarks: 85, totalMarks: 100, status: "COMPLETED", createdAt: new Date().toISOString() },
-    { id: "demo-2", subject: "Physics", grade: "12th", percentage: 72, obtainedMarks: 72, totalMarks: 100, status: "COMPLETED", createdAt: new Date(Date.now() - 86400000).toISOString() },
-    { id: "demo-3", subject: "Chemistry", grade: "12th", percentage: 91, obtainedMarks: 91, totalMarks: 100, status: "COMPLETED", createdAt: new Date(Date.now() - 2 * 86400000).toISOString() },
-  ],
-};
+
 
 export default function DashboardPage() {
   const { data: session } = useSession();
-  const [data, setData] = useState<AnalyticsData>(DEMO_DATA);
+  const [data, setData] = useState<AnalyticsData>({
+    totalEvaluations: 0,
+    completedEvaluations: 0,
+    avgPercentage: 0,
+    monthlyTrend: [],
+    subjectPerformance: [],
+    recentEvaluations: [],
+  });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {

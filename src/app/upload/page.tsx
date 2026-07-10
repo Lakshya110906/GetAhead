@@ -3,7 +3,6 @@
 import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useDropzone } from "react-dropzone";
-import { motion, AnimatePresence } from "framer-motion";
 import {
   Upload,
   FileText,
@@ -15,18 +14,7 @@ import {
   Info,
 } from "lucide-react";
 
-const subjects = [
-  "Mathematics",
-  "Physics",
-  "Chemistry",
-  "Biology",
-  "English",
-  "Computer Science",
-  "History",
-  "Geography",
-  "Economics",
-  "Accountancy",
-];
+import { SubjectSelector } from "@/components/SubjectSelector";
 
 const grades = [
   "8th Grade",
@@ -185,19 +173,12 @@ export default function UploadPage() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Subject *</label>
-              <select
+              <SubjectSelector
                 id="subject-select"
                 value={subject}
-                onChange={(e) => setSubject(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all bg-white"
-              >
-                <option value="">Select subject...</option>
-                {subjects.map((s) => (
-                  <option key={s} value={s}>
-                    {s}
-                  </option>
-                ))}
-              </select>
+                onChange={setSubject}
+                placeholder="Select or type subject..."
+              />
             </div>
 
             <div>

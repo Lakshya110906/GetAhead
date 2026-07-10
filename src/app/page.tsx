@@ -22,8 +22,6 @@ import {
   ChevronRight,
   Menu,
   X,
-  Moon,
-  Sun,
 } from "lucide-react";
 import { useTheme } from "@/components/ThemeProvider";
 import { ThemeSlider } from "@/components/ThemeSlider";
@@ -185,9 +183,8 @@ export default function LandingPage() {
   const { theme, setTheme } = useTheme();
   const isDark = theme === "dark";
 
-  const toggleDarkMode = () => {
-    setTheme(isDark ? "default" : "dark");
-  };
+  const toggleDarkMode = () => { setTheme(isDark ? "default" : "dark"); };
+  void toggleDarkMode; // reserved for future navbar toggle
 
   return (
     <div className={`min-h-screen ${isDark ? "bg-gray-950" : "bg-white"} transition-colors duration-300`}>

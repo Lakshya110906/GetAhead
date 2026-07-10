@@ -22,7 +22,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { name, email, password, role } = parsed.data;
+    const { name, role } = parsed.data;
+    const email = parsed.data.email.trim().toLowerCase();
+    const password = parsed.data.password;
 
     // Check if user already exists
     const existingUser = await prisma.user.findUnique({

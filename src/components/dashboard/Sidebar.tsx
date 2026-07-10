@@ -17,11 +17,7 @@ import {
   GraduationCap,
   Menu,
   X,
-  Monitor,
-  Sun,
-  Moon,
 } from "lucide-react";
-import { useTheme } from "@/components/ThemeProvider";
 import { ThemeSlider } from "@/components/ThemeSlider";
 
 const navItems = [

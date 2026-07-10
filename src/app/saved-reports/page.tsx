@@ -61,12 +61,6 @@ interface SavedReportWithEvaluation {
   };
 }
 
-const DEMO_REPORTS = [
-  { id: "demo-1", subject: "Mathematics", grade: "12th Grade", percentage: 85, date: "June 25, 2024", status: "COMPLETED" },
-  { id: "demo-2", subject: "Physics", grade: "12th Grade", percentage: 72, date: "June 20, 2024", status: "COMPLETED" },
-  { id: "demo-3", subject: "Chemistry", grade: "12th Grade", percentage: 91, date: "June 15, 2024", status: "COMPLETED" },
-  { id: "demo-4", subject: "Biology", grade: "11th Grade", percentage: 68, date: "June 10, 2024", status: "COMPLETED" },
-];
 
 export default function SavedReportsPage() {
   const [activeTab, setActiveTab] = useState<"reports" | "papers">("reports");
@@ -329,67 +323,22 @@ export default function SavedReportsPage() {
               <Loader2 className="w-10 h-10 animate-spin text-blue-500" />
             </div>
           ) : savedReports.length === 0 ? (
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {DEMO_REPORTS.map((report) => (
-                <div
-                  key={report.id}
-                  className="bg-white rounded-2xl border border-gray-100 card-shadow-md p-5 hover:card-shadow-lg hover:-translate-y-0.5 transition-all group"
-                >
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="w-12 h-12 gradient-primary rounded-xl flex items-center justify-center text-white font-bold text-sm">
-                      {report.subject.slice(0, 2).toUpperCase()}
-                    </div>
-                    <span
-                      className={`text-xs px-2.5 py-1 rounded-full font-semibold ${
-                        report.percentage >= 80
-                          ? "bg-green-100 text-green-700"
-                          : report.percentage >= 60
-                          ? "bg-amber-100 text-amber-700"
-                          : "bg-red-100 text-red-700"
-                      }`}
-                    >
-                      {report.percentage}%
-                    </span>
-                  </div>
-
-                  <h3 className="font-bold text-gray-900 mb-0.5" style={{ fontFamily: "var(--font-poppins)" }}>
-                    {report.subject}
-                  </h3>
-                  <p className="text-gray-500 text-xs mb-4">{report.grade} • {report.date}</p>
-
-                  <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden mb-4">
-                    <div
-                      className="h-full rounded-full"
-                      style={{
-                        width: `${report.percentage}%`,
-                        background: report.percentage >= 80 ? "#22C55E" : report.percentage >= 60 ? "#F59E0B" : "#EF4444",
-                      }}
-                    />
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-1.5 text-xs text-gray-400">
-                      <BookMarked className="w-3.5 h-3.5" />
-                      <span>Saved Report (Demo)</span>
-                    </div>
-                    <Link
-                      href={`/evaluation/demo`}
-                      className="inline-flex items-center gap-1.5 text-blue-600 text-xs font-semibold opacity-0 group-hover:opacity-100 transition-opacity"
-                    >
-                      View <ExternalLink className="w-3.5 h-3.5" />
-                    </Link>
-                  </div>
-                </div>
-              ))}
-
-              {/* Empty state card */}
-              <div className="bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200 p-5 flex flex-col items-center justify-center text-center min-h-48">
-                <FileText className="w-8 h-8 text-gray-300 mb-3" />
-                <p className="text-gray-500 text-sm font-medium">Save reports after evaluation</p>
-                <Link href="/upload" className="text-blue-600 text-xs font-medium mt-2 hover:underline">
-                  Start new evaluation →
-                </Link>
+            <div className="bg-white rounded-3xl border border-gray-150 p-12 text-center max-w-lg mx-auto shadow-sm">
+              <div className="w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <BookMarked className="w-8 h-8 text-blue-600" />
               </div>
+              <h3 className="text-lg font-bold text-gray-900 mb-1" style={{ fontFamily: "var(--font-poppins)" }}>
+                No Saved Reports Yet
+              </h3>
+              <p className="text-gray-500 text-sm max-w-xs mx-auto mb-6">
+                When you evaluate an exam answer sheet, you can save the results here to build your academic repository.
+              </p>
+              <Link
+                href="/upload"
+                className="inline-flex items-center gap-2 gradient-primary text-white font-semibold px-6 py-3 rounded-xl hover:opacity-90 transition-opacity text-sm shadow-md"
+              >
+                <FileText className="w-4 h-4" /> Start First Evaluation
+              </Link>
             </div>
           ) : (
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
