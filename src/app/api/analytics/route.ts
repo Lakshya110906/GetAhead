@@ -19,10 +19,10 @@ export async function GET(_req: NextRequest) {
     });
 
     // Calculate analytics
-    const completed = evaluations.filter((e: any) => e.status === "COMPLETED");
+    const completed = evaluations.filter((e) => e.status === "COMPLETED");
     const avgPercentage =
       completed.length > 0
-        ? completed.reduce((sum: number, e: any) => sum + (e.percentage || 0), 0) / completed.length
+        ? completed.reduce((sum: number, e) => sum + (e.percentage || 0), 0) / completed.length
         : 0;
 
     // Group by month for trend data
@@ -30,7 +30,7 @@ export async function GET(_req: NextRequest) {
       const date = new Date();
       date.setMonth(date.getMonth() - (5 - i));
       const month = date.toLocaleString("default", { month: "short" });
-      const monthEvals = completed.filter((e: any) => {
+      const monthEvals = completed.filter((e) => {
         const evalDate = new Date(e.createdAt);
         return (
           evalDate.getMonth() === date.getMonth() &&
@@ -40,7 +40,7 @@ export async function GET(_req: NextRequest) {
       const avgScore =
         monthEvals.length > 0
           ? Math.round(
-            monthEvals.reduce((sum: number, e: any) => sum + (e.percentage || 0), 0) /
+            monthEvals.reduce((sum: number, e) => sum + (e.percentage || 0), 0) /
             monthEvals.length
           )
           : 0;
@@ -49,7 +49,7 @@ export async function GET(_req: NextRequest) {
 
     // Subject performance
     const subjectMap = new Map<string, { total: number; sum: number }>();
-    completed.forEach((e: any) => {
+    completed.forEach((e) => {
       const existing = subjectMap.get(e.subject);
       if (existing) {
         existing.total += 1;
@@ -73,7 +73,7 @@ export async function GET(_req: NextRequest) {
       avgPercentage: Math.round(avgPercentage),
       monthlyTrend: monthlyData,
       subjectPerformance,
-      recentEvaluations: evaluations.slice(0, 5).map((e: any) => ({
+      recentEvaluations: evaluations.slice(0, 5).map((e) => ({
         id: e.id,
         subject: e.subject,
         grade: e.grade,

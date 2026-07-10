@@ -1307,7 +1307,7 @@ ${JSON.stringify(paper, null, 2)}
                     AI Paper Refinement & Tweaks
                   </h3>
                   <p className="text-xs text-gray-500">
-                    Instruct the agents to update the paper (e.g. "change Section A questions to be more focused on algorithms").
+                    Instruct the agents to update the paper (e.g. &quot;change Section A questions to be more focused on algorithms&quot;).
                   </p>
                 </div>
               </div>
