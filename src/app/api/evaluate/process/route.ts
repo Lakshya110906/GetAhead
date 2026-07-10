@@ -67,11 +67,7 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // Increment used credits
-    await prisma.subscription.updateMany({
-      where: { userId: (session.user as { id: string }).id },
-      data: { usedCredits: { increment: 1 } },
-    });
+
 
     return NextResponse.json({
       success: true,

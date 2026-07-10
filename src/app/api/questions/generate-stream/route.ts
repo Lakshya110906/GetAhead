@@ -75,14 +75,7 @@ export async function POST(request: NextRequest) {
           }
         });
 
-        try {
-          await prisma.subscription.updateMany({
-            where: { userId },
-            data: { usedCredits: { increment: 1 } }
-          });
-        } catch {
-          // Non-critical
-        }
+
 
         emit("complete", { paper: savedPaper });
       } catch (err) {

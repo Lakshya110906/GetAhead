@@ -68,15 +68,7 @@ export async function POST(request: NextRequest) {
       }
     });
 
-    // Deduct credit
-    try {
-      await prisma.subscription.updateMany({
-        where: { userId },
-        data: { usedCredits: { increment: 1 } }
-      });
-    } catch (creditError) {
-      console.warn("Could not deduct credits:", creditError);
-    }
+
 
     return NextResponse.json({
       success: true,
