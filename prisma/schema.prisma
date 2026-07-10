@@ -18,12 +18,12 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  evaluations   Evaluation[]
-  savedReports  SavedReport[]
-  feedbacks     Feedback[]
-  subscription  Subscription?
-  accounts      Account[]
-  sessions      Session[]
+  evaluations    Evaluation[]
+  savedReports   SavedReport[]
+  feedbacks      Feedback[]
+  subscription   Subscription?
+  accounts       Account[]
+  sessions       Session[]
   questionPapers QuestionPaper[]
 }
 
@@ -33,12 +33,12 @@ model Account {
   type              String
   provider          String
   providerAccountId String
-  refresh_token     String?
-  access_token      String?
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
   expires_at        Int?
   token_type        String?
   scope             String?
-  id_token          String?
+  id_token          String? @db.Text
   session_state     String?
   user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -62,36 +62,36 @@ model VerificationToken {
 }
 
 model Evaluation {
-  id               String   @id @default(cuid())
-  userId           String
-  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id            String  @id @default(cuid())
+  userId        String
+  user          User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  examType         String   @default("MCQ")
-  subject          String
-  grade            String?
-  totalMarks       Int?
-  obtainedMarks    Float?
-  percentage       Float?
-  status           String   @default("IN_PROGRESS")
+  examType      String  @default("MCQ")
+  subject       String
+  grade         String?
+  totalMarks    Int?
+  obtainedMarks Float?
+  percentage    Float?
+  status        String  @default("IN_PROGRESS")
 
   originalFileName String?
   fileUrl          String?
   fileType         String?
-  ocrText          String?
+  ocrText          String? @db.LongText
 
-  aiResponse       String?
-  marksBreakdown   String?
-  aiFeedback       String?
+  aiResponse       String? @db.LongText
+  marksBreakdown   String? @db.LongText
+  aiFeedback       String? @db.LongText
 
-  strengths        String?
-  weaknesses       String?
-  recommendations  String?
+  strengths        String? @db.LongText
+  weaknesses       String? @db.LongText
+  recommendations  String? @db.LongText
 
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  savedReports     SavedReport[]
-  feedbacks        Feedback[]
+  savedReports SavedReport[]
+  feedbacks    Feedback[]
 
   @@index([userId])
   @@index([status])
@@ -116,35 +116,35 @@ model Feedback {
   evaluationId String?
   evaluation   Evaluation? @relation(fields: [evaluationId], references: [id])
   rating       Int
-  comment      String?
+  comment      String?     @db.Text
   createdAt    DateTime    @default(now())
   updatedAt    DateTime    @updatedAt
 }
 
 model Subscription {
-  id          String   @id @default(cuid())
-  userId      String   @unique
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  plan        String   @default("FREE")
-  credits     Int      @default(10)
-  usedCredits Int      @default(0)
+  id          String    @id @default(cuid())
+  userId      String    @unique
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan        String    @default("FREE")
+  credits     Int       @default(10)
+  usedCredits Int       @default(0)
   validUntil  DateTime?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 }
 
 model QuestionPaper {
-  id          String   @id @default(cuid())
-  userId      String
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  subject     String
-  grade       String
-  difficulty  String
-  totalMarks  Int
-  title       String
-  content     String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  subject    String
+  grade      String
+  difficulty String
+  totalMarks Int
+  title      String
+  content    String   @db.LongText
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
   @@index([userId])
 }
