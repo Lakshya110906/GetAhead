@@ -16,12 +16,12 @@ import {
 } from "recharts";
 import {
   PlusCircle,
-  Clock,
   TrendingUp,
   Award,
   FileText,
   ChevronRight,
   Loader2,
+  Bookmark,
 } from "lucide-react";
 
 
@@ -30,6 +30,7 @@ interface AnalyticsData {
   totalEvaluations: number;
   completedEvaluations: number;
   avgPercentage: number;
+  savedReportsCount: number;
   monthlyTrend: Array<{ month: string; score: number; count: number }>;
   subjectPerformance: Array<{ subject: string; avgScore: number; count: number }>;
   recentEvaluations: Array<{
@@ -44,14 +45,13 @@ interface AnalyticsData {
   }>;
 }
 
-
-
 export default function DashboardPage() {
   const { data: session } = useSession();
   const [data, setData] = useState<AnalyticsData>({
     totalEvaluations: 0,
     completedEvaluations: 0,
     avgPercentage: 0,
+    savedReportsCount: 0,
     monthlyTrend: [],
     subjectPerformance: [],
     recentEvaluations: [],
@@ -76,14 +76,14 @@ export default function DashboardPage() {
     {
       title: "Total Evaluations",
       value: data.totalEvaluations.toString(),
-      change: "+4 this month",
+      change: "All time uploads",
       icon: Award,
       positive: true,
     },
     {
       title: "Average Score",
-      value: `${data.avgPercentage}%`,
-      change: data.avgPercentage >= 75 ? "↑ Great progress!" : "Keep improving!",
+      value: data.totalEvaluations === 0 ? "—" : `${data.avgPercentage}%`,
+      change: data.totalEvaluations === 0 ? "No evaluations graded" : (data.avgPercentage >= 75 ? "↑ Great progress!" : "Keep improving!"),
       icon: TrendingUp,
       positive: data.avgPercentage >= 75,
     },
@@ -95,10 +95,10 @@ export default function DashboardPage() {
       positive: true,
     },
     {
-      title: "Next Target",
-      value: `${Math.min(data.avgPercentage + 10, 100)}%`,
-      change: "Set your goal",
-      icon: Clock,
+      title: "Saved Reports",
+      value: data.savedReportsCount.toString(),
+      change: "Bookmarked summaries",
+      icon: Bookmark,
       positive: true,
     },
   ];
@@ -155,24 +155,32 @@ export default function DashboardPage() {
             Performance Trend
           </h2>
           <div className="h-52">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={data.monthlyTrend}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                <XAxis dataKey="month" tick={{ fontSize: 12, fill: "#6b7280" }} />
-                <YAxis domain={[0, 100]} tick={{ fontSize: 12, fill: "#6b7280" }} />
-                <Tooltip
-                  contentStyle={{ borderRadius: "12px", border: "1px solid #e5e7eb", fontSize: 12 }}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="score"
-                  stroke="#2563EB"
-                  strokeWidth={3}
-                  dot={{ fill: "#2563EB", strokeWidth: 2, r: 4 }}
-                  activeDot={{ r: 7, fill: "#2563EB" }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
+            {data.completedEvaluations === 0 ? (
+              <div className="h-full flex flex-col items-center justify-center text-center bg-gray-50/50 rounded-2xl border border-dashed border-gray-200 p-4">
+                <TrendingUp className="w-8 h-8 text-gray-300 mb-2" />
+                <p className="text-gray-500 text-sm font-medium">No evaluation data yet</p>
+                <p className="text-gray-400 text-xs mt-0.5">Complete an evaluation to see trends</p>
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={data.monthlyTrend}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                  <XAxis dataKey="month" tick={{ fontSize: 12, fill: "#6b7280" }} />
+                  <YAxis domain={[0, 100]} tick={{ fontSize: 12, fill: "#6b7280" }} />
+                  <Tooltip
+                    contentStyle={{ borderRadius: "12px", border: "1px solid #e5e7eb", fontSize: 12 }}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="score"
+                    stroke="#2563EB"
+                    strokeWidth={3}
+                    dot={{ fill: "#2563EB", strokeWidth: 2, r: 4 }}
+                    activeDot={{ r: 7, fill: "#2563EB" }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            )}
           </div>
         </div>
 
@@ -182,17 +190,25 @@ export default function DashboardPage() {
             Subject Performance
           </h2>
           <div className="h-52">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={data.subjectPerformance}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                <XAxis dataKey="subject" tick={{ fontSize: 11, fill: "#6b7280" }} />
-                <YAxis domain={[0, 100]} tick={{ fontSize: 12, fill: "#6b7280" }} />
-                <Tooltip
-                  contentStyle={{ borderRadius: "12px", border: "1px solid #e5e7eb", fontSize: 12 }}
-                />
-                <Bar dataKey="avgScore" fill="#2563EB" radius={[6, 6, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
+            {data.completedEvaluations === 0 ? (
+              <div className="h-full flex flex-col items-center justify-center text-center bg-gray-50/50 rounded-2xl border border-dashed border-gray-200 p-4">
+                <BarChart className="w-8 h-8 text-gray-300 mb-2" />
+                <p className="text-gray-500 text-sm font-medium">No evaluation data yet</p>
+                <p className="text-gray-400 text-xs mt-0.5">Grades will be grouped by subject here</p>
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={data.subjectPerformance}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                  <XAxis dataKey="subject" tick={{ fontSize: 11, fill: "#6b7280" }} />
+                  <YAxis domain={[0, 100]} tick={{ fontSize: 12, fill: "#6b7280" }} />
+                  <Tooltip
+                    contentStyle={{ borderRadius: "12px", border: "1px solid #e5e7eb", fontSize: 12 }}
+                  />
+                  <Bar dataKey="avgScore" fill="#2563EB" radius={[6, 6, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
           </div>
         </div>
       </div>

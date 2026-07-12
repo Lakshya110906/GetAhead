@@ -67,10 +67,15 @@ export async function GET() {
       })
     );
 
+    const savedReportsCount = await prisma.savedReport.count({
+      where: { userId },
+    });
+
     return NextResponse.json({
       totalEvaluations: evaluations.length,
       completedEvaluations: completed.length,
       avgPercentage: Math.round(avgPercentage),
+      savedReportsCount,
       monthlyTrend: monthlyData,
       subjectPerformance,
       recentEvaluations: evaluations.slice(0, 5).map((e) => ({

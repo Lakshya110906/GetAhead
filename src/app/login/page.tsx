@@ -73,18 +73,15 @@ function LoginForm() {
             Sign in to access your evaluations, analytics, and personalized study recommendations.
           </p>
 
-          <div className="space-y-4">
+          <div className="space-y-3">
             {[
-              { stat: "10,000+", label: "Students using ExamEval AI" },
-              { stat: "94%", label: "Evaluation accuracy rate" },
-              { stat: "30s", label: "Average evaluation time" },
+              "✓ Instant grading and detailed feedback",
+              "✓ Personalized study recommendations",
+              "✓ Secure storage and data privacy",
             ].map((item) => (
-              <div key={item.label} className="flex items-center gap-4">
-                <div className="w-16 h-9 bg-white/20 rounded-lg flex items-center justify-center text-sm font-bold">
-                  {item.stat}
-                </div>
-                <p className="text-blue-100 text-sm">{item.label}</p>
-              </div>
+              <p key={item} className="text-blue-100 text-sm font-medium">
+                {item}
+              </p>
             ))}
           </div>
         </div>
