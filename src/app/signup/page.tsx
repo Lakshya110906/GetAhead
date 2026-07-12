@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { signIn } from "next-auth/react";
+
 import { motion } from "framer-motion";
 import { Brain, Mail, Lock, User, Eye, EyeOff, ArrowRight, Loader2, CheckCircle } from "lucide-react";
 
@@ -52,14 +52,9 @@ export default function SignupPage() {
 
       setSuccess(true);
 
-      // Auto sign in after signup
-      await signIn("credentials", {
-        email: formData.email,
-        password: formData.password,
-        redirect: false,
-      });
-
-      setTimeout(() => router.push("/dashboard"), 1500);
+      setTimeout(() => {
+        router.push(`/login?email=${encodeURIComponent(formData.email)}&signupSuccess=true`);
+      }, 4000);
     } catch {
       setError("Something went wrong. Please try again.");
       setLoading(false);
@@ -68,19 +63,30 @@ export default function SignupPage() {
 
   if (success) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 px-6">
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="text-center"
+          className="text-center bg-white rounded-2xl border border-gray-150 card-shadow-md p-8 max-w-sm w-full"
         >
-          <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <CheckCircle className="w-10 h-10 text-green-500" />
+          <div className="w-20 h-20 bg-green-150 rounded-full flex items-center justify-center mx-auto mb-5 shadow-inner">
+            <CheckCircle className="w-10 h-10 text-green-600" />
           </div>
           <h2 className="text-2xl font-bold text-gray-900 mb-2" style={{ fontFamily: "var(--font-poppins)" }}>
             Account Created!
           </h2>
-          <p className="text-gray-500">Redirecting to your dashboard...</p>
+          <p className="text-gray-600 text-sm mb-6 leading-relaxed">
+            Account created successfully! Please sign in to continue.
+          </p>
+          <button
+            onClick={() => router.push(`/login?email=${encodeURIComponent(formData.email)}&signupSuccess=true`)}
+            className="w-full gradient-primary text-white font-semibold py-3 rounded-xl hover:opacity-90 transition-opacity flex items-center justify-center gap-2 shadow-md"
+          >
+            Continue to Sign In <ArrowRight className="w-4 h-4" />
+          </button>
+          <p className="text-xs text-gray-400 mt-4 animate-pulse">
+            Redirecting automatically in a few seconds...
+          </p>
         </motion.div>
       </div>
     );
