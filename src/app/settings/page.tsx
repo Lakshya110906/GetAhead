@@ -18,9 +18,70 @@ export default function SettingsPage() {
   const [activeSection, setActiveSection] = useState("profile");
   const [saved, setSaved] = useState(false);
 
+  // Security password change states
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [passwordError, setPasswordError] = useState("");
+  const [passwordSuccess, setPasswordSuccess] = useState("");
+  const [passwordLoading, setPasswordLoading] = useState(false);
+
+  // Notifications state
+  const [evalEmail, setEvalEmail] = useState(true);
+  const [featureEmail, setFeatureEmail] = useState(true);
+  const [weeklyEmail, setWeeklyEmail] = useState(false);
+  const [pushNotif, setPushNotif] = useState(true);
+  const [notificationsSaved, setNotificationsSaved] = useState(false);
+
   const handleSave = () => {
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
+  };
+
+  const handlePasswordChange = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPasswordError("");
+    setPasswordSuccess("");
+
+    if (!currentPassword) {
+      setPasswordError("Current password is required");
+      return;
+    }
+    if (newPassword.length < 6) {
+      setPasswordError("New password must be at least 6 characters");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setPasswordError("New passwords do not match");
+      return;
+    }
+
+    setPasswordLoading(true);
+    try {
+      const res = await fetch("/api/user/change-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ currentPassword, newPassword }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setPasswordError(data.error || "Failed to update password");
+      } else {
+        setPasswordSuccess("Password updated successfully!");
+        setCurrentPassword("");
+        setNewPassword("");
+        setConfirmPassword("");
+      }
+    } catch {
+      setPasswordError("An unexpected error occurred");
+    } finally {
+      setPasswordLoading(false);
+    }
+  };
+
+  const handleNotificationsSave = () => {
+    setNotificationsSaved(true);
+    setTimeout(() => setNotificationsSaved(false), 2000);
   };
 
   return (
@@ -186,17 +247,154 @@ export default function SettingsPage() {
             </div>
           )}
 
-          {activeSection !== "profile" && activeSection !== "appearance" && (
-            <div className="text-center py-10">
-              <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                {(() => {
-                  const sec = sections.find((s) => s.id === activeSection);
-                  const Icon = sec?.icon || User;
-                  return <Icon className="w-7 h-7 text-gray-400" />;
-                })()}
+          {activeSection === "notifications" && (
+            <div>
+              <h2 className="text-lg font-bold text-gray-900 mb-2" style={{ fontFamily: "var(--font-poppins)" }}>
+                Notification Preferences
+              </h2>
+              <p className="text-gray-500 text-xs mb-6">
+                Choose how and when you receive system and performance updates.
+              </p>
+
+              <div className="space-y-6">
+                <div className="space-y-4">
+                  <h3 className="font-semibold text-gray-800 text-sm uppercase tracking-wide">Email Notifications</h3>
+                  <div className="space-y-3">
+                    <label className="flex items-center gap-3 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={evalEmail}
+                        onChange={(e) => setEvalEmail(e.target.checked)}
+                        className="w-4.5 h-4.5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                      />
+                      <div>
+                        <p className="text-sm font-medium text-gray-900">Evaluation Completion</p>
+                        <p className="text-xs text-gray-500">Notify me as soon as an uploaded answer sheet is graded.</p>
+                      </div>
+                    </label>
+                    <label className="flex items-center gap-3 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={featureEmail}
+                        onChange={(e) => setFeatureEmail(e.target.checked)}
+                        className="w-4.5 h-4.5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                      />
+                      <div>
+                        <p className="text-sm font-medium text-gray-900">Feature Updates</p>
+                        <p className="text-xs text-gray-500">Keep me updated on newly supported built-in subjects and features.</p>
+                      </div>
+                    </label>
+                    <label className="flex items-center gap-3 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={weeklyEmail}
+                        onChange={(e) => setWeeklyEmail(e.target.checked)}
+                        className="w-4.5 h-4.5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                      />
+                      <div>
+                        <p className="text-sm font-medium text-gray-900">Weekly Progress</p>
+                        <p className="text-xs text-gray-500">Receive a weekly digest of evaluation accuracy and scores.</p>
+                      </div>
+                    </label>
+                  </div>
+                </div>
+
+                <div className="pt-4 border-t border-gray-100 space-y-4">
+                  <h3 className="font-semibold text-gray-800 text-sm uppercase tracking-wide">Browser Notifications</h3>
+                  <label className="flex items-center gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={pushNotif}
+                      onChange={(e) => setPushNotif(e.target.checked)}
+                      className="w-4.5 h-4.5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                    />
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">Push Notifications</p>
+                      <p className="text-xs text-gray-500">Display real-time evaluation status alerts inside your browser window.</p>
+                    </div>
+                  </label>
+                </div>
               </div>
-              <p className="text-gray-500 font-medium capitalize">{activeSection} settings</p>
-              <p className="text-gray-400 text-sm mt-1">Coming soon — we&apos;re building this out!</p>
+
+              <div className="mt-8 flex items-center gap-3">
+                <button
+                  onClick={handleNotificationsSave}
+                  className="gradient-primary text-white font-semibold px-6 py-2.5 rounded-xl hover:opacity-90 transition-opacity text-sm"
+                >
+                  {notificationsSaved ? "✓ Preferences Saved!" : "Save Preferences"}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {activeSection === "security" && (
+            <div>
+              <h2 className="text-lg font-bold text-gray-900 mb-2" style={{ fontFamily: "var(--font-poppins)" }}>
+                Security Settings
+              </h2>
+              <p className="text-gray-500 text-xs mb-6">
+                Update your account password and configure security options.
+              </p>
+
+              {passwordError && (
+                <div className="mb-4 p-3.5 bg-red-50 border border-red-200 text-red-700 rounded-xl text-sm font-medium">
+                  {passwordError}
+                </div>
+              )}
+
+              {passwordSuccess && (
+                <div className="mb-4 p-3.5 bg-green-50 border border-green-200 text-green-700 rounded-xl text-sm font-medium">
+                  {passwordSuccess}
+                </div>
+              )}
+
+              <form onSubmit={handlePasswordChange} className="space-y-4 max-w-md">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                    Current Password
+                  </label>
+                  <input
+                    type="password"
+                    value={currentPassword}
+                    onChange={(e) => setCurrentPassword(e.target.value)}
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
+                    placeholder="••••••••"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                    New Password
+                  </label>
+                  <input
+                    type="password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
+                    placeholder="At least 6 characters"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                    Confirm New Password
+                  </label>
+                  <input
+                    type="password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
+                    placeholder="At least 6 characters"
+                  />
+                </div>
+                <div className="pt-2">
+                  <button
+                    type="submit"
+                    disabled={passwordLoading}
+                    className="gradient-primary text-white font-semibold px-6 py-2.5 rounded-xl hover:opacity-90 transition-opacity text-sm disabled:opacity-50"
+                  >
+                    {passwordLoading ? "Updating..." : "Update Password"}
+                  </button>
+                </div>
+              </form>
             </div>
           )}
         </div>
