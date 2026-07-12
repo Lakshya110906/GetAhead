@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { useSession } from "next-auth/react";
 import { motion } from "framer-motion";
 import {
   Brain,
@@ -127,6 +128,10 @@ const stats = [
 ];
 
 export default function LandingPage() {
+  const { status } = useSession();
+  const isAuthenticated = status === "authenticated";
+  const ctaUrl = isAuthenticated ? "/dashboard" : "/signup";
+
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(null);
   const { theme, setTheme } = useTheme();
@@ -178,18 +183,29 @@ export default function LandingPage() {
             <div className="hidden md:flex items-center gap-3 flex-shrink-0">
               {/* Dark/Light Toggle Slider */}
               <ThemeSlider />
-              <Link
-                href="/login"
-                className={`text-sm font-medium transition-colors px-4 py-2 whitespace-nowrap ${isDark ? "text-gray-300 hover:text-blue-400" : "text-gray-700 hover:text-blue-600"}`}
-              >
-                Sign In
-              </Link>
-              <Link
-                href="/signup"
-                className="text-sm font-semibold text-white gradient-primary rounded-lg px-5 py-2 hover:opacity-90 transition-opacity shadow-sm whitespace-nowrap"
-              >
-                Start Free
-              </Link>
+              {isAuthenticated ? (
+                <Link
+                  href="/dashboard"
+                  className="text-sm font-semibold text-white gradient-primary rounded-lg px-5 py-2 hover:opacity-90 transition-opacity shadow-sm whitespace-nowrap"
+                >
+                  Go to Dashboard
+                </Link>
+              ) : (
+                <>
+                  <Link
+                    href="/login"
+                    className={`text-sm font-medium transition-colors px-4 py-2 whitespace-nowrap ${isDark ? "text-gray-300 hover:text-blue-400" : "text-gray-700 hover:text-blue-600"}`}
+                  >
+                    Sign In
+                  </Link>
+                  <Link
+                    href="/signup"
+                    className="text-sm font-semibold text-white gradient-primary rounded-lg px-5 py-2 hover:opacity-90 transition-opacity shadow-sm whitespace-nowrap"
+                  >
+                    Start Free
+                  </Link>
+                </>
+              )}
             </div>
 
             <div className="md:hidden flex items-center gap-2">
@@ -223,24 +239,29 @@ export default function LandingPage() {
             >
               How It Works
             </Link>
-            <Link
-              href="#pricing"
-              className={`block text-sm font-medium ${isDark ? "text-gray-300" : "text-gray-600"}`}
-            >
-              Pricing
-            </Link>
-            <Link
-              href="/login"
-              className={`block text-sm font-medium ${isDark ? "text-gray-300" : "text-gray-700"}`}
-            >
-              Sign In
-            </Link>
-            <Link
-              href="/signup"
-              className="block text-white gradient-primary rounded-lg px-4 py-2 text-sm font-semibold text-center"
-            >
-              Start Free
-            </Link>
+            {isAuthenticated ? (
+              <Link
+                href="/dashboard"
+                className="block text-white gradient-primary rounded-lg px-4 py-2 text-sm font-semibold text-center"
+              >
+                Go to Dashboard
+              </Link>
+            ) : (
+              <>
+                <Link
+                  href="/login"
+                  className={`block text-sm font-medium ${isDark ? "text-gray-300" : "text-gray-700"}`}
+                >
+                  Sign In
+                </Link>
+                <Link
+                  href="/signup"
+                  className="block text-white gradient-primary rounded-lg px-4 py-2 text-sm font-semibold text-center"
+                >
+                  Start Free
+                </Link>
+              </>
+            )}
           </div>
         )}
       </nav>
@@ -277,14 +298,14 @@ export default function LandingPage() {
 
               <div className="flex flex-wrap gap-4 mb-10">
                 <Link
-                  href="/signup"
+                  href={ctaUrl}
                   className="inline-flex items-center gap-2 gradient-primary text-white font-semibold px-6 py-3 rounded-xl hover:opacity-90 transition-opacity shadow-lg shadow-blue-500/25 group"
                 >
                   Start Free Evaluation
                   <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                 </Link>
                 <Link
-                  href="/login"
+                  href={isAuthenticated ? "/dashboard" : "/login"}
                   className={`inline-flex items-center gap-2 font-semibold px-6 py-3 rounded-xl border transition-colors shadow-sm ${isDark ? "bg-gray-800 text-gray-200 border-gray-700 hover:border-blue-500 hover:text-blue-400" : "bg-white text-gray-700 border-gray-200 hover:border-blue-300 hover:text-blue-600"}`}
                 >
                   <BookOpen className="w-4 h-4" />
@@ -518,7 +539,7 @@ export default function LandingPage() {
           </p>
           <div className="flex flex-col sm:flex-row justify-center items-center gap-4">
             <Link
-              href="/signup"
+              href={ctaUrl}
               className="px-8 py-3.5 bg-white text-blue-900 font-bold rounded-xl shadow-lg hover:bg-blue-50 transition-colors text-base"
             >
               Get Started Now
@@ -601,7 +622,7 @@ export default function LandingPage() {
               Start with 10 free evaluations — no credit card needed.
             </p>
             <Link
-              href="/signup"
+              href={ctaUrl}
               className="inline-flex items-center gap-2 bg-white text-blue-600 font-bold px-8 py-4 rounded-xl hover:bg-blue-50 transition-colors shadow-lg group"
             >
               Start Free Today
