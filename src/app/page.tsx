@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { motion } from "framer-motion";
 import {
@@ -19,7 +19,6 @@ import {
   Zap,
   Users,
   TrendingUp,
-  BookOpen,
   ChevronRight,
   Menu,
   X,
@@ -35,6 +34,7 @@ const features = [
       "Gemini 2.5 Flash analyzes answers with expert-level accuracy, providing detailed feedback in seconds.",
     color: "from-blue-500 to-blue-600",
     bg: "bg-blue-50",
+    link: "/upload",
   },
   {
     icon: Upload,
@@ -43,6 +43,7 @@ const features = [
       "Drag & drop PDFs or images. Our system extracts text and evaluates instantly.",
     color: "from-teal-500 to-teal-600",
     bg: "bg-teal-50",
+    link: "/upload",
   },
   {
     icon: BarChart3,
@@ -51,22 +52,25 @@ const features = [
       "Visual breakdowns of subject-wise performance, trends over time, and improvement areas.",
     color: "from-purple-500 to-purple-600",
     bg: "bg-purple-50",
+    link: "/analytics",
   },
   {
     icon: Clock,
-    title: "Save 90% Time",
+    title: "Save Hours of Work",
     description:
-      "Manual grading takes hours. ExamEval AI does it in under 30 seconds.",
+      "Manual grading takes hours. ExamEval AI does it in seconds.",
     color: "from-orange-500 to-orange-600",
     bg: "bg-orange-50",
+    link: "/upload",
   },
   {
     icon: Shield,
     title: "Trusted & Accurate",
     description:
-      "Calibrated against professional evaluators with 94%+ accuracy on standardized tests.",
+      "Calibrated against professional academic grading rubrics to ensure highly reliable evaluations.",
     color: "from-green-500 to-green-600",
     bg: "bg-green-50",
+    link: "/upload",
   },
   {
     icon: Award,
@@ -75,6 +79,7 @@ const features = [
       "Custom study recommendations, strength/weakness analysis, and progress tracking.",
     color: "from-pink-500 to-pink-600",
     bg: "bg-pink-50",
+    link: "/analytics",
   },
 ];
 
@@ -120,22 +125,41 @@ const faqs = [
   },
 ];
 
-const stats = [
-  { value: "50,000+", label: "Evaluations Done", icon: CheckCircle },
-  { value: "10,000+", label: "Students Trust Us", icon: Users },
-  { value: "94%", label: "Accuracy Rate", icon: TrendingUp },
-  { value: "30s", label: "Avg. Evaluation Time", icon: Zap },
-];
 
 export default function LandingPage() {
   const { status } = useSession();
   const isAuthenticated = status === "authenticated";
   const ctaUrl = isAuthenticated ? "/dashboard" : "/signup";
 
+  const [dbStats, setDbStats] = useState({
+    totalUsers: 0,
+    totalEvaluations: 0,
+    averageTimeSeconds: 12,
+    averagePercentage: 85
+  });
+
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(null);
   const { theme, setTheme } = useTheme();
   const isDark = theme === "dark";
+
+  useEffect(() => {
+    fetch("/api/public/stats")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data && data.totalUsers !== undefined) {
+          setDbStats(data);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  const statsList = [
+    { value: dbStats.totalEvaluations.toString(), label: "Evaluations Done", icon: CheckCircle },
+    { value: dbStats.totalUsers.toString(), label: "Registered Users", icon: Users },
+    { value: `${dbStats.averagePercentage}%`, label: "Avg. Evaluation Score", icon: TrendingUp },
+    { value: `${dbStats.averageTimeSeconds}s`, label: "Avg. Evaluation Time", icon: Zap },
+  ];
 
   const toggleDarkMode = () => { setTheme(isDark ? "default" : "dark"); };
   void toggleDarkMode; // reserved for future navbar toggle
@@ -304,13 +328,6 @@ export default function LandingPage() {
                   Start Free Evaluation
                   <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                 </Link>
-                <Link
-                  href={isAuthenticated ? "/dashboard" : "/login"}
-                  className={`inline-flex items-center gap-2 font-semibold px-6 py-3 rounded-xl border transition-colors shadow-sm ${isDark ? "bg-gray-800 text-gray-200 border-gray-700 hover:border-blue-500 hover:text-blue-400" : "bg-white text-gray-700 border-gray-200 hover:border-blue-300 hover:text-blue-600"}`}
-                >
-                  <BookOpen className="w-4 h-4" />
-                  View Demo
-                </Link>
               </div>
 
               <div className="flex items-center gap-6">
@@ -336,7 +353,7 @@ export default function LandingPage() {
                     ))}
                   </div>
                   <p className={`text-sm ${isDark ? "text-gray-400" : "text-gray-600"}`}>
-                    <strong className={isDark ? "text-white" : "text-gray-900"}>10,000+ students</strong> trust GetAhead
+                    Join <strong className={isDark ? "text-white" : "text-gray-900"}>{dbStats.totalUsers}</strong> registered users on GetAhead
                   </p>
                 </div>
               </div>
@@ -414,7 +431,7 @@ export default function LandingPage() {
       <section className="py-12 bg-gray-900">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
-            {stats.map((stat) => (
+            {statsList.map((stat) => (
               <div key={stat.label} className="text-center">
                 <stat.icon className="w-6 h-6 text-teal-400 mx-auto mb-2" />
                 <p
@@ -448,33 +465,37 @@ export default function LandingPage() {
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {features.map((feature, i) => (
-              <motion.div
-                key={feature.title}
-                initial={{ opacity: 0, y: 24 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: i * 0.1 }}
-                className="bg-white rounded-2xl p-6 border border-gray-100 card-shadow-md hover:card-shadow-lg hover:-translate-y-1 transition-all duration-300 group"
-              >
-                <div
-                  className={`w-12 h-12 rounded-xl ${feature.bg} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}
-                >
-                  <div
-                    className={`w-6 h-6 bg-gradient-to-r ${feature.color} rounded-md flex items-center justify-center`}
+            {features.map((feature, i) => {
+              const destUrl = isAuthenticated ? feature.link : "/signup";
+              return (
+                <Link key={feature.title} href={destUrl} className="block cursor-pointer">
+                  <motion.div
+                    initial={{ opacity: 0, y: 24 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.5, delay: i * 0.1 }}
+                    className="bg-white rounded-2xl p-6 border border-gray-100 card-shadow-md hover:card-shadow-lg hover:-translate-y-1 transition-all duration-300 group h-full"
                   >
-                    <feature.icon className="w-3.5 h-3.5 text-white" />
-                  </div>
-                </div>
-                <h3
-                  className="text-lg font-bold text-gray-900 mb-2"
-                  style={{ fontFamily: "var(--font-poppins)" }}
-                >
-                  {feature.title}
-                </h3>
-                <p className="text-gray-600 text-sm leading-relaxed">{feature.description}</p>
-              </motion.div>
-            ))}
+                    <div
+                      className={`w-12 h-12 rounded-xl ${feature.bg} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}
+                    >
+                      <div
+                        className={`w-6 h-6 bg-gradient-to-r ${feature.color} rounded-md flex items-center justify-center`}
+                      >
+                        <feature.icon className="w-3.5 h-3.5 text-white" />
+                      </div>
+                    </div>
+                    <h3
+                      className="text-lg font-bold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors"
+                      style={{ fontFamily: "var(--font-poppins)" }}
+                    >
+                      {feature.title}
+                    </h3>
+                    <p className="text-gray-600 text-sm leading-relaxed">{feature.description}</p>
+                  </motion.div>
+                </Link>
+              );
+            })}
           </div>
         </div>
       </section>
@@ -618,8 +639,7 @@ export default function LandingPage() {
               Ready to Transform Your Exam Performance?
             </h2>
             <p className="text-blue-100 text-lg mb-8">
-              Join 10,000+ students and educators who trust GetAhead.
-              Start with 10 free evaluations — no credit card needed.
+              Unlock your academic potential with ExamEval AI&apos;s precise answer sheet evaluations and question paper generators.
             </p>
             <Link
               href={ctaUrl}

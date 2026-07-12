@@ -107,19 +107,19 @@ export default function SignupPage() {
 
         <div>
           <h2 className="text-4xl font-bold mb-4 leading-tight" style={{ fontFamily: "var(--font-poppins)" }}>
-            Join 10,000+ students & teachers
+            Join students & educators on ExamEval AI
           </h2>
           <p className="text-blue-100 text-lg leading-relaxed mb-10">
-            Get your first 10 evaluations completely free. No credit card required.
+            Get unlimited answer sheet evaluations and AI question paper generation. Completely free.
           </p>
           <div className="space-y-3">
             {[
-              "✓ 10 free evaluations immediately",
+              "✓ Unlimited answer evaluations",
               "✓ Detailed AI-powered feedback",
               "✓ Subject-wise performance analytics",
               "✓ Personalized study recommendations",
             ].map((item) => (
-              <p key={item} className="text-blue-100 text-sm">
+              <p key={item} className="text-blue-100 text-sm font-medium">
                 {item}
               </p>
             ))}
