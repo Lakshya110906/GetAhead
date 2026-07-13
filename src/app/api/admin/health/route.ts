@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
   const memoryUsagePercent = Math.round(((os.totalmem() - os.freemem()) / os.totalmem()) * 100);
 
   // Gemini API check
-  const geminiStatus = process.env.GOOGLE_GENERATIVE_AI_API_KEY ? "HEALTHY" : "ERROR";
+  const geminiStatus = (process.env.GOOGLE_GENERATIVE_AI_API_KEY || process.env.GEMINI_API_KEY) ? "HEALTHY" : "ERROR";
   const authStatus = "HEALTHY"; // NextAuth is active
 
   return NextResponse.json({
