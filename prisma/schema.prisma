@@ -137,3 +137,28 @@ model QuestionPaper {
 
   @@index([userId])
 }
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  action    String
+  details   String?  @db.Text
+  ip        String?
+  status    String   @default("SUCCESS")
+  createdAt DateTime @default(now())
+}
+
+model ErrorLog {
+  id        String   @id @default(cuid())
+  type      String   // e.g. "APPLICATION", "AUTHENTICATION", "API", "DATABASE", "AI"
+  message   String   @db.Text
+  stack     String?  @db.Text
+  path      String?
+  createdAt DateTime @default(now())
+}
+
+model SystemSetting {
+  key       String   @id
+  value     String   @db.Text
+  updatedAt DateTime @updatedAt
+}
