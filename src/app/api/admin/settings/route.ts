@@ -3,7 +3,7 @@ import { verifyAdminToken } from "@/lib/adminAuth";
 import { prisma } from "@/lib/prisma";
 
 const DEFAULT_SETTINGS = [
-  { key: "siteName", value: "ExamEval AI" },
+  { key: "siteName", value: "GetAhead AI" },
   { key: "logoUrl", value: "" },
   { key: "maintenanceMode", value: "false" },
   { key: "defaultTheme", value: "default" },

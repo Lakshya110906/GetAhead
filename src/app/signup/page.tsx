@@ -101,13 +101,13 @@ export default function SignupPage() {
             <Brain className="w-5 h-5 text-white" />
           </div>
           <span className="text-xl font-bold" style={{ fontFamily: "var(--font-poppins)" }}>
-            ExamEval AI
+            GetAhead AI
           </span>
         </Link>
 
         <div>
           <h2 className="text-4xl font-bold mb-4 leading-tight" style={{ fontFamily: "var(--font-poppins)" }}>
-            Join students & educators on ExamEval AI
+            Join students & educators on GetAhead AI
           </h2>
           <p className="text-blue-100 text-lg leading-relaxed mb-10">
             Get unlimited answer sheet evaluations and AI question paper generation. Completely free.
@@ -126,7 +126,7 @@ export default function SignupPage() {
           </div>
         </div>
 
-        <p className="text-blue-200 text-sm">© 2024 ExamEval AI</p>
+        <p className="text-blue-200 text-sm">© 2026 GetAhead AI</p>
       </div>
 
       {/* Right Panel */}
@@ -141,7 +141,7 @@ export default function SignupPage() {
               <Brain className="w-4 h-4 text-white" />
             </div>
             <span className="font-bold text-gray-900" style={{ fontFamily: "var(--font-poppins)" }}>
-              ExamEval AI
+              GetAhead AI
             </span>
           </div>
 
