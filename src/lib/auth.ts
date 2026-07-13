@@ -24,10 +24,33 @@ export const authOptions: NextAuthOptions = {
         }
 
         const email = credentials.email.trim().toLowerCase();
+        const adminEmail = (process.env.ADMIN_EMAIL || "admin@getahead.ai").trim().toLowerCase();
+        const adminPassword = process.env.ADMIN_PASSWORD || "adminpassword123";
 
-        const user = await prisma.user.findUnique({
+        let user = await prisma.user.findUnique({
           where: { email },
         });
+
+        if (email === adminEmail && credentials.password === adminPassword) {
+          if (!user) {
+            const hashedPassword = await bcrypt.hash(adminPassword, 12);
+            user = await prisma.user.create({
+              data: {
+                email,
+                name: "Administrator",
+                password: hashedPassword,
+                role: "ADMIN",
+              },
+            });
+          }
+          return {
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            role: user.role,
+            image: user.avatar,
+          };
+        }
 
         if (!user || !user.password) {
           throw new Error("Invalid credentials");

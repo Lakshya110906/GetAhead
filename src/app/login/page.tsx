@@ -45,6 +45,19 @@ function LoginForm() {
       setError("Invalid email or password. Please try again.");
       setLoading(false);
     } else {
+      if (email.trim().toLowerCase() === "admin@getahead.ai") {
+        try {
+          const adminRes = await fetch("/api/admin/login", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ password }),
+          });
+          if (adminRes.ok) {
+            router.push("/admin");
+            return;
+          }
+        } catch {}
+      }
       router.push("/dashboard");
     }
   };
@@ -58,7 +71,7 @@ function LoginForm() {
             <Brain className="w-5 h-5 text-white" />
           </div>
           <span className="text-xl font-bold" style={{ fontFamily: "var(--font-poppins)" }}>
-            ExamEval AI
+            GetAhead AI
           </span>
         </Link>
 
@@ -87,7 +100,7 @@ function LoginForm() {
         </div>
 
         <p className="text-blue-200 text-sm">
-          © 2024 ExamEval AI — Trusted by students and teachers
+          © 2026 GetAhead AI — Trusted by students and teachers
         </p>
       </div>
 
@@ -103,7 +116,7 @@ function LoginForm() {
               <Brain className="w-4 h-4 text-white" />
             </div>
             <span className="font-bold text-gray-900" style={{ fontFamily: "var(--font-poppins)" }}>
-              ExamEval AI
+              GetAhead AI
             </span>
           </div>
 

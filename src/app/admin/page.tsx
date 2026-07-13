@@ -73,7 +73,7 @@ export default function AdminPage() {
   const [logType, setLogType] = useState("audit"); // audit or error
 
   const [sysSettings, setSysSettings] = useState<any>({
-    siteName: "ExamEval AI",
+    siteName: "GetAhead AI",
     logoUrl: "",
     maintenanceMode: "false",
     defaultTheme: "default",
@@ -339,7 +339,7 @@ export default function AdminPage() {
               <Shield className="w-4 h-4" />
             </div>
             <span className="font-bold text-gray-900" style={{ fontFamily: "var(--font-poppins)" }}>
-              ExamEval Admin Panel
+              GetAhead Admin Panel
             </span>
           </div>
 
@@ -404,7 +404,7 @@ export default function AdminPage() {
             <h1 className="font-bold text-gray-900 text-base" style={{ fontFamily: "var(--font-poppins)" }}>
               Admin Panel
             </h1>
-            <p className="text-gray-500 text-xxs leading-none mt-0.5">ExamEval AI Management System</p>
+            <p className="text-gray-500 text-xxs leading-none mt-0.5">GetAhead AI Management System</p>
           </div>
         </div>
 

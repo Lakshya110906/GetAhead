@@ -58,7 +58,7 @@ const features = [
     icon: Clock,
     title: "Save Hours of Work",
     description:
-      "Manual grading takes hours. ExamEval AI does it in seconds.",
+      "Manual grading takes hours. GetAhead AI does it in seconds.",
     color: "from-orange-500 to-orange-600",
     bg: "bg-orange-50",
     link: "/upload",
@@ -566,7 +566,7 @@ export default function LandingPage() {
               Get Started Now
             </Link>
             <span className="text-blue-200 text-sm font-semibold sm:border-l sm:border-blue-700/50 sm:pl-4">
-              ExamEval AI is completely free to use.
+              GetAhead AI is completely free to use.
             </span>
           </div>
         </div>
@@ -639,7 +639,7 @@ export default function LandingPage() {
               Ready to Transform Your Exam Performance?
             </h2>
             <p className="text-blue-100 text-lg mb-8">
-              Unlock your academic potential with ExamEval AI&apos;s precise answer sheet evaluations and question paper generators.
+              Unlock your academic potential with GetAhead AI&apos;s precise answer sheet evaluations and question paper generators.
             </p>
             <Link
               href={ctaUrl}
