@@ -62,7 +62,9 @@ export async function POST(request: NextRequest) {
     });
 
     return response;
-  } catch {
-    return NextResponse.json({ error: "Invalid request payload" }, { status: 400 });
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error("Login endpoint error:", err);
+    return NextResponse.json({ error: `Invalid request payload: ${msg}` }, { status: 400 });
   }
 }
