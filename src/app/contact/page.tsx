@@ -33,6 +33,7 @@ export default function ContactPage() {
     message: "",
   });
   const [status, setStatus] = useState<"idle" | "submitting" | "success" | "error">("idle");
+  const [ticketNumber, setTicketNumber] = useState<number | null>(null);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -41,9 +42,28 @@ export default function ContactPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setStatus("submitting");
-    // Simulate submission (real implementation would POST to an API route)
-    await new Promise((r) => setTimeout(r, 1500));
-    setStatus("success");
+    try {
+      const res = await fetch("/api/support/tickets", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: formData.name,
+          email: formData.email,
+          category: formData.type,
+          subject: formData.subject,
+          message: formData.message,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setTicketNumber(data.ticketNumber);
+        setStatus("success");
+      } else {
+        setStatus("error");
+      }
+    } catch {
+      setStatus("error");
+    }
   };
 
   if (status === "success") {
@@ -54,17 +74,17 @@ export default function ContactPage() {
             <CheckCircle className="w-10 h-10 text-green-500" />
           </div>
           <h2 className="text-2xl font-bold text-gray-900 mb-3" style={{ fontFamily: "var(--font-poppins)" }}>
-            Message received!
+            Ticket Registered!
           </h2>
           <p className="text-gray-600 mb-6">
-            Thanks for reaching out. We&apos;ll get back to you at <strong>{formData.email}</strong> within 24 hours on weekdays.
+            Thanks for reaching out. We have successfully registered your support request as ticket <strong>#TKT-{ticketNumber}</strong>. We&apos;ll get back to you at <strong>{formData.email}</strong> within 24 hours on weekdays.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Link href="/" className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-600 to-teal-500 text-white font-semibold px-5 py-2.5 rounded-xl hover:opacity-90 transition-opacity">
               Back to Home
             </Link>
-            <Link href="/help" className="inline-flex items-center gap-2 bg-white text-gray-700 font-medium px-5 py-2.5 rounded-xl border border-gray-200 hover:bg-gray-50 transition-all">
-              Browse Help Center
+            <Link href="/support/tickets" className="inline-flex items-center gap-2 bg-white text-gray-700 font-medium px-5 py-2.5 rounded-xl border border-gray-200 hover:bg-gray-50 transition-all">
+              Go to Support Tickets
             </Link>
           </div>
         </div>

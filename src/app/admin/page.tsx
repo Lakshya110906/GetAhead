@@ -23,6 +23,7 @@ import {
   Shield,
   Settings,
   ListCollapse,
+  LifeBuoy,
 } from "lucide-react";
 import {
   ResponsiveContainer,
@@ -81,6 +82,16 @@ export default function AdminPage() {
     allowedFileTypes: "pdf,jpeg,png",
   });
 
+  // Support Tickets States
+  const [ticketStats, setTicketStats] = useState<any>(null);
+  const [tickets, setTickets] = useState<any[]>([]);
+  const [ticketsTotal, setTicketsTotal] = useState(0);
+  const [ticketsPage, setTicketsPage] = useState(1);
+  const [ticketsSearch, setTicketsSearch] = useState("");
+  const [ticketStatusFilter, setTicketStatusFilter] = useState("");
+  const [ticketPriorityFilter, setTicketPriorityFilter] = useState("");
+  const [ticketCategoryFilter, setTicketCategoryFilter] = useState("");
+
   // Action helpers
   const [, setActionLoading] = useState(false);
   const [passwordResetUser, setPasswordResetUser] = useState<string | null>(null);
@@ -107,6 +118,8 @@ export default function AdminPage() {
         fetchDbInfo();
         fetchLogs();
         fetchSettings();
+        fetchTicketStats();
+        fetchTickets(1, "", "", "", "");
       } else {
         setAuthenticated(false);
       }
@@ -116,6 +129,46 @@ export default function AdminPage() {
       setCheckingAuth(false);
     }
   };
+
+  const fetchTicketStats = () => {
+    fetch("/api/admin/tickets/stats")
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.success) setTicketStats(d.stats);
+      })
+      .catch(() => {});
+  };
+
+  const fetchTickets = (
+    page = 1,
+    search = ticketsSearch,
+    status = ticketStatusFilter,
+    priority = ticketPriorityFilter,
+    category = ticketCategoryFilter
+  ) => {
+    fetch(
+      `/api/admin/tickets?page=${page}&search=${encodeURIComponent(
+        search
+      )}&status=${status}&priority=${priority}&category=${category}`
+    )
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.success) {
+          setTickets(d.tickets || []);
+          setTicketsTotal(d.total || 0);
+          setTicketsPage(d.page || 1);
+        }
+      })
+      .catch(() => {});
+  };
+
+  useEffect(() => {
+    if (authenticated && activeTab === "support") {
+      fetchTickets(1, ticketsSearch, ticketStatusFilter, ticketPriorityFilter, ticketCategoryFilter);
+      fetchTicketStats();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ticketsSearch, ticketStatusFilter, ticketPriorityFilter, ticketCategoryFilter, activeTab, authenticated]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -426,6 +479,7 @@ export default function AdminPage() {
             { id: "users", label: "User Management", icon: Users },
             { id: "evaluations", label: "Evaluations", icon: Award },
             { id: "papers", label: "Question Papers", icon: FileText },
+            { id: "support", label: "Support Tickets", icon: LifeBuoy, badge: ticketStats?.statusCounts?.NEW },
             { id: "database", label: "Database Panel", icon: Database },
             { id: "health", label: "System Health", icon: Clock },
             { id: "logs", label: "System Logs", icon: ListCollapse },
@@ -437,12 +491,19 @@ export default function AdminPage() {
               <button
                 key={item.id}
                 onClick={() => setActiveTab(item.id)}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all ${
+                className={`w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all ${
                   active ? "bg-blue-600 text-white shadow-md shadow-blue-500/25" : "text-gray-600 hover:bg-gray-50"
                 }`}
               >
-                <Icon className="w-4 h-4" />
-                {item.label}
+                <div className="flex items-center gap-3">
+                  <Icon className="w-4 h-4" />
+                  <span>{item.label}</span>
+                </div>
+                {item.badge && item.badge > 0 ? (
+                  <span className="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
+                    {item.badge}
+                  </span>
+                ) : null}
               </button>
             );
           })}
@@ -1176,6 +1237,276 @@ export default function AdminPage() {
                     Next
                   </button>
                 </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB Support: TICKETS MANAGEMENT */}
+          {activeTab === "support" && (
+            <div className="space-y-6 animate-fadeIn">
+              <div className="flex flex-wrap justify-between items-center gap-4">
+                <div>
+                  <h2 className="text-xl font-bold text-gray-900" style={{ fontFamily: "var(--font-poppins)" }}>
+                    Support Tickets Center
+                  </h2>
+                  <p className="text-gray-500 text-sm">
+                    Manage system support requests, bug reports, and customer conversations.
+                  </p>
+                </div>
+                <button
+                  onClick={() => {
+                    fetchTicketStats();
+                    fetchTickets(1);
+                  }}
+                  className="inline-flex items-center gap-1.5 border border-gray-200 bg-white text-gray-700 text-xs font-semibold px-3 py-2 rounded-xl hover:bg-gray-50 transition-colors"
+                >
+                  <RefreshCw className="w-3.5 h-3.5" /> Refresh Tickets
+                </button>
+              </div>
+
+              {/* Tickets Stats grid */}
+              {ticketStats && (
+                <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 select-none">
+                  {[
+                    { title: "Total Tickets", val: ticketStats.total, icon: Activity, color: "text-blue-600", bg: "bg-blue-50" },
+                    { title: "Open / In Progress", val: ticketStats.openTickets, icon: Clock, color: "text-amber-600", bg: "bg-amber-50" },
+                    { title: "Critical / High Priority", val: (ticketStats.priorityCounts?.CRITICAL || 0) + (ticketStats.priorityCounts?.HIGH || 0), icon: Shield, color: "text-red-600", bg: "bg-red-50" },
+                    { title: "Avg Response Time", val: `${ticketStats.avgResponseHours}h`, icon: Clock, color: "text-purple-600", bg: "bg-purple-50" },
+                  ].map((card, i) => (
+                    <div key={i} className="bg-white rounded-2xl border border-gray-100 card-shadow-md p-5">
+                      <div className="flex items-center justify-between mb-3">
+                        <p className="text-sm text-gray-500 font-semibold">{card.title}</p>
+                        <div className={`w-9 h-9 ${card.bg} rounded-xl flex items-center justify-center`}>
+                          <card.icon className={`w-4.5 h-4.5 ${card.color}`} />
+                        </div>
+                      </div>
+                      <p className="text-3xl font-extrabold text-gray-900" style={{ fontFamily: "var(--font-poppins)" }}>
+                        {card.val}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Analytics and category charts */}
+              {ticketStats && (
+                <div className="grid lg:grid-cols-3 gap-6">
+                  {/* Category Distribution Chart */}
+                  <div className="bg-white rounded-2xl border border-gray-100 card-shadow-md p-6 lg:col-span-2">
+                    <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-5">Tickets Category Split</h3>
+                    <div className="h-56">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={[
+                          { name: "General Query", tickets: ticketStats.categoryCounts?.general || 0 },
+                          { name: "Bug Report", tickets: ticketStats.categoryCounts?.bug || 0 },
+                          { name: "Feature Request", tickets: ticketStats.categoryCounts?.feature || 0 },
+                          { name: "Other Support", tickets: ticketStats.categoryCounts?.other || 0 },
+                        ]}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
+                          <XAxis dataKey="name" tick={{ fontSize: 11 }} />
+                          <YAxis tick={{ fontSize: 11 }} />
+                          <Tooltip />
+                          <Bar dataKey="tickets" fill="#4f46e5" radius={[4, 4, 0, 0]} />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </div>
+
+                  {/* Priority Breakdown card */}
+                  <div className="bg-white rounded-2xl border border-gray-100 card-shadow-md p-6 space-y-4">
+                    <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider">Priority Distribution</h3>
+                    <div className="space-y-3.5 select-none pt-2">
+                      {[
+                        { label: "Critical", count: ticketStats.priorityCounts?.CRITICAL || 0, color: "bg-red-500" },
+                        { label: "High", count: ticketStats.priorityCounts?.HIGH || 0, color: "bg-orange-500" },
+                        { label: "Medium", count: ticketStats.priorityCounts?.MEDIUM || 0, color: "bg-amber-500" },
+                        { label: "Low", count: ticketStats.priorityCounts?.LOW || 0, color: "bg-blue-500" },
+                      ].map((item) => {
+                        const pct = ticketStats.total > 0 ? (item.count / ticketStats.total) * 100 : 0;
+                        return (
+                          <div key={item.label} className="space-y-1">
+                            <div className="flex justify-between text-xs font-semibold">
+                              <span className="text-gray-700">{item.label}</span>
+                              <span className="text-gray-500">{item.count} ({pct.toFixed(0)}%)</span>
+                            </div>
+                            <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                              <div className={`h-full ${item.color}`} style={{ width: `${pct}%` }} />
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Main Ticket Grid Table */}
+              <div className="bg-white rounded-2xl border border-gray-100 card-shadow-md overflow-hidden">
+                {/* Search / filter header */}
+                <div className="p-4 border-b border-gray-100 flex flex-col md:flex-row gap-4 items-center justify-between">
+                  <div className="relative w-full md:max-w-xs">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <input
+                      type="text"
+                      placeholder="Search support tickets..."
+                      value={ticketsSearch}
+                      onChange={(e) => setTicketsSearch(e.target.value)}
+                      className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-blue-500"
+                    />
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+                    <select
+                      value={ticketStatusFilter}
+                      onChange={(e) => setTicketStatusFilter(e.target.value)}
+                      className="bg-white border border-gray-200 rounded-lg text-xs px-2.5 py-1.5 text-gray-700 focus:outline-none"
+                    >
+                      <option value="">All Statuses</option>
+                      <option value="NEW">New</option>
+                      <option value="OPEN">Open</option>
+                      <option value="IN_PROGRESS">In Progress</option>
+                      <option value="WAITING_USER">Waiting for User</option>
+                      <option value="RESOLVED">Resolved</option>
+                      <option value="CLOSED">Closed</option>
+                    </select>
+
+                    <select
+                      value={ticketPriorityFilter}
+                      onChange={(e) => setTicketPriorityFilter(e.target.value)}
+                      className="bg-white border border-gray-200 rounded-lg text-xs px-2.5 py-1.5 text-gray-700 focus:outline-none"
+                    >
+                      <option value="">All Priorities</option>
+                      <option value="LOW">Low</option>
+                      <option value="MEDIUM">Medium</option>
+                      <option value="HIGH">High</option>
+                      <option value="CRITICAL">Critical</option>
+                    </select>
+
+                    <select
+                      value={ticketCategoryFilter}
+                      onChange={(e) => setTicketCategoryFilter(e.target.value)}
+                      className="bg-white border border-gray-200 rounded-lg text-xs px-2.5 py-1.5 text-gray-700 focus:outline-none"
+                    >
+                      <option value="">All Categories</option>
+                      <option value="general">General</option>
+                      <option value="bug">Bug</option>
+                      <option value="feature">Feature</option>
+                      <option value="other">Other</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Table list */}
+                {tickets.length === 0 ? (
+                  <div className="p-12 text-center text-gray-400 select-none">
+                    <RefreshCw className="w-10 h-10 mx-auto mb-3 opacity-25" />
+                    <p className="font-semibold text-sm">No support tickets match these criteria</p>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-sm">
+                      <thead>
+                        <tr className="border-b border-gray-100 bg-gray-50/50">
+                          <th className="px-6 py-3 font-semibold text-xs text-gray-500">Ticket Number</th>
+                          <th className="px-6 py-3 font-semibold text-xs text-gray-500">User</th>
+                          <th className="px-6 py-3 font-semibold text-xs text-gray-500">Category</th>
+                          <th className="px-6 py-3 font-semibold text-xs text-gray-500">Subject</th>
+                          <th className="px-6 py-3 font-semibold text-xs text-gray-500 text-center">Priority</th>
+                          <th className="px-6 py-3 font-semibold text-xs text-gray-500 text-center">Status</th>
+                          <th className="px-6 py-3 font-semibold text-xs text-gray-500 text-right">Created</th>
+                          <th className="px-6 py-3 font-semibold text-xs text-gray-500 text-right">Assignee</th>
+                          <th className="px-6 py-3"></th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-50">
+                        {tickets.map((t) => (
+                          <tr key={t.id} className="hover:bg-gray-50/60 transition-colors">
+                            <td className="px-6 py-4 whitespace-nowrap font-mono text-xs font-bold text-blue-600">
+                              #TKT-{t.ticketNumber}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div>
+                                <p className="font-semibold text-gray-900">{t.name}</p>
+                                <p className="text-[10px] text-gray-450 font-mono">{t.email}</p>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap capitalize text-xs text-gray-600">
+                              {t.category}
+                            </td>
+                            <td className="px-6 py-4 max-w-xs truncate font-semibold text-gray-800">
+                              {t.subject}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-center text-xs">
+                              <span className={`px-2 py-0.5 rounded-full font-bold text-[10px] ${
+                                t.priority === "CRITICAL"
+                                  ? "text-red-700 bg-red-50"
+                                  : t.priority === "HIGH"
+                                  ? "text-orange-700 bg-orange-50"
+                                  : "text-gray-700 bg-gray-50"
+                              }`}>
+                                {t.priority.toLowerCase()}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-center text-xs">
+                              <span className={`px-2.5 py-0.5 rounded-full font-bold text-[10px] border ${
+                                t.status === "NEW"
+                                  ? "bg-blue-50 text-blue-700 border-blue-100"
+                                  : t.status === "OPEN"
+                                  ? "bg-amber-50 text-amber-700 border-amber-100"
+                                  : t.status === "IN_PROGRESS"
+                                  ? "bg-purple-50 text-purple-700 border-purple-100"
+                                  : t.status === "WAITING_USER"
+                                  ? "bg-orange-50 text-orange-700 border-orange-100"
+                                  : "bg-green-50 text-green-700 border-green-100"
+                              }`}>
+                                {t.status.replace("_", " ").toLowerCase()}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-right text-xs text-gray-500">
+                              {new Date(t.createdAt).toLocaleDateString("en-IN")}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-right text-xs text-gray-700 font-semibold">
+                              {t.assignedTo?.name || "Unassigned"}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-right">
+                              <Link
+                                href={`/admin/tickets/${t.id}`}
+                                className="inline-flex items-center text-xs font-semibold text-blue-600 hover:underline"
+                              >
+                                Manage
+                              </Link>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+
+                {/* Pagination Controls */}
+                {ticketsTotal > 15 && (
+                  <div className="p-4 border-t border-gray-100 flex items-center justify-between select-none">
+                    <p className="text-xs text-gray-500 font-medium">
+                      Showing {(ticketsPage - 1) * 15 + 1} to {Math.min(ticketsPage * 15, ticketsTotal)} of {ticketsTotal} entries
+                    </p>
+                    <div className="flex gap-2">
+                      <button
+                        disabled={ticketsPage <= 1}
+                        onClick={() => fetchTickets(ticketsPage - 1)}
+                        className="px-3 py-1 text-xs border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50 transition-colors"
+                      >
+                        Prev
+                      </button>
+                      <button
+                        disabled={ticketsPage * 15 >= ticketsTotal}
+                        onClick={() => fetchTickets(ticketsPage + 1)}
+                        className="px-3 py-1 text-xs border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50 transition-colors"
+                      >
+                        Next
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           )}
