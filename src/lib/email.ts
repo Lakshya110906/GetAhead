@@ -1,6 +1,6 @@
 import { Resend } from "resend";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const resend = new Resend(process.env.RESEND_API_KEY || "re_dummy_key_for_build");
 
 const APP_NAME = "GetAhead AI";
 const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || "noreply@getahead.ai";
@@ -113,3 +113,122 @@ export async function sendPasswordResetEmail(email: string, name: string, token:
     `,
   });
 }
+
+export async function sendTicketConfirmationEmail(
+  email: string,
+  name: string,
+  ticketNum: number,
+  subject: string
+) {
+  const ticketUrl = `${APP_URL}/support/tickets`;
+
+  return resend.emails.send({
+    from: `Support <${FROM_EMAIL}>`,
+    to: email,
+    subject: `[Ticket #TKT-${ticketNum}] Support Ticket Received: ${subject}`,
+    html: `
+      <!DOCTYPE html>
+      <html lang="en">
+      <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+      <body style="margin:0;padding:0;background:#f8fafc;font-family:'Inter',sans-serif;">
+        <table width="100%" cellpadding="0" cellspacing="0" style="background:#f8fafc;padding:40px 20px;">
+          <tr><td align="center">
+            <table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
+              <tr>
+                <td style="background:linear-gradient(135deg,#2563eb,#14b8a6);padding:40px;text-align:center;">
+                  <h1 style="color:#fff;margin:0;font-size:28px;font-weight:700;">Support Center</h1>
+                  <p style="color:rgba(255,255,255,0.85);margin:8px 0 0;font-size:14px;">Ticket #TKT-${ticketNum}</p>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding:40px;">
+                  <h2 style="color:#1f2937;font-size:22px;margin:0 0 16px;">We have received your ticket, ${name}!</h2>
+                  <p style="color:#6b7280;font-size:15px;line-height:1.6;margin:0 0 24px;">
+                    Thanks for reaching out to GetAhead support. We have successfully registered your ticket regarding: <strong>${subject}</strong>.
+                  </p>
+                  <p style="color:#6b7280;font-size:15px;line-height:1.6;margin:0 0 24px;">
+                    Our team reviews tickets immediately. Our expected response time is within 24 hours on business days.
+                  </p>
+                  <table cellpadding="0" cellspacing="0" width="100%">
+                    <tr><td align="center" style="padding:8px 0 32px;">
+                      <a href="${ticketUrl}" style="background:linear-gradient(135deg,#2563eb,#14b8a6);color:#fff;text-decoration:none;padding:14px 32px;border-radius:10px;font-weight:600;font-size:15px;display:inline-block;">
+                        View Your Ticket
+                      </a>
+                    </td></tr>
+                  </table>
+                  <hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0;">
+                  <p style="color:#9ca3af;font-size:12px;margin:0;">Do not reply directly to this email. To continue the conversation or add more details, please visit your support portal dashboard.</p>
+                </td>
+              </tr>
+              <tr>
+                <td style="background:#f8fafc;padding:20px;text-align:center;">
+                  <p style="color:#9ca3af;font-size:12px;margin:0;">© 2026 GetAhead AI. All rights reserved.</p>
+                </td>
+              </tr>
+            </table>
+          </td></tr>
+        </table>
+      </body>
+      </html>
+    `,
+  });
+}
+
+export async function sendTicketReplyNotificationEmail(
+  email: string,
+  name: string,
+  ticketNum: number,
+  replyText: string
+) {
+  const ticketUrl = `${APP_URL}/support/tickets`;
+
+  return resend.emails.send({
+    from: `Support <${FROM_EMAIL}>`,
+    to: email,
+    subject: `[Reply #TKT-${ticketNum}] New message from GetAhead Support`,
+    html: `
+      <!DOCTYPE html>
+      <html lang="en">
+      <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+      <body style="margin:0;padding:0;background:#f8fafc;font-family:'Inter',sans-serif;">
+        <table width="100%" cellpadding="0" cellspacing="0" style="background:#f8fafc;padding:40px 20px;">
+          <tr><td align="center">
+            <table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
+              <tr>
+                <td style="background:linear-gradient(135deg,#2563eb,#14b8a6);padding:40px;text-align:center;">
+                  <h1 style="color:#fff;margin:0;font-size:28px;font-weight:700;">Ticket Update</h1>
+                  <p style="color:rgba(255,255,255,0.85);margin:8px 0 0;font-size:14px;">Ticket #TKT-${ticketNum}</p>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding:40px;">
+                  <h2 style="color:#1f2937;font-size:20px;margin:0 0 16px;">Hi ${name},</h2>
+                  <p style="color:#6b7280;font-size:15px;line-height:1.6;margin:0 0 20px;">
+                    Our support team has posted a reply to your support request #TKT-${ticketNum}:
+                  </p>
+                  <div style="background:#f3f4f6;border-left:4px solid #2563eb;padding:16px;border-radius:8px;font-style:italic;color:#374151;font-size:14px;margin-bottom:24px;white-space:pre-wrap;">${replyText}</div>
+                  <table cellpadding="0" cellspacing="0" width="100%">
+                    <tr><td align="center" style="padding:8px 0 32px;">
+                      <a href="${ticketUrl}" style="background:linear-gradient(135deg,#2563eb,#14b8a6);color:#fff;text-decoration:none;padding:14px 32px;border-radius:10px;font-weight:600;font-size:15px;display:inline-block;">
+                        Reply to Support
+                      </a>
+                    </td></tr>
+                  </table>
+                  <hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0;">
+                  <p style="color:#9ca3af;font-size:12px;margin:0;">Do not reply directly to this email. To continue the conversation, please click the button above to view your support history in the dashboard.</p>
+                </td>
+              </tr>
+              <tr>
+                <td style="background:#f8fafc;padding:20px;text-align:center;">
+                  <p style="color:#9ca3af;font-size:12px;margin:0;">© 2026 GetAhead AI. All rights reserved.</p>
+                </td>
+              </tr>
+            </table>
+          </td></tr>
+        </table>
+      </body>
+      </html>
+    `,
+  });
+}
+

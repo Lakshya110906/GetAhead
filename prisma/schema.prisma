@@ -27,6 +27,10 @@ model User {
   sessions       Session[]
   questionPapers QuestionPaper[]
   tutorConversations TutorConversation[]
+  supportTickets SupportTicket[]
+  assignedTickets SupportTicket[] @relation("AssignedTickets")
+  ticketNotes     TicketNote[]
+  ticketReplies   TicketReply[]
 }
 
 model Account {
@@ -217,3 +221,63 @@ model TutorMessage {
   @@index([conversationId])
   @@index([createdAt])
 }
+
+model SupportTicket {
+  id           String        @id @default(cuid())
+  ticketNumber Int           @default(autoincrement()) @unique
+  userId       String?
+  name         String
+  email        String
+  category     String        // "general" | "bug" | "feature" | "other"
+  subject      String
+  message      String        @db.Text
+  status       String        @default("NEW") // "NEW" | "OPEN" | "IN_PROGRESS" | "WAITING_USER" | "RESOLVED" | "CLOSED"
+  priority     String        @default("LOW") // "LOW" | "MEDIUM" | "HIGH" | "CRITICAL"
+  ip           String?
+  userAgent    String?
+  assignedToId String?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  user         User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
+  assignedTo   User?         @relation("AssignedTickets", fields: [assignedToId], references: [id], onDelete: SetNull)
+  replies      TicketReply[]
+  notes        TicketNote[]
+
+  @@index([userId])
+  @@index([assignedToId])
+  @@index([status])
+  @@index([priority])
+  @@index([createdAt])
+}
+
+model TicketReply {
+  id         String        @id @default(cuid())
+  ticketId   String
+  userId     String?
+  senderType String        // "USER" | "ADMIN"
+  content    String        @db.Text
+  createdAt  DateTime      @default(now())
+
+  ticket     SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  user       User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([ticketId])
+  @@index([createdAt])
+}
+
+model TicketNote {
+  id        String        @id @default(cuid())
+  ticketId  String
+  userId    String
+  content   String        @db.Text
+  createdAt DateTime      @default(now())
+
+  ticket    SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([ticketId])
+  @@index([userId])
+  @@index([createdAt])
+}
+
