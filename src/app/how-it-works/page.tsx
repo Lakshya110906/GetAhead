@@ -179,7 +179,7 @@ export default function HowItWorksPage() {
           </div>
           <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6 leading-tight" style={{ fontFamily: "var(--font-poppins)" }}>
             From upload to insights —<br />
-            <span className="bg-gradient-to-r from-blue-600 to-teal-500 bg-clip-text text-transparent">here's exactly how it works</span>
+            <span className="bg-gradient-to-r from-blue-600 to-teal-500 bg-clip-text text-transparent">here&apos;s exactly how it works</span>
           </h1>
           <p className="text-xl text-gray-600 leading-relaxed mb-10 max-w-2xl mx-auto">
             GetAhead AI is designed to be fast and simple. Follow the 12-step journey from account creation to downloading your first report.

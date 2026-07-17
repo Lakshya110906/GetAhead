@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import {
   Brain,
-  Upload,
   BarChart3,
   FileText,
   Bookmark,

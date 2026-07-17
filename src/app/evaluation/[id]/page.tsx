@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import dynamic from "next/dynamic";
 import {
   BarChart,
   Bar,
@@ -27,6 +28,8 @@ import {
   TrendingUp,
   Target,
 } from "lucide-react";
+
+const AiTutor = dynamic(() => import("@/components/tutor/AiTutor").then((m) => m.AiTutor), { ssr: false });
 
 interface EvaluationData {
   id: string;
@@ -72,6 +75,7 @@ export default function EvaluationPage() {
   const [isSaved, setIsSaved] = useState(false);
   const [saveLoading, setSaveLoading] = useState(false);
   const [shareCopied, setShareCopied] = useState(false);
+  const [highlightedIndex, setHighlightedIndex] = useState<number | null>(null);
 
   useEffect(() => {
     if (!id || id === "demo") {
@@ -108,6 +112,32 @@ export default function EvaluationPage() {
       })
       .catch(() => {});
   }, [id]);
+
+  useEffect(() => {
+    const handleHighlight = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      if (typeof detail?.index === "number") {
+        const idx = detail.index;
+        setHighlightedIndex(idx);
+
+        // Scroll to question row
+        const el = document.getElementById(`breakdown-row-${idx}`);
+        if (el) {
+          el.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+
+        // Reset highlight after 3 seconds
+        setTimeout(() => {
+          setHighlightedIndex(null);
+        }, 3000);
+      }
+    };
+
+    window.addEventListener("tutor:highlight", handleHighlight);
+    return () => {
+      window.removeEventListener("tutor:highlight", handleHighlight);
+    };
+  }, []);
 
   const handleSave = async () => {
     if (!id || !data) return;
@@ -202,7 +232,8 @@ export default function EvaluationPage() {
   const breakdown = data.marksBreakdown || [];
 
   return (
-    <div className="max-w-7xl mx-auto space-y-6">
+    <div className="flex flex-col lg:flex-row gap-6 relative max-w-7xl mx-auto">
+      <div className="flex-1 min-w-0 space-y-6 lg:pr-[var(--tutor-width,0px)] transition-all duration-300">
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-3">
@@ -389,42 +420,53 @@ export default function EvaluationPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
-                {breakdown.map((item) => (
-                  <tr key={item.topic} className="hover:bg-gray-50 transition-colors">
-                    <td className="py-3 text-sm font-semibold text-gray-900">{item.topic}</td>
-                    <td className="py-3 text-sm text-gray-600 text-center">
-                      {item.obtainedMarks}/{item.totalMarks}
-                    </td>
-                    <td className="py-3 text-center">
-                      <div className="flex items-center justify-center gap-2">
-                        <div className="w-20 h-2 bg-gray-100 rounded-full overflow-hidden">
-                          <div
-                            className="h-full rounded-full"
-                            style={{
-                              width: `${item.percentage}%`,
-                              background:
-                                item.percentage >= 80
-                                  ? "#22C55E"
-                                  : item.percentage >= 60
-                                  ? "#F59E0B"
-                                  : "#EF4444",
-                            }}
-                          />
+                {breakdown.map((item, idx) => {
+                  const isHighlighted = highlightedIndex === idx;
+                  return (
+                    <tr
+                      key={item.topic}
+                      id={`breakdown-row-${idx}`}
+                      className={`transition-colors duration-500 ${
+                        isHighlighted
+                          ? "bg-yellow-100/90 dark:bg-yellow-950/40"
+                          : "hover:bg-gray-50 dark:hover:bg-gray-800/40"
+                      }`}
+                    >
+                      <td className="py-3 text-sm font-semibold text-gray-900 dark:text-gray-100">{item.topic}</td>
+                      <td className="py-3 text-sm text-gray-600 dark:text-gray-400 text-center">
+                        {item.obtainedMarks}/{item.totalMarks}
+                      </td>
+                      <td className="py-3 text-center">
+                        <div className="flex items-center justify-center gap-2">
+                          <div className="w-20 h-2 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+                            <div
+                              className="h-full rounded-full"
+                              style={{
+                                width: `${item.percentage}%`,
+                                background:
+                                  item.percentage >= 80
+                                    ? "#22C55E"
+                                    : item.percentage >= 60
+                                    ? "#F59E0B"
+                                    : "#EF4444",
+                              }}
+                            />
+                          </div>
+                          <span className={`text-xs font-bold ${
+                            item.percentage >= 80
+                              ? "text-green-600"
+                              : item.percentage >= 60
+                              ? "text-amber-600"
+                              : "text-red-500"
+                          }`}>
+                            {item.percentage.toFixed(0)}%
+                          </span>
                         </div>
-                        <span className={`text-xs font-bold ${
-                          item.percentage >= 80
-                            ? "text-green-600"
-                            : item.percentage >= 60
-                            ? "text-amber-600"
-                            : "text-red-500"
-                        }`}>
-                          {item.percentage.toFixed(0)}%
-                        </span>
-                      </div>
-                    </td>
-                    <td className="py-3 text-xs text-gray-500 pl-4">{item.feedback}</td>
-                  </tr>
-                ))}
+                      </td>
+                      <td className="py-3 text-xs text-gray-500 dark:text-gray-400 pl-4">{item.feedback}</td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -549,6 +591,10 @@ export default function EvaluationPage() {
           }
         }
       `}</style>
+      </div>
+      
+      {/* AI Tutor Collapsible right sidebar */}
+      {id && id !== "demo" && <AiTutor evaluationId={id} />}
     </div>
   );
 }
