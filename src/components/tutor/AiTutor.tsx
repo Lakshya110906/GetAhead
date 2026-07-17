@@ -131,6 +131,7 @@ export function AiTutor({ evaluationId }: AiTutorProps) {
         const lines = chunk.split("\n");
         for (const line of lines) {
           if (line.startsWith("data: ")) {
+            let errorMsg: string | null = null;
             try {
               const payload = JSON.parse(line.slice(6));
               
@@ -160,10 +161,14 @@ export function AiTutor({ evaluationId }: AiTutorProps) {
                 );
                 tempAssistantId = payload.id;
               } else if (payload.type === "error" && payload.message) {
-                throw new Error(payload.message);
+                errorMsg = payload.message;
               }
             } catch {
               // Ignore partial chunk parse failures
+            }
+
+            if (errorMsg) {
+              throw new Error(errorMsg);
             }
           }
         }
