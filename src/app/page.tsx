@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import { useTheme } from "@/components/ThemeProvider";
 import { ThemeSlider } from "@/components/ThemeSlider";
+import { SiteFooter } from "@/components/SiteFooter";
 
 const features = [
   {
@@ -652,57 +653,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="bg-gray-900 text-gray-400 py-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid md:grid-cols-4 gap-8 mb-8">
-            <div>
-              <div className="flex items-center gap-2 mb-4">
-                <div className="w-7 h-7 rounded-lg gradient-primary flex items-center justify-center">
-                  <Brain className="w-4 h-4 text-white" />
-                </div>
-                <span className="text-white font-bold">Get<span className="text-gradient">Ahead</span></span>
-              </div>
-              <p className="text-sm leading-relaxed">
-                AI-powered exam evaluation for students, teachers, and institutions.
-              </p>
-            </div>
-            {[
-              {
-                title: "Product",
-                links: ["Features", "How It Works", "FAQ"],
-              },
-              {
-                title: "For Users",
-                links: ["Students", "Teachers", "Institutions", "Coaching Centers"],
-              },
-              {
-                title: "Support",
-                links: ["Help Center", "Contact Us", "Privacy Policy", "Terms of Service"],
-              },
-            ].map((col) => (
-              <div key={col.title}>
-                <h4 className="text-white font-semibold text-sm mb-4">{col.title}</h4>
-                <ul className="space-y-2">
-                  {col.links.map((link) => (
-                    <li key={link}>
-                      <a
-                        href="#"
-                        className="text-sm hover:text-white transition-colors"
-                      >
-                        {link}
-                      </a>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </div>
-          <div className="border-t border-gray-800 pt-8 text-center text-sm">
-            <p>© 2024 GetAhead. All rights reserved. Built with ❤️ for Indian students.</p>
-          </div>
-        </div>
-      </footer>
+      <SiteFooter />
     </div>
   );
 }
