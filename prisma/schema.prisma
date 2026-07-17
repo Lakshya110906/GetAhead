@@ -145,7 +145,7 @@ model Feedback {
   userId       String
   user         User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   evaluationId String?
-  evaluation   Evaluation? @relation(fields: [evaluationId], references: [id])
+  evaluation   Evaluation? @relation(fields: [evaluationId], references: [id], onDelete: Cascade)
   rating       Int
   comment      String?     @db.Text
   createdAt    DateTime    @default(now())

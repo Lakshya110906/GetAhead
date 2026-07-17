@@ -62,6 +62,16 @@ export const authOptions: NextAuthOptions = {
           throw new Error("Invalid credentials");
         }
 
+        // Enforce user suspension check
+        if (user.role === "SUSPENDED" || user.suspended) {
+          throw new Error("Your account has been suspended");
+        }
+
+        // Enforce email verification (exclude admin and check user emailVerified status)
+        if (email !== adminEmail && !user.emailVerified) {
+          throw new Error("Email not verified");
+        }
+
         return {
           id: user.id,
           email: user.email,
@@ -81,9 +91,24 @@ export const authOptions: NextAuthOptions = {
       return token;
     },
     async session({ session, token }) {
-      if (session.user) {
+      if (session.user && token.id) {
+        // Query database to ensure user is active and has not been suspended/deleted
+        const user = await prisma.user.findUnique({
+          where: { id: token.id as string },
+          select: { role: true, suspended: true },
+        });
+
+        if (!user || user.suspended || user.role === "SUSPENDED") {
+          // Force invalidate the NextAuth session
+          return {
+            ...session,
+            user: undefined,
+            expires: new Date(0).toISOString(),
+          };
+        }
+
         (session.user as { id?: string }).id = token.id as string;
-        (session.user as { role?: string }).role = token.role as string;
+        (session.user as { role?: string }).role = user.role;
       }
       return session;
     },

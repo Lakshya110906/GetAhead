@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextRequest } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
@@ -8,8 +9,6 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 export const maxDuration = 120;
 
 type RouteParams = { params: Promise<{ evaluationId: string }> };
-
-const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GENERATIVE_AI_API_KEY!);
 
 // Simple rate limiting: 30 messages per 60 seconds per user
 async function checkRateLimit(userId: string): Promise<boolean> {
@@ -124,6 +123,10 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
   // Build conversation history for Gemini
   const history = buildConversationHistory(conversation.messages);
 
+  // Check if API key is valid or placeholder
+  const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY || process.env.GEMINI_API_KEY;
+  const isPlaceholder = !apiKey || apiKey === "your-gemini-api-key-here" || apiKey.startsWith("your-gemini") || apiKey.length < 20;
+
   // Create SSE stream
   const encoder = new TextEncoder();
   let assistantContent = "";
@@ -135,6 +138,89 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
       };
 
       try {
+        if (isPlaceholder) {
+          // Stream a contextual, encouraging placeholder response for demo/development environments
+          send({ type: "user_message_id", id: savedUserMsg.id });
+
+          const mockReplies: Record<string, string> = {
+            "why did i lose marks?": `Based on your evaluation for **${evaluation.subject}**, you scored **${evaluation.obtainedMarks}/${evaluation.totalMarks}** (${evaluation.percentage?.toFixed(1)}%).
+
+Here is a summary of where marks were deducted:
+${marksBreakdown?.filter((b: any) => b.percentage < 90).map((b: any) => `* **${b.topic}**: Scored ${b.obtainedMarks}/${b.totalMarks} — *${b.feedback}*`).join("\n") || "* Calculation details and procedural accuracy."}
+
+For improvement:
+${recommendations.map((r: string) => `* ${r}`).join("\n") || "* Focus on formulas and step-by-step proofs."}
+
+Let me know which question you'd like to work through together!`,
+            "explain like i'm 10": `Imagine your **${evaluation.subject}** paper is like a video game level. You scored **${evaluation.obtainedMarks}** points out of **${evaluation.totalMarks}**! 
+
+* You did super well on: ${strengths.slice(0, 2).join(", ") || "the early questions"}.
+* You got a bit stuck on: ${weaknesses.slice(0, 1).join(", ") || "some calculation puzzles"}.
+
+Don't worry! Let's practice one of the tricky levels again together. Ask me a question and I'll explain it using simple examples!`,
+            default: `Hello! I am your GetAhead AI Tutor. I have reviewed your **${evaluation.subject}** answer sheet, where you scored **${evaluation.obtainedMarks}/${evaluation.totalMarks}** (${evaluation.percentage?.toFixed(1)}%).
+
+Here are some insights from your report:
+* **Key Strength**: ${strengths[0] || "Methodical working"}
+* **Top Improvement Area**: ${weaknesses[0] || "Review of calculus/algebra steps"}
+
+You can ask me questions like:
+1. *"Why did I lose marks?"*
+2. *"Explain Question 1"*
+3. *"Give me a quiz on my weak topics"*
+
+What topic would you like to explore first?`
+          };
+
+          const userQueryClean = userMessage.toLowerCase().trim();
+          let responseText = mockReplies[userQueryClean];
+          if (!responseText) {
+            // Check if user is asking to explain a specific question number
+            const qMatch = userQueryClean.match(/explain\s+question\s+(\d+)/i);
+            if (qMatch && marksBreakdown) {
+              const qIndex = parseInt(qMatch[1]) - 1;
+              const topicInfo = marksBreakdown[qIndex];
+              if (topicInfo) {
+                responseText = `Question ${qMatch[1]} covers **${topicInfo.topic}**. 
+                
+You scored **${topicInfo.obtainedMarks}/${topicInfo.totalMarks}** (${topicInfo.percentage.toFixed(0)}%) on this topic.
+* **Evaluator Feedback**: *${topicInfo.feedback}*
+
+Let's break down the concepts behind ${topicInfo.topic}. Would you like me to walk you through a step-by-step example or create a quick flashcard for it?`;
+              }
+            }
+          }
+          if (!responseText) {
+            responseText = mockReplies.default;
+          }
+
+          const words = responseText.split(" ");
+          for (let i = 0; i < words.length; i++) {
+            const word = words[i] + (i === words.length - 1 ? "" : " ");
+            assistantContent += word;
+            send({ type: "delta", text: word });
+            await new Promise(r => setTimeout(r, 30)); // simulated streaming speed
+          }
+
+          const savedAssistantMsg = await prisma.tutorMessage.create({
+            data: {
+              conversationId: conversation!.id,
+              role: "assistant",
+              content: assistantContent,
+            },
+          });
+
+          await prisma.tutorConversation.update({
+            where: { id: conversation!.id },
+            data: { updatedAt: new Date() },
+          });
+
+          send({ type: "done", id: savedAssistantMsg.id });
+          return;
+        }
+
+        // Real Gemini stream setup
+        const genAI = new GoogleGenerativeAI(apiKey);
         const model = genAI.getGenerativeModel({
           model: "gemini-2.0-flash",
           systemInstruction: systemPrompt,
@@ -143,7 +229,6 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
         const chat = model.startChat({ history });
         const result = await chat.sendMessageStream(userMessage);
 
-        // Send user message ID so client can track it
         send({ type: "user_message_id", id: savedUserMsg.id });
 
         for await (const chunk of result.stream) {
@@ -154,7 +239,7 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
           }
         }
 
-        // Save assistant response
+        // Save assistant response to DB
         const savedAssistantMsg = await prisma.tutorMessage.create({
           data: {
             conversationId: conversation!.id,
@@ -171,8 +256,8 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
 
         send({ type: "done", id: savedAssistantMsg.id });
       } catch (err) {
+        console.error("Gemini stream error:", err);
         const msg = err instanceof Error ? err.message : "AI response failed";
-        // Check for specific errors
         const isRateLimit = msg.toLowerCase().includes("quota") || msg.toLowerCase().includes("429");
         const isTimeout = msg.toLowerCase().includes("timeout");
         send({
