@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
+import crypto from "crypto";
+import { sendVerificationEmail } from "@/lib/email";
 
 const signupSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
@@ -41,7 +43,10 @@ export async function POST(request: NextRequest) {
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 12);
 
-    // Create user directly
+    // Create user and verification token inside a transaction to ensure consistency
+    const token = crypto.randomBytes(32).toString("hex");
+    const expires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours validity
+
     const user = await prisma.user.create({
       data: {
         name,
@@ -51,10 +56,26 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    await prisma.verificationToken.create({
+      data: {
+        identifier: email,
+        token,
+        expires,
+      },
+    });
+
+    // Send verification email asynchronously
+    try {
+      await sendVerificationEmail(email, name, token);
+    } catch (emailError) {
+      console.error("Failed to send signup verification email:", emailError);
+    }
+
     return NextResponse.json(
       {
-        message: "Account created successfully",
+        message: "Account created successfully. A verification email has been sent.",
         user: { id: user.id, email: user.email, name: user.name },
+        verificationRequired: true,
       },
       { status: 201 }
     );

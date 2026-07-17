@@ -16,6 +16,11 @@ function LoginForm() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [signupSuccess, setSignupSuccess] = useState(false);
+  
+  // Resend verification link states
+  const [resendLoading, setResendLoading] = useState(false);
+  const [resendSuccess, setResendSuccess] = useState(false);
+  const [resendError, setResendError] = useState("");
 
   useEffect(() => {
     const emailParam = searchParams.get("email");
@@ -34,6 +39,8 @@ function LoginForm() {
     e.preventDefault();
     setLoading(true);
     setError("");
+    setResendSuccess(false);
+    setResendError("");
 
     const result = await signIn("credentials", {
       email,
@@ -42,7 +49,13 @@ function LoginForm() {
     });
 
     if (result?.error) {
-      setError("Invalid email or password. Please try again.");
+      if (result.error === "Email not verified") {
+        setError("Email not verified");
+      } else if (result.error === "Your account has been suspended") {
+        setError("Your account has been suspended. Please contact support.");
+      } else {
+        setError("Invalid email or password. Please try again.");
+      }
       setLoading(false);
     } else {
       if (email.trim().toLowerCase() === "admin@getahead.ai") {
@@ -59,6 +72,31 @@ function LoginForm() {
         } catch {}
       }
       router.push("/dashboard");
+    }
+  };
+
+  const handleResendVerification = async () => {
+    if (!email) return;
+    setResendLoading(true);
+    setResendError("");
+    setResendSuccess(false);
+
+    try {
+      const res = await fetch("/api/auth/verify-email/resend", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setResendError(data.error || "Failed to resend link");
+      } else {
+        setResendSuccess(true);
+      }
+    } catch {
+      setResendError("Failed to connect to server. Please try again.");
+    } finally {
+      setResendLoading(false);
     }
   };
 
@@ -143,7 +181,36 @@ function LoginForm() {
             </div>
           )}
 
-          {error && (
+          {error && error === "Email not verified" && (
+            <div className="bg-amber-50 border border-amber-200 text-amber-800 rounded-xl p-4 text-sm mb-6 space-y-3">
+              <p className="font-semibold">Email Verification Required</p>
+              <p className="text-xs text-amber-700 leading-relaxed">
+                Your email address is not verified yet. Please click the link we sent to your inbox to log in.
+              </p>
+              {resendSuccess ? (
+                <p className="text-xs font-bold text-green-700">
+                  ✓ A new verification link has been sent successfully.
+                </p>
+              ) : (
+                <div className="pt-1">
+                  <button
+                    type="button"
+                    onClick={handleResendVerification}
+                    disabled={resendLoading}
+                    className="inline-flex items-center gap-1.5 bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors disabled:opacity-60"
+                  >
+                    {resendLoading && <Loader2 className="w-3 h-3 animate-spin" />}
+                    Resend Verification Link
+                  </button>
+                  {resendError && (
+                    <p className="text-[11px] text-red-650 mt-1.5 font-medium">{resendError}</p>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          {error && error !== "Email not verified" && (
             <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-sm mb-6">
               {error}
             </div>
@@ -198,9 +265,9 @@ function LoginForm() {
                 <input type="checkbox" className="rounded border-gray-300" />
                 Remember me
               </label>
-              <a href="#" className="text-sm text-blue-600 hover:underline">
+              <Link href="/forgot-password" className="text-sm text-blue-605 hover:underline font-medium">
                 Forgot password?
-              </a>
+              </Link>
             </div>
 
             <button
