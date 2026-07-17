@@ -1,8 +1,8 @@
 "use client";
 
 import { useSession } from "next-auth/react";
-import { User, Bell, Shield, Palette, ChevronRight } from "lucide-react";
-import { useState } from "react";
+import { User, Bell, Shield, Palette, ChevronRight, Loader2 } from "lucide-react";
+import { useState, useEffect } from "react";
 import { useTheme } from "@/components/ThemeProvider";
 
 const sections = [
@@ -13,10 +13,27 @@ const sections = [
 ];
 
 export default function SettingsPage() {
-  const { data: session } = useSession();
+  const { data: session, update } = useSession();
   const { theme, setTheme } = useTheme();
   const [activeSection, setActiveSection] = useState("profile");
   const [saved, setSaved] = useState(false);
+
+  // Profile fields state
+  const [profileName, setProfileName] = useState("");
+  const [profileEmail, setProfileEmail] = useState("");
+  const [profileError, setProfileError] = useState("");
+  const [profileLoading, setProfileLoading] = useState(false);
+
+  // Sync profile fields from session
+  useEffect(() => {
+    if (session?.user) {
+      const t = setTimeout(() => {
+        setProfileName(session.user!.name || "");
+        setProfileEmail(session.user!.email || "");
+      }, 0);
+      return () => clearTimeout(t);
+    }
+  }, [session]);
 
   // Security password change states
   const [currentPassword, setCurrentPassword] = useState("");
@@ -33,9 +50,43 @@ export default function SettingsPage() {
   const [pushNotif, setPushNotif] = useState(true);
   const [notificationsSaved, setNotificationsSaved] = useState(false);
 
-  const handleSave = () => {
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+  const handleSave = async () => {
+    setProfileError("");
+    setSaved(false);
+    setProfileLoading(true);
+
+    if (!profileName.trim()) {
+      setProfileError("Full Name is required");
+      setProfileLoading(false);
+      return;
+    }
+
+    if (!profileEmail.trim() || !profileEmail.includes("@")) {
+      setProfileError("A valid email address is required");
+      setProfileLoading(false);
+      return;
+    }
+
+    try {
+      const res = await fetch("/api/user/profile", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: profileName, email: profileEmail }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setProfileError(data.error || "Failed to update profile settings");
+      } else {
+        setSaved(true);
+        // Refresh session token content
+        await update();
+        setTimeout(() => setSaved(false), 2000);
+      }
+    } catch {
+      setProfileError("Unexpected server connection error. Please try again.");
+    } finally {
+      setProfileLoading(false);
+    }
   };
 
   const handlePasswordChange = async (e: React.FormEvent) => {
@@ -137,36 +188,91 @@ export default function SettingsPage() {
                 </div>
               </div>
 
+              {profileError && (
+                <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-sm mb-6">
+                  {profileError}
+                </div>
+              )}
+
               <div className="grid sm:grid-cols-2 gap-5">
-                {[
-                  { label: "Full Name", value: session?.user?.name || "", id: "settings-name" },
-                  { label: "Email Address", value: session?.user?.email || "", id: "settings-email" },
-                  { label: "Role", value: "Student", id: "settings-role" },
-                  { label: "Institution", value: "N/A", id: "settings-institution" },
-                ].map((field) => (
-                  <div key={field.id}>
-                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                      {field.label}
-                    </label>
-                    <input
-                      id={field.id}
-                      type="text"
-                      defaultValue={field.value}
-                      className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
-                    />
-                  </div>
-                ))}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                    Full Name
+                  </label>
+                  <input
+                    id="settings-name"
+                    type="text"
+                    value={profileName}
+                    onChange={(e) => setProfileName(e.target.value)}
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                    Email Address
+                  </label>
+                  <input
+                    id="settings-email"
+                    type="email"
+                    value={profileEmail}
+                    onChange={(e) => setProfileEmail(e.target.value)}
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                    Role
+                  </label>
+                  <input
+                    id="settings-role"
+                    type="text"
+                    disabled
+                    value={session?.user && (session.user as { role?: string }).role ? (session.user as { role?: string }).role : "STUDENT"}
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm bg-gray-50 text-gray-500 cursor-not-allowed outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                    Institution
+                  </label>
+                  <input
+                    id="settings-institution"
+                    type="text"
+                    disabled
+                    value="GetAhead AI Board"
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm bg-gray-50 text-gray-500 cursor-not-allowed outline-none"
+                  />
+                </div>
               </div>
 
               <div className="mt-6 flex items-center gap-3">
                 <button
                   id="save-settings"
                   onClick={handleSave}
-                  className="gradient-primary text-white font-semibold px-6 py-2.5 rounded-xl hover:opacity-90 transition-opacity text-sm"
+                  disabled={profileLoading}
+                  className="gradient-primary text-white font-semibold px-6 py-2.5 rounded-xl hover:opacity-90 transition-opacity text-sm flex items-center gap-2 disabled:opacity-60"
                 >
-                  {saved ? "✓ Saved!" : "Save Changes"}
+                  {profileLoading ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : saved ? (
+                    "✓ Saved!"
+                  ) : (
+                    "Save Changes"
+                  )}
                 </button>
-                <button className="border border-gray-200 text-gray-600 font-medium px-6 py-2.5 rounded-xl hover:bg-gray-50 transition-colors text-sm">
+                <button 
+                  onClick={() => {
+                    if (session?.user) {
+                      setProfileName(session.user.name || "");
+                      setProfileEmail(session.user.email || "");
+                    }
+                    setProfileError("");
+                  }}
+                  className="border border-gray-200 text-gray-600 font-medium px-6 py-2.5 rounded-xl hover:bg-gray-50 transition-colors text-sm"
+                >
                   Cancel
                 </button>
               </div>
