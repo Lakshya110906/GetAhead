@@ -248,7 +248,7 @@ export default function CoachingCentersPage() {
               <Trophy className="w-12 h-12 text-orange-500 mb-4" />
               <h3 className="text-xl font-bold text-gray-900 mb-3">Competitive exam focus</h3>
               <p className="text-gray-600 mb-4 leading-relaxed text-sm">
-                GetAhead AI is calibrated for the rigorous standards of JEE, NEET, and board examinations. The AI understands subject-specific rubrics and evaluates with the precision that competitive exam preparation demands.
+                GetAhead AI is built for the rigorous standards of JEE, NEET, and board examinations, and we measure its grading accuracy against real teacher-marked answer sheets rather than just asserting it.
               </p>
               <p className="text-gray-600 leading-relaxed text-sm">
                 Students get the same quality of feedback they&apos;d get from a subject-matter expert — delivered in seconds rather than days.

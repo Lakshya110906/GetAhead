@@ -200,7 +200,7 @@ export default function StudentsPage() {
             Start Free <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
           </Link>
           <div className="flex flex-wrap items-center justify-center gap-6 mt-8">
-            {["100% Free", "No credit card", "Instant results", "Personalised feedback"].map((t) => (
+            {["Free during beta", "No credit card", "Instant results", "Personalised feedback"].map((t) => (
               <span key={t} className="flex items-center gap-2 text-blue-100 text-sm">
                 <CheckCircle className="w-4 h-4 text-teal-300" />{t}
               </span>

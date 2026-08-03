@@ -39,3 +39,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# accuracy harness: latest.json is a per-run artifact, baseline.json is checked in deliberately
+/accuracy-results/latest.json

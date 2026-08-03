@@ -1,11 +1,12 @@
-import { NextRequest, NextResponse } from "next/server";
-import { verifyAdminToken } from "@/lib/adminAuth";
+import { NextResponse } from "next/server";
+import { requireAdmin } from "@/lib/requireAdmin";
 import { prisma } from "@/lib/prisma";
 import os from "os";
 
-export async function GET(request: NextRequest) {
-  if (!verifyAdminToken(request)) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+export async function GET() {
+  const auth = await requireAdmin();
+  if (!auth.ok) {
+    return auth.response;
   }
 
   const startTime = Date.now();

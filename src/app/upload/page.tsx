@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useDropzone } from "react-dropzone";
+import { upload } from "@vercel/blob/client";
 import {
   Upload,
   FileText,
@@ -12,6 +13,8 @@ import {
   Brain,
   ArrowRight,
   Info,
+  Clock,
+  AlertTriangle,
 } from "lucide-react";
 
 import { SubjectSelector } from "@/components/SubjectSelector";
@@ -27,7 +30,17 @@ const grades = [
   "Competitive Exam",
 ];
 
-type Status = "idle" | "uploading" | "processing" | "complete" | "error";
+// idle -> uploading (direct-to-storage) -> queued -> processing -> succeeded | failed | cancelled
+type Status = "idle" | "uploading" | "queued" | "processing" | "succeeded" | "failed" | "cancelled" | "quota_exceeded" | "maintenance";
+
+const POLL_INTERVALS_MS = [1000, 1500, 2000, 3000, 4000, 6000, 8000];
+
+const MIME_BY_EXT: Record<string, string> = {
+  pdf: "application/pdf",
+  png: "image/png",
+  jpg: "image/jpeg",
+  jpeg: "image/jpeg",
+};
 
 export default function UploadPage() {
   const router = useRouter();
@@ -36,9 +49,21 @@ export default function UploadPage() {
   const [grade, setGrade] = useState("");
   const [examType, setExamType] = useState("Mixed");
   const [status, setStatus] = useState<Status>("idle");
-  const [progress, setProgress] = useState(0);
-  const [evaluationId, setEvaluationId] = useState<string | null>(null);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [jobId, setJobId] = useState<string | null>(null);
   const [error, setError] = useState("");
+  const [quotaResetsAt, setQuotaResetsAt] = useState<string | null>(null);
+  const [attempts, setAttempts] = useState(0);
+  const [maxAttempts, setMaxAttempts] = useState(3);
+
+  const pollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pollIndexRef = useRef(0);
+
+  useEffect(() => {
+    return () => {
+      if (pollTimeoutRef.current) clearTimeout(pollTimeoutRef.current);
+    };
+  }, []);
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
     if (acceptedFiles[0]) setFile(acceptedFiles[0]);
@@ -50,63 +75,171 @@ export default function UploadPage() {
       "image/*": [".png", ".jpg", ".jpeg"],
       "application/pdf": [".pdf"],
     },
-    maxSize: 10 * 1024 * 1024,
+    maxSize: 20 * 1024 * 1024,
     multiple: false,
   });
+
+  const pollJob = useCallback(
+    (id: string) => {
+      const poll = async () => {
+        try {
+          const res = await fetch(`/api/evaluations/${id}`);
+          const data = await res.json();
+
+          if (!res.ok) {
+            setStatus("failed");
+            setError(data.error || "Couldn't check the evaluation's status.");
+            return;
+          }
+
+          setAttempts(data.attempts ?? 0);
+          setMaxAttempts(data.maxAttempts ?? 3);
+
+          if (data.status === "SUCCEEDED") {
+            setStatus("succeeded");
+            setTimeout(() => router.push(`/evaluation/${id}`), 600);
+            return;
+          }
+          if (data.status === "FAILED") {
+            setStatus("failed");
+            setError(data.lastError || "The evaluation failed after multiple attempts.");
+            return;
+          }
+          if (data.status === "CANCELLED") {
+            setStatus("cancelled");
+            return;
+          }
+
+          setStatus(data.status === "PROCESSING" ? "processing" : "queued");
+
+          const i = Math.min(pollIndexRef.current, POLL_INTERVALS_MS.length - 1);
+          pollIndexRef.current += 1;
+          pollTimeoutRef.current = setTimeout(poll, POLL_INTERVALS_MS[i]);
+        } catch {
+          // Transient network hiccup while polling — keep trying on the same
+          // backoff schedule rather than surfacing an error for one dropped check.
+          const i = Math.min(pollIndexRef.current, POLL_INTERVALS_MS.length - 1);
+          pollIndexRef.current += 1;
+          pollTimeoutRef.current = setTimeout(poll, POLL_INTERVALS_MS[i]);
+        }
+      };
+      poll();
+    },
+    [router]
+  );
 
   const handleEvaluate = async () => {
     if (!file || !subject || !grade) return;
 
     setStatus("uploading");
     setError("");
-
-    // Simulate upload progress
-    for (let i = 0; i <= 100; i += 20) {
-      await new Promise((r) => setTimeout(r, 200));
-      setProgress(i);
-    }
+    setUploadProgress(0);
 
     try {
-      // Create evaluation record
-      const uploadRes = await fetch("/api/evaluate/upload", {
+      const ext = file.name.split(".").pop()?.toLowerCase() || "";
+      const contentType = MIME_BY_EXT[ext] || file.type;
+
+      const blob = await upload(file.name, file, {
+        access: "public",
+        handleUploadUrl: "/api/uploads",
+        contentType,
+        onUploadProgress: ({ percentage }) => setUploadProgress(percentage),
+      });
+
+      setStatus("queued");
+
+      const enqueueRes = await fetch("/api/evaluations", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          fileUrl: blob.url,
+          fileKey: blob.pathname,
+          fileName: file.name,
+          fileSize: file.size,
+          fileType: contentType,
           subject,
           grade,
           examType,
-          fileName: file.name,
         }),
       });
 
-      if (!uploadRes.ok) {
-        const err = await uploadRes.json();
-        throw new Error(err.error || "Upload failed");
+      const enqueueData = await enqueueRes.json();
+      if (!enqueueRes.ok) {
+        if (enqueueData.quotaExceeded) {
+          setQuotaResetsAt(enqueueData.resetsAt || null);
+          setStatus("quota_exceeded");
+          setError(enqueueData.error);
+          return;
+        }
+        if (enqueueData.maintenance) {
+          setStatus("maintenance");
+          setError(enqueueData.error);
+          return;
+        }
+        throw new Error(enqueueData.error || "Couldn't queue the evaluation.");
       }
 
-      const { evaluationId: id } = await uploadRes.json();
-      setEvaluationId(id);
-
-      // Process with AI
-      setStatus("processing");
-
-      const processRes = await fetch("/api/evaluate/process", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ evaluationId: id }),
-      });
-
-      if (!processRes.ok) {
-        const err = await processRes.json();
-        throw new Error(err.error || "Processing failed");
-      }
-
-      setStatus("complete");
+      setJobId(enqueueData.jobId);
+      pollIndexRef.current = 0;
+      pollJob(enqueueData.jobId);
     } catch (err) {
-      setStatus("error");
-      setError(err instanceof Error ? err.message : "The evaluation didn't complete. Check your connection and try again.");
+      setStatus("failed");
+      setError(err instanceof Error ? err.message : "The upload didn't complete. Check your connection and try again.");
     }
   };
+
+  const handleCancel = async () => {
+    if (!jobId) return;
+    if (pollTimeoutRef.current) clearTimeout(pollTimeoutRef.current);
+    try {
+      const res = await fetch(`/api/evaluations/${jobId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "cancel" }),
+      });
+      if (!res.ok) {
+        // Couldn't cancel (e.g. it started processing the instant before) — resume polling for the real outcome.
+        pollJob(jobId);
+        return;
+      }
+      setStatus("cancelled");
+    } catch {
+      pollJob(jobId);
+    }
+  };
+
+  const handleRetry = async () => {
+    if (!jobId) return;
+    setError("");
+    try {
+      const res = await fetch(`/api/evaluations/${jobId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "retry" }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || "Couldn't retry this evaluation. Start a new one instead.");
+        return;
+      }
+      pollIndexRef.current = 0;
+      setStatus("queued");
+      pollJob(jobId);
+    } catch {
+      setError("Couldn't reach the server to retry. Check your connection and try again.");
+    }
+  };
+
+  const handleStartOver = () => {
+    if (pollTimeoutRef.current) clearTimeout(pollTimeoutRef.current);
+    setFile(null);
+    setStatus("idle");
+    setJobId(null);
+    setError("");
+    setUploadProgress(0);
+  };
+
+  const isBusy = status === "uploading" || status === "queued" || status === "processing";
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -114,7 +247,7 @@ export default function UploadPage() {
         <h1 className="text-3xl font-bold text-gray-900 mb-1" style={{ fontFamily: "var(--font-display)" }}>
           New Evaluation
         </h1>
-        <p className="text-gray-500">Upload your answer sheet and let AI evaluate it instantly</p>
+        <p className="text-gray-500">Upload your answer sheet and let AI evaluate it</p>
       </div>
 
       <div className="grid lg:grid-cols-5 gap-6">
@@ -142,7 +275,7 @@ export default function UploadPage() {
                 <p className="text-gray-700 font-semibold mb-1">
                   {isDragActive ? "Drop your file here!" : "Drag & drop or click to upload"}
                 </p>
-                <p className="text-gray-400 text-sm">Supports PDF, PNG, JPG, JPEG (max 10MB)</p>
+                <p className="text-gray-400 text-sm">Supports PDF (up to 25 pages), PNG, JPG, JPEG (max 20MB)</p>
               </div>
             ) : (
               <div className="flex items-center gap-4 p-4 bg-blue-50 rounded-xl border border-blue-100">
@@ -155,12 +288,14 @@ export default function UploadPage() {
                     {(file.size / 1024 / 1024).toFixed(2)} MB
                   </p>
                 </div>
-                <button
-                  onClick={() => setFile(null)}
-                  className="w-8 h-8 bg-white rounded-lg flex items-center justify-center text-gray-400 hover:text-red-500 transition-colors shadow-sm"
-                >
-                  <X className="w-4 h-4" />
-                </button>
+                {!isBusy && (
+                  <button
+                    onClick={() => setFile(null)}
+                    className="w-8 h-8 bg-white rounded-lg flex items-center justify-center text-gray-400 hover:text-red-500 transition-colors shadow-sm"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
               </div>
             )}
           </div>
@@ -238,17 +373,17 @@ export default function UploadPage() {
               {[
                 {
                   label: "Upload File",
-                  done: !!file,
+                  done: status !== "idle" && status !== "uploading",
                   active: status === "uploading",
                 },
                 {
-                  label: "Configure Settings",
-                  done: !!(file && subject && grade),
-                  active: false,
+                  label: "Queued",
+                  done: status === "processing" || status === "succeeded",
+                  active: status === "queued",
                 },
                 {
-                  label: "AI Processing",
-                  done: status === "complete",
+                  label: "AI Evaluation",
+                  done: status === "succeeded",
                   active: status === "processing",
                 },
               ].map((step, i) => (
@@ -266,11 +401,7 @@ export default function UploadPage() {
                   </div>
                   <span
                     className={`text-sm font-medium ${
-                      step.done
-                        ? "text-green-600"
-                        : step.active
-                        ? "text-blue-600"
-                        : "text-gray-400"
+                      step.done ? "text-green-600" : step.active ? "text-blue-600" : "text-gray-400"
                     }`}
                   >
                     {step.label}
@@ -279,68 +410,165 @@ export default function UploadPage() {
               ))}
             </div>
 
-            {/* Progress Bar */}
+            {/* Uploading: direct-to-storage progress */}
             {status === "uploading" && (
               <div className="mb-5">
                 <div className="flex justify-between text-xs text-gray-500 mb-1.5">
-                  <span>Uploading...</span>
-                  <span className="font-mono">{progress}%</span>
+                  <span>Uploading to storage...</span>
+                  <span className="font-mono">{uploadProgress}%</span>
                 </div>
                 <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
                   <div
                     className="h-full bg-ink rounded-full transition-all duration-200"
-                    style={{ width: `${progress}%` }}
+                    style={{ width: `${uploadProgress}%` }}
                   />
                 </div>
               </div>
             )}
 
-            {status === "processing" && (
-              <div className="bg-blue-50 rounded-xl p-4 mb-5 flex items-center gap-3">
-                <Brain className="w-5 h-5 text-blue-500 animate-pulse" />
-                <p className="text-sm text-blue-700 font-medium">
-                  AI is evaluating your answers...
+            {/* Queued: distinct state, distinct copy */}
+            {status === "queued" && (
+              <div className="bg-amber-50 border border-amber-100 rounded-xl p-4 mb-5 flex items-center gap-3">
+                <Clock className="w-5 h-5 text-amber-500 flex-shrink-0" />
+                <p className="text-sm text-amber-800 font-medium">
+                  Your sheet is in the queue — evaluation will start shortly.
                 </p>
               </div>
             )}
 
-            {status === "error" && (
-              <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-5">
-                <p className="text-sm text-red-700">{error}</p>
+            {/* Processing: distinct state, distinct copy */}
+            {status === "processing" && (
+              <div className="bg-blue-50 rounded-xl p-4 mb-5 flex items-center gap-3">
+                <Brain className="w-5 h-5 text-blue-500 animate-pulse flex-shrink-0" />
+                <div>
+                  <p className="text-sm text-blue-700 font-medium">AI is reading and grading your answer sheet...</p>
+                  {attempts > 1 && (
+                    <p className="text-xs text-blue-600 mt-0.5">Retrying (attempt {attempts} of {maxAttempts})</p>
+                  )}
+                </div>
               </div>
             )}
 
-            {status === "complete" ? (
+            {status === "cancelled" && (
+              <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 mb-5">
+                <p className="text-sm text-gray-600">Evaluation cancelled. No credit was used.</p>
+              </div>
+            )}
+
+            {status === "failed" && (
+              <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-5">
+                <div className="flex items-start gap-2">
+                  <AlertTriangle className="w-4 h-4 text-red-500 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="text-sm font-semibold text-red-800">
+                      {attempts >= maxAttempts ? `Evaluation failed after ${maxAttempts} attempts` : "Evaluation failed"}
+                    </p>
+                    <p className="text-sm text-red-700 mt-0.5">{error}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {status === "quota_exceeded" && (
+              <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-5">
+                <div className="flex items-start gap-2">
+                  <Clock className="w-4 h-4 text-amber-500 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="text-sm font-semibold text-amber-800">Daily evaluation limit reached</p>
+                    <p className="text-sm text-amber-700 mt-0.5">
+                      You&apos;ve used today&apos;s free evaluations.
+                      {quotaResetsAt && ` Resets ${new Date(quotaResetsAt).toLocaleString(undefined, { hour: "numeric", minute: "2-digit", month: "short", day: "numeric" })}.`}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {status === "maintenance" && (
+              <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-5">
+                <div className="flex items-start gap-2">
+                  <AlertTriangle className="w-4 h-4 text-amber-500 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="text-sm font-semibold text-amber-800">Evaluations are paused for today</p>
+                    <p className="text-sm text-amber-700 mt-0.5">
+                      We&apos;ve hit our daily processing limit to keep the service running smoothly. Please try again tomorrow.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {status === "succeeded" ? (
               <div>
                 <div className="bg-green-50 rounded-xl p-4 mb-5 text-center">
                   <CheckCircle className="w-8 h-8 text-green-500 mx-auto mb-2" />
                   <p className="font-semibold text-green-700">Evaluation Complete!</p>
-                  <p className="text-xs text-green-600 mt-0.5">Your results are ready</p>
+                  <p className="text-xs text-green-600 mt-0.5">Taking you to your results...</p>
                 </div>
                 <button
                   id="view-results"
-                  onClick={() => router.push(`/evaluation/${evaluationId}`)}
+                  onClick={() => jobId && router.push(`/evaluation/${jobId}`)}
                   className="w-full bg-ink text-white font-semibold py-3 rounded-xl hover:opacity-90 transition-opacity flex items-center justify-center gap-2"
                 >
                   View Results <ArrowRight className="w-4 h-4" />
                 </button>
               </div>
-            ) : (
+            ) : status === "failed" ? (
+              <div className="space-y-2">
+                <button
+                  onClick={handleRetry}
+                  className="w-full bg-ink text-white font-semibold py-3 rounded-xl hover:opacity-90 transition-opacity"
+                >
+                  Retry Evaluation
+                </button>
+                <button
+                  onClick={handleStartOver}
+                  className="w-full border border-gray-200 text-gray-600 font-semibold py-3 rounded-xl hover:bg-gray-50 transition-colors"
+                >
+                  Upload a Different File
+                </button>
+              </div>
+            ) : status === "cancelled" ? (
               <button
-                id="start-evaluation"
-                onClick={handleEvaluate}
-                disabled={!file || !subject || !grade || status !== "idle"}
-                className="w-full bg-ink text-white font-semibold py-3 rounded-xl hover:opacity-90 transition-opacity flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
+                onClick={handleStartOver}
+                className="w-full bg-ink text-white font-semibold py-3 rounded-xl hover:opacity-90 transition-opacity"
               >
-                {status === "idle" ? (
-                  <>
-                    <Brain className="w-4 h-4" />
-                    Start AI Evaluation
-                  </>
-                ) : (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                )}
+                Start a New Evaluation
               </button>
+            ) : status === "quota_exceeded" || status === "maintenance" ? (
+              <button
+                disabled
+                className="w-full bg-gray-100 text-gray-400 font-semibold py-3 rounded-xl cursor-not-allowed"
+              >
+                {status === "quota_exceeded" ? "Come back after your limit resets" : "Come back tomorrow"}
+              </button>
+            ) : (
+              <div className="space-y-2">
+                <button
+                  id="start-evaluation"
+                  onClick={handleEvaluate}
+                  disabled={!file || !subject || !grade || isBusy}
+                  className="w-full bg-ink text-white font-semibold py-3 rounded-xl hover:opacity-90 transition-opacity flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  {status === "idle" ? (
+                    <>
+                      <Brain className="w-4 h-4" />
+                      Start AI Evaluation
+                    </>
+                  ) : (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  )}
+                </button>
+                {(status === "queued" || status === "processing") && (
+                  <button
+                    onClick={handleCancel}
+                    className="w-full border border-gray-200 text-gray-600 font-semibold py-3 rounded-xl hover:bg-gray-50 transition-colors disabled:opacity-40"
+                    disabled={status === "processing"}
+                  >
+                    Cancel
+                  </button>
+                )}
+              </div>
             )}
 
             <div className="mt-4 flex items-start gap-2 text-xs text-gray-400">

@@ -58,20 +58,18 @@ function LoginForm() {
       }
       setLoading(false);
     } else {
-      if (email.trim().toLowerCase() === "admin@getahead.ai") {
-        try {
-          const adminRes = await fetch("/api/admin/login", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ password }),
-          });
-          if (adminRes.ok) {
-            router.push("/admin");
-            return;
-          }
-        } catch {}
+      // One session, one role claim: redirect to wherever the caller was
+      // headed (e.g. /admin/layout.tsx sends unauthenticated admins here
+      // with ?callbackUrl=/admin), or by role for a direct /login visit.
+      const callbackUrl = searchParams.get("callbackUrl");
+      if (callbackUrl) {
+        router.push(callbackUrl);
+        return;
       }
-      router.push("/dashboard");
+
+      const sessionRes = await fetch("/api/auth/session");
+      const session = await sessionRes.json();
+      router.push(session?.user?.role === "ADMIN" ? "/admin" : "/dashboard");
     }
   };
 

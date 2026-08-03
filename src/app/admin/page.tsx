@@ -2,11 +2,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { signOut } from "next-auth/react";
 import Link from "next/link";
 import {
   Brain,
-  Lock,
   Loader2,
   Users,
   Award,
@@ -24,6 +23,8 @@ import {
   Settings,
   ListCollapse,
   LifeBuoy,
+  DollarSign,
+  AlertTriangle,
 } from "lucide-react";
 import {
   ResponsiveContainer,
@@ -38,12 +39,12 @@ import {
 } from "recharts";
 
 export default function AdminPage() {
-  const router = useRouter();
+  // Auth itself is enforced server-side by src/app/admin/layout.tsx (session
+  // + role check) and independently by requireAdmin() on every /api/admin/*
+  // route — reaching this component at all means that already passed.
+  // "authenticated" here just tracks whether the initial data load finished.
   const [authenticated, setAuthenticated] = useState(false);
   const [checkingAuth, setCheckingAuth] = useState(true);
-  const [password, setPassword] = useState("");
-  const [loginError, setLoginError] = useState("");
-  const [loggingIn, setLoggingIn] = useState(false);
 
   // Active Tab
   const [activeTab, setActiveTab] = useState("overview");
@@ -51,6 +52,7 @@ export default function AdminPage() {
   // Admin Data states
   const [stats, setStats] = useState<any>(null);
   const [health, setHealth] = useState<any>(null);
+  const [spend, setSpend] = useState<any>(null);
   const [users, setUsers] = useState<any[]>([]);
   const [usersTotal, setUsersTotal] = useState(0);
   const [usersPage, setUsersPage] = useState(1);
@@ -112,6 +114,7 @@ export default function AdminPage() {
         setAuthenticated(true);
         // Load secondary states
         fetchHealth();
+        fetchSpend();
         fetchUsers();
         fetchEvaluations();
         fetchPapers();
@@ -170,36 +173,11 @@ export default function AdminPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ticketsSearch, ticketStatusFilter, ticketPriorityFilter, ticketCategoryFilter, activeTab, authenticated]);
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoginError("");
-    setLoggingIn(true);
-
-    try {
-      const res = await fetch("/api/admin/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ password }),
-      });
-      const data = await res.json();
-      if (res.ok) {
-        setAuthenticated(true);
-        fetchStats();
-      } else {
-        setLoginError(data.error || "Authentication failed.");
-      }
-    } catch {
-      setLoginError("Unexpected connection issue.");
-    } finally {
-      setLoggingIn(false);
-    }
-  };
-
   const handleLogout = async () => {
-    await fetch("/api/admin/logout", { method: "POST" });
-    setAuthenticated(false);
-    setPassword("");
-    router.push("/");
+    // signOut's server-side event handler (see authOptions.events.signOut in
+    // src/lib/auth.ts) revokes this session's token in the KV revocation
+    // list immediately, on top of clearing the cookie.
+    await signOut({ callbackUrl: "/" });
   };
 
   // Sub-queries
@@ -207,6 +185,13 @@ export default function AdminPage() {
     fetch("/api/admin/health")
       .then((r) => r.json())
       .then(setHealth)
+      .catch(() => {});
+  };
+
+  const fetchSpend = () => {
+    fetch("/api/admin/spend")
+      .then((r) => r.json())
+      .then(setSpend)
       .catch(() => {});
   };
 
@@ -376,69 +361,7 @@ export default function AdminPage() {
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
           <Loader2 className="w-10 h-10 animate-spin text-blue-600 mx-auto mb-2" />
-          <p className="text-gray-500 text-sm">Verifying Admin authorization...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // 2. Render Login Form
-  if (!authenticated) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 px-6">
-        <div className="max-w-md w-full bg-white rounded-3xl border border-gray-150 p-8 card-shadow-md">
-          <div className="flex items-center gap-2 mb-6">
-            <div className="w-8 h-8 rounded-xl bg-ink flex items-center justify-center text-white">
-              <Shield className="w-4 h-4" />
-            </div>
-            <span className="font-bold text-gray-900" style={{ fontFamily: "var(--font-display)" }}>
-              GetAhead Admin Panel
-            </span>
-          </div>
-
-          <h1 className="text-2xl font-bold text-gray-900 mb-2" style={{ fontFamily: "var(--font-display)" }}>
-            Authorized Sign In
-          </h1>
-          <p className="text-gray-500 text-xs mb-6">
-            Access to this portal is restricted to system administrators only.
-          </p>
-
-          {loginError && (
-            <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-xs mb-6">
-              {loginError}
-            </div>
-          )}
-
-          <form onSubmit={handleLogin} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                Admin Password
-              </label>
-              <div className="relative">
-                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <input
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Enter administrator secret"
-                  required
-                  className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
-                />
-              </div>
-            </div>
-
-            <button
-              type="submit"
-              disabled={loggingIn}
-              className="w-full bg-ink text-white font-semibold py-3 rounded-xl hover:opacity-90 transition-opacity flex items-center justify-center gap-2 disabled:opacity-60 text-sm shadow-sm"
-            >
-              {loggingIn ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                "Verify Credentials"
-              )}
-            </button>
-          </form>
+          <p className="text-gray-500 text-sm">Loading dashboard...</p>
         </div>
       </div>
     );
@@ -539,6 +462,46 @@ export default function AdminPage() {
                   </div>
                 ))}
               </div>
+
+              {/* Today's spend — see it here, without opening the Google console */}
+              {spend && (
+                <div
+                  className={`rounded-2xl border p-5 flex items-center justify-between gap-4 ${
+                    spend.killSwitchActive
+                      ? "bg-red-50 border-red-200"
+                      : spend.estimatedUsd >= spend.thresholdUsd * 0.5
+                      ? "bg-amber-50 border-amber-200"
+                      : "bg-white border-gray-100 card-shadow-md"
+                  }`}
+                >
+                  <div className="flex items-center gap-4">
+                    <div
+                      className={`w-11 h-11 rounded-xl flex items-center justify-center ${
+                        spend.killSwitchActive ? "bg-red-100" : spend.estimatedUsd >= spend.thresholdUsd * 0.5 ? "bg-amber-100" : "bg-green-50"
+                      }`}
+                    >
+                      {spend.killSwitchActive ? (
+                        <AlertTriangle className="w-5 h-5 text-red-600" />
+                      ) : (
+                        <DollarSign className={`w-5 h-5 ${spend.estimatedUsd >= spend.thresholdUsd * 0.5 ? "text-amber-600" : "text-green-600"}`} />
+                      )}
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-gray-900">
+                        Today&apos;s estimated spend: ${spend.estimatedUsd.toFixed(2)} of ${spend.thresholdUsd}
+                      </p>
+                      <p className="text-xs text-gray-500 mt-0.5">
+                        {spend.totalTokens.toLocaleString()} tokens across evaluations today ({spend.date}). Estimate only — Google Cloud billing is authoritative.
+                      </p>
+                    </div>
+                  </div>
+                  {spend.killSwitchActive && (
+                    <span className="text-xs font-bold text-red-700 bg-red-100 px-3 py-1.5 rounded-full whitespace-nowrap">
+                      Kill switch active — new jobs paused
+                    </span>
+                  )}
+                </div>
+              )}
 
               {/* Charts Row */}
               <div className="grid lg:grid-cols-2 gap-6">

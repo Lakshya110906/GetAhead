@@ -3,12 +3,36 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { generateQuestionPaper } from "@/lib/question-agents";
+import { consumeQuota, QuotaExceededError } from "@/lib/quota";
+import { assertSpendGateOpen, SpendLimitReachedError } from "@/lib/spendControl";
 
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    const userId = (session.user as { id: string }).id;
+
+    try {
+      await assertSpendGateOpen();
+    } catch (err) {
+      if (err instanceof SpendLimitReachedError) {
+        return NextResponse.json({ error: err.message, maintenance: true }, { status: 503 });
+      }
+      throw err;
+    }
+
+    try {
+      await consumeQuota(userId, "PAPER_GENERATION");
+    } catch (err) {
+      if (err instanceof QuotaExceededError) {
+        return NextResponse.json(
+          { error: err.message, quotaExceeded: true, limit: err.limit, resetsAt: err.resetsAt.toISOString() },
+          { status: 429 }
+        );
+      }
+      throw err;
     }
 
     const body = await request.json();
@@ -45,7 +69,6 @@ export async function POST(request: NextRequest) {
     });
 
     // Save to database
-    const userId = (session.user as { id: string }).id;
     const dbPayload = {
       ...result,
       metadata: {

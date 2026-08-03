@@ -110,11 +110,11 @@ export default function SignupPage() {
             Join students & educators on GetAhead AI
           </h2>
           <p className="text-blue-100 text-lg leading-relaxed mb-10">
-            Get unlimited answer sheet evaluations and AI question paper generation. Completely free.
+            Get answer sheet evaluations and AI question paper generation, free during beta.
           </p>
           <div className="space-y-3">
             {[
-              "✓ Unlimited answer evaluations",
+              "✓ Free during beta — 10 evaluations/day",
               "✓ Detailed AI-powered feedback",
               "✓ Subject-wise performance analytics",
               "✓ Personalized study recommendations",

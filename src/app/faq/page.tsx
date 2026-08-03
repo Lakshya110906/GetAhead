@@ -15,7 +15,7 @@ const faqCategories = [
       },
       {
         q: "Is GetAhead AI free to use?",
-        a: "Yes — GetAhead AI is currently completely free. There are no pricing tiers, no credit card required, and no hidden limits. We plan to introduce optional premium features in the future, but the core evaluation and question generation features will remain free.",
+        a: "Yes — GetAhead AI is free during our beta period, no credit card required. Each account gets a daily quota (currently 10 evaluations and 10 question paper generations per day) to keep the service running smoothly for everyone. We plan to introduce paid plans in the future as the product matures.",
       },
       {
         q: "Can I change my role after signing up?",
@@ -86,7 +86,7 @@ const faqCategories = [
     faqs: [
       {
         q: "How accurate is the AI evaluation?",
-        a: "GetAhead AI uses Gemini 2.5 Flash, calibrated against standard academic rubrics for CBSE, ICSE, and general board formats. For well-structured written answers, accuracy is very high. For highly subjective or niche topics, we recommend a final teacher review for high-stakes exams.",
+        a: "We measure this directly against a golden set of real answer sheets marked by real teachers, re-run on every prompt or rubric change — see the accuracy figure and methodology on our homepage. For highly subjective or niche topics, we recommend a final teacher review for high-stakes exams.",
       },
       {
         q: "Does the AI understand partial credit?",

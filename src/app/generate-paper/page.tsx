@@ -17,6 +17,8 @@ import {
   Upload,
   X,
   Sparkles,
+  Clock,
+  AlertTriangle,
 } from "lucide-react";
 import { GeneratedPaper } from "@/lib/question-agents";
 import { SubjectSelector } from "@/components/SubjectSelector";
@@ -33,7 +35,7 @@ const grades = [
 ];
 
 // ─── Types ───────────────────────────────────────────────────────────────────
-type GenerationStatus = "idle" | "generating" | "complete" | "error";
+type GenerationStatus = "idle" | "generating" | "complete" | "error" | "quota_exceeded" | "maintenance";
 type AgentStatus = "idle" | "active" | "done" | "error";
 
 interface AgentLogEntry {
@@ -157,6 +159,7 @@ export default function GeneratePaperPage() {
   
   const [status, setStatus] = useState<GenerationStatus>("idle");
   const [error, setError] = useState("");
+  const [quotaResetsAt, setQuotaResetsAt] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
   // Custom Paper Style & Study Material Upload
@@ -280,7 +283,21 @@ export default function GeneratePaperPage() {
         }),
       });
 
-      if (!res.ok) throw new Error("Failed to connect to generation service.");
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        if (body.quotaExceeded) {
+          setQuotaResetsAt(body.resetsAt || null);
+          setStatus("quota_exceeded");
+          setError(body.error || "Daily limit reached.");
+          return;
+        }
+        if (body.maintenance) {
+          setStatus("maintenance");
+          setError(body.error || "Question generation is temporarily unavailable.");
+          return;
+        }
+        throw new Error(body.error || "Failed to connect to generation service.");
+      }
       if (!res.body) throw new Error("No response stream.");
 
       const reader = res.body.getReader();
@@ -414,7 +431,21 @@ ${JSON.stringify(paper, null, 2)}
         }),
       });
 
-      if (!res.ok) throw new Error("Failed to connect to generation service.");
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        if (body.quotaExceeded) {
+          setQuotaResetsAt(body.resetsAt || null);
+          setStatus("quota_exceeded");
+          setError(body.error || "Daily limit reached.");
+          return;
+        }
+        if (body.maintenance) {
+          setStatus("maintenance");
+          setError(body.error || "Question generation is temporarily unavailable.");
+          return;
+        }
+        throw new Error(body.error || "Failed to connect to generation service.");
+      }
       if (!res.body) throw new Error("No response stream.");
 
       const reader = res.body.getReader();
@@ -929,6 +960,41 @@ ${JSON.stringify(paper, null, 2)}
             className="mt-6 px-6 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm shadow-md transition-colors"
           >
             Try Again
+          </button>
+        </div>
+      )}
+
+      {/* Quota Exceeded State */}
+      {status === "quota_exceeded" && (
+        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-10 max-w-lg mx-auto text-center no-print">
+          <Clock className="w-12 h-12 text-amber-500 mx-auto mb-4" />
+          <h2 className="text-xl font-bold text-amber-800">Daily generation limit reached</h2>
+          <p className="text-amber-700 text-sm mt-1">
+            You&apos;ve used today&apos;s free question paper generations.
+            {quotaResetsAt && ` Resets ${new Date(quotaResetsAt).toLocaleString(undefined, { hour: "numeric", minute: "2-digit", month: "short", day: "numeric" })}.`}
+          </p>
+          <button
+            disabled
+            className="mt-6 px-6 py-3 rounded-xl bg-gray-100 text-gray-400 font-bold text-sm cursor-not-allowed"
+          >
+            Come back after your limit resets
+          </button>
+        </div>
+      )}
+
+      {/* Maintenance State */}
+      {status === "maintenance" && (
+        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-10 max-w-lg mx-auto text-center no-print">
+          <AlertTriangle className="w-12 h-12 text-amber-500 mx-auto mb-4" />
+          <h2 className="text-xl font-bold text-amber-800">Generation is paused for today</h2>
+          <p className="text-amber-700 text-sm mt-1">
+            We&apos;ve hit our daily processing limit to keep the service running smoothly. Please try again tomorrow.
+          </p>
+          <button
+            disabled
+            className="mt-6 px-6 py-3 rounded-xl bg-gray-100 text-gray-400 font-bold text-sm cursor-not-allowed"
+          >
+            Come back tomorrow
           </button>
         </div>
       )}

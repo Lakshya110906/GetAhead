@@ -1,0 +1,147 @@
+import { NextRequest, NextResponse } from "next/server";
+import { after } from "next/server";
+import { getServerSession } from "next-auth";
+import { z } from "zod";
+import { PDFDocument } from "pdf-lib";
+import { authOptions } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
+import { processSpecificJob } from "@/lib/evaluationWorker";
+import { MAX_UPLOAD_BYTES } from "@/app/api/uploads/route";
+import { consumeQuota, QuotaExceededError } from "@/lib/quota";
+import { assertSpendGateOpen, SpendLimitReachedError } from "@/lib/spendControl";
+import { assertDeclaredTypeMatches } from "@/lib/fileSignature";
+
+// after() keeps the worker call running past the point the response is
+// sent, so this stays fast for the client while the real work (which can
+// legitimately take tens of seconds) happens in the background of the same
+// invocation. This route's own maxDuration needs headroom for that.
+export const maxDuration = 60;
+
+const MAX_PAGES = 25;
+
+const enqueueSchema = z.object({
+  fileUrl: z.string().url(),
+  fileKey: z.string().optional(),
+  fileName: z.string().min(1),
+  fileSize: z.number().int().positive(),
+  fileType: z.enum(["application/pdf", "image/png", "image/jpeg"]),
+  subject: z.string().min(1, "Subject is required"),
+  grade: z.string().optional(),
+  examType: z.enum(["MCQ", "Descriptive", "Mixed"]),
+});
+
+export async function POST(request: NextRequest) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    const userId = (session.user as { id: string }).id;
+
+    const parsed = enqueueSchema.safeParse(await request.json());
+    if (!parsed.success) {
+      return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 });
+    }
+    const { fileUrl, fileKey, fileName, fileSize, fileType, subject, grade, examType } = parsed.data;
+
+    if (fileSize > MAX_UPLOAD_BYTES) {
+      return NextResponse.json(
+        { error: `That file is too large (${(fileSize / 1024 / 1024).toFixed(1)}MB). The limit is ${MAX_UPLOAD_BYTES / 1024 / 1024}MB — try scanning at a lower resolution.` },
+        { status: 413 }
+      );
+    }
+
+    // Global kill switch first: no point spending a quota unit or a
+    // download on a job we're not going to run today.
+    try {
+      await assertSpendGateOpen();
+    } catch (err) {
+      if (err instanceof SpendLimitReachedError) {
+        return NextResponse.json(
+          { error: err.message, maintenance: true },
+          { status: 503 }
+        );
+      }
+      throw err;
+    }
+
+    // Per-user daily quota, enforced server-side before any paid call.
+    try {
+      await consumeQuota(userId, "EVALUATION");
+    } catch (err) {
+      if (err instanceof QuotaExceededError) {
+        return NextResponse.json(
+          { error: err.message, quotaExceeded: true, limit: err.limit, resetsAt: err.resetsAt.toISOString() },
+          { status: 429 }
+        );
+      }
+      throw err;
+    }
+
+    // Download once, use for both the magic-byte check and (for PDFs) the
+    // page-count check below — never trust the extension or the
+    // client-supplied Content-Type for what a file actually is.
+    const fileRes = await fetch(fileUrl);
+    if (!fileRes.ok) {
+      return NextResponse.json({ error: "Couldn't read the uploaded file. Try uploading again." }, { status: 502 });
+    }
+    const bytes = new Uint8Array(await fileRes.arrayBuffer());
+
+    try {
+      assertDeclaredTypeMatches(bytes, fileType);
+    } catch (err) {
+      return NextResponse.json({ error: err instanceof Error ? err.message : "Unrecognized file type." }, { status: 400 });
+    }
+
+    let pageCount = 1;
+    if (fileType === "application/pdf") {
+      try {
+        const pdf = await PDFDocument.load(bytes);
+        pageCount = pdf.getPageCount();
+      } catch {
+        return NextResponse.json({ error: "That file doesn't look like a valid PDF. Try re-exporting or scanning it again." }, { status: 400 });
+      }
+      if (pageCount > MAX_PAGES) {
+        return NextResponse.json(
+          { error: `That PDF has ${pageCount} pages. The limit is ${MAX_PAGES} pages per evaluation — split it and upload in parts.` },
+          { status: 413 }
+        );
+      }
+    }
+
+    const job = await prisma.evaluation.create({
+      data: {
+        userId,
+        subject,
+        grade: grade || "12th",
+        examType,
+        status: "QUEUED",
+        originalFileName: fileName,
+        fileUrl,
+        fileKey,
+        fileSize,
+        fileType,
+        pageCount,
+      },
+    });
+
+    // Fire the worker in the background of this same invocation. The
+    // cron sweep is the backstop if this never runs or the function dies
+    // before it finishes — the job row is already durably QUEUED either way.
+    after(async () => {
+      try {
+        await processSpecificJob(job.id);
+      } catch (err) {
+        console.error(`Background worker trigger failed for job ${job.id}:`, err);
+      }
+    });
+
+    return NextResponse.json({ jobId: job.id }, { status: 202 });
+  } catch (error) {
+    console.error("Enqueue evaluation error:", error);
+    return NextResponse.json(
+      { error: "Couldn't queue your evaluation due to a server error. Try again in a moment." },
+      { status: 500 }
+    );
+  }
+}
