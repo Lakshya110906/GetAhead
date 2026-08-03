@@ -46,7 +46,7 @@ export default function CoachingCentersPage() {
           </Link>
           <div className="flex items-center gap-3">
             <Link href="/login" className="text-sm text-gray-600 hover:text-gray-900 font-medium transition-colors">Sign In</Link>
-            <Link href="/signup" className="text-sm bg-ink text-white font-semibold px-4 py-2 rounded-lg hover:opacity-90 transition-opacity">Get Started Free</Link>
+            <Link href="/signup" className="text-sm bg-fixed-ink text-white font-semibold px-4 py-2 rounded-lg hover:opacity-90 transition-opacity">Get Started Free</Link>
           </div>
         </div>
       </nav>
@@ -68,7 +68,7 @@ export default function CoachingCentersPage() {
                 GetAhead AI turns your coaching center&apos;s mock test grading from a multi-day bottleneck into a same-day, AI-powered workflow — consistent, fast, and insightful.
               </p>
               <div className="flex flex-col sm:flex-row gap-3">
-                <Link href="/signup" className="inline-flex items-center justify-center gap-2 bg-ink text-white font-semibold px-6 py-3 rounded-xl hover:opacity-90 transition-opacity shadow-lg">
+                <Link href="/signup" className="inline-flex items-center justify-center gap-2 bg-fixed-ink text-white font-semibold px-6 py-3 rounded-xl hover:opacity-90 transition-opacity shadow-lg">
                   Start Free <ArrowRight className="w-4 h-4" />
                 </Link>
                 <Link href="/contact" className="inline-flex items-center justify-center gap-2 bg-white text-gray-700 font-medium px-6 py-3 rounded-xl border border-gray-200 hover:bg-gray-50 transition-all">
@@ -156,7 +156,7 @@ export default function CoachingCentersPage() {
             const Icon = item.icon;
             return (
               <div key={item.title} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 hover:shadow-md transition-shadow">
-                <div className={"w-12 h-12 rounded-xl bg-ink flex items-center justify-center mb-4"}>
+                <div className={"w-12 h-12 rounded-xl bg-fixed-ink flex items-center justify-center mb-4"}>
                   <Icon className="w-6 h-6 text-white" />
                 </div>
                 <h3 className="font-semibold text-gray-900 mb-2">{item.title}</h3>
@@ -259,7 +259,7 @@ export default function CoachingCentersPage() {
       </section>
 
       {/* CTA */}
-      <section className="py-24 bg-ink">
+      <section className="py-24 bg-fixed-ink">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl md:text-4xl font-bold text-white mb-4" style={{ fontFamily: "var(--font-display)" }}>
             Power your coaching center with AI evaluation

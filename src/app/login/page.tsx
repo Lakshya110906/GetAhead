@@ -63,7 +63,7 @@ function LoginForm() {
   return (
     <div className="min-h-screen flex">
       {/* Left Panel */}
-      <div className="hidden lg:flex lg:w-1/2 bg-ink flex-col justify-between p-12 text-white">
+      <div className="hidden lg:flex lg:w-1/2 bg-fixed-ink flex-col justify-between p-12 text-white">
         <Link href="/" className="flex items-center gap-2">
           <div className="w-9 h-9 bg-white/20 rounded-xl flex items-center justify-center">
             <Brain className="w-5 h-5 text-white" />
@@ -80,7 +80,7 @@ function LoginForm() {
           >
             Welcome back to your AI study companion
           </h2>
-          <p className="text-blue-100 text-lg leading-relaxed mb-10">
+          <p className="text-white/70 text-lg leading-relaxed mb-10">
             Sign in to access your evaluations, analytics, and personalized study recommendations.
           </p>
 
@@ -90,7 +90,7 @@ function LoginForm() {
               "✓ Personalized study recommendations",
               "✓ Secure storage and data privacy",
             ].map((item) => (
-              <p key={item} className="text-blue-100 text-sm font-medium">
+              <p key={item} className="text-white/70 text-sm font-medium">
                 {item}
               </p>
             ))}
@@ -110,7 +110,7 @@ function LoginForm() {
           className="w-full max-w-md"
         >
           <div className="lg:hidden flex items-center gap-2 mb-8">
-            <div className="w-8 h-8 rounded-xl bg-ink flex items-center justify-center">
+            <div className="w-8 h-8 rounded-xl bg-fixed-ink flex items-center justify-center">
               <Brain className="w-4 h-4 text-white" />
             </div>
             <span className="font-bold text-gray-900" style={{ fontFamily: "var(--font-display)" }}>
@@ -201,7 +201,7 @@ function LoginForm() {
               id="login-submit"
               type="submit"
               disabled={loading}
-              className="w-full bg-ink text-white font-semibold py-3 rounded-xl hover:opacity-90 transition-opacity flex items-center justify-center gap-2 disabled:opacity-60"
+              className="w-full bg-fixed-ink text-white font-semibold py-3 rounded-xl hover:opacity-90 transition-opacity flex items-center justify-center gap-2 disabled:opacity-60"
             >
               {loading ? (
                 <Loader2 className="w-4 h-4 animate-spin" />

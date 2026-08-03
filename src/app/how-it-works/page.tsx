@@ -154,7 +154,7 @@ export default function HowItWorksPage() {
           </Link>
           <div className="flex items-center gap-3">
             <Link href="/login" className="text-sm text-gray-600 hover:text-gray-900 font-medium transition-colors">Sign In</Link>
-            <Link href="/signup" className="text-sm bg-ink text-white font-semibold px-4 py-2 rounded-lg hover:opacity-90 transition-opacity">Get Started Free</Link>
+            <Link href="/signup" className="text-sm bg-fixed-ink text-white font-semibold px-4 py-2 rounded-lg hover:opacity-90 transition-opacity">Get Started Free</Link>
           </div>
         </div>
       </nav>
@@ -187,7 +187,7 @@ export default function HowItWorksPage() {
       <section className="py-20 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="relative">
           {/* Vertical line */}
-          <div className="absolute left-6 top-8 bottom-8 w-px bg-ink hidden lg:block" />
+          <div className="absolute left-6 top-8 bottom-8 w-px bg-fixed-ink hidden lg:block" />
 
           <div className="space-y-8">
             {steps.map((step, idx) => {
@@ -196,7 +196,7 @@ export default function HowItWorksPage() {
               return (
                 <div key={step.number} className="relative lg:pl-20">
                   {/* Step number circle */}
-                  <div className={"hidden lg:flex absolute left-0 top-4 w-12 h-12 rounded-full bg-ink items-center justify-center shadow-lg text-white font-bold text-sm z-10"}>
+                  <div className={"hidden lg:flex absolute left-0 top-4 w-12 h-12 rounded-full bg-fixed-ink items-center justify-center shadow-lg text-white font-bold text-sm z-10"}>
                     {step.number}
                   </div>
 
@@ -209,7 +209,7 @@ export default function HowItWorksPage() {
                   >
                     <div className={`bg-white border rounded-2xl p-6 hover:border-blue-200 hover:shadow-md transition-all ${isOpen ? "border-blue-200 shadow-md" : "border-gray-100 shadow-sm"}`}>
                       <div className="flex items-start gap-4">
-                        <div className={"w-10 h-10 lg:w-12 lg:h-12 rounded-xl bg-ink flex items-center justify-center flex-shrink-0 shadow-sm lg:hidden"}>
+                        <div className={"w-10 h-10 lg:w-12 lg:h-12 rounded-xl bg-fixed-ink flex items-center justify-center flex-shrink-0 shadow-sm lg:hidden"}>
                           <Icon className="w-5 h-5 text-white" />
                         </div>
                         <div className={`w-10 h-10 rounded-xl ${step.bg} hidden lg:flex items-center justify-center flex-shrink-0`}>
@@ -276,12 +276,12 @@ export default function HowItWorksPage() {
       </section>
 
       {/* CTA */}
-      <section className="py-24 bg-ink">
+      <section className="py-24 bg-fixed-ink">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl md:text-4xl font-bold text-white mb-4" style={{ fontFamily: "var(--font-display)" }}>
             Ready to try it yourself?
           </h2>
-          <p className="text-blue-100 text-lg mb-8">
+          <p className="text-white/70 text-lg mb-8">
             Create a free account in 60 seconds and upload your first answer sheet today.
           </p>
           <Link href="/signup" className="inline-flex items-center gap-2 bg-white text-blue-600 font-bold px-8 py-4 rounded-xl hover:bg-blue-50 transition-colors shadow-lg group">

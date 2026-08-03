@@ -114,7 +114,7 @@ export function AudienceSwitcher() {
                 <motion.span
                   layoutId="audience-indicator"
                   transition={indicatorTransition}
-                  className="absolute left-0 right-0 -bottom-px h-0.5 bg-ink"
+                  className="absolute left-0 right-0 -bottom-px h-0.5 bg-fixed-ink"
                 />
               )}
             </button>

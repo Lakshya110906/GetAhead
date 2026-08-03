@@ -276,7 +276,7 @@ export default function FeaturesPage() {
           </Link>
           <div className="flex items-center gap-3">
             <Link href="/login" className="text-sm text-gray-600 hover:text-gray-900 font-medium transition-colors">Sign In</Link>
-            <Link href="/signup" className="text-sm bg-ink text-white font-semibold px-4 py-2 rounded-lg hover:opacity-90 transition-opacity">Get Started Free</Link>
+            <Link href="/signup" className="text-sm bg-fixed-ink text-white font-semibold px-4 py-2 rounded-lg hover:opacity-90 transition-opacity">Get Started Free</Link>
           </div>
         </div>
       </nav>
@@ -296,7 +296,7 @@ export default function FeaturesPage() {
             GetAhead AI combines AI evaluation, smart analytics, and question generation into a single platform built for students, teachers, and institutions.
           </p>
           <div className="flex flex-wrap items-center justify-center gap-4">
-            <Link href="/signup" className="inline-flex items-center gap-2 bg-ink text-white font-semibold px-6 py-3 rounded-xl hover:opacity-90 transition-opacity shadow-lg shadow-blue-500/20">
+            <Link href="/signup" className="inline-flex items-center gap-2 bg-fixed-ink text-white font-semibold px-6 py-3 rounded-xl hover:opacity-90 transition-opacity shadow-lg shadow-blue-500/20">
               Start Free — No Card Required <ArrowRight className="w-4 h-4" />
             </Link>
             <Link href="/how-it-works" className="inline-flex items-center gap-2 text-gray-700 font-medium px-6 py-3 rounded-xl border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-all">
@@ -361,7 +361,7 @@ export default function FeaturesPage() {
 
                   {/* Card */}
                   <div className={`w-full lg:w-80 flex-shrink-0 border ${feature.borderColor} rounded-2xl overflow-hidden shadow-sm`}>
-                    <div className={"bg-ink p-8 flex items-center justify-center"}>
+                    <div className={"bg-fixed-ink p-8 flex items-center justify-center"}>
                       <div className="w-20 h-20 bg-white/20 rounded-2xl flex items-center justify-center">
                         <Icon className="w-10 h-10 text-white" />
                       </div>
@@ -383,13 +383,13 @@ export default function FeaturesPage() {
       </section>
 
       {/* CTA */}
-      <section className="py-24 mt-8 bg-ink">
+      <section className="py-24 mt-8 bg-fixed-ink">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <Zap className="w-12 h-12 text-white/80 mx-auto mb-6" />
           <h2 className="text-3xl md:text-4xl font-bold text-white mb-4" style={{ fontFamily: "var(--font-display)" }}>
             Ready to use every feature?
           </h2>
-          <p className="text-blue-100 text-lg mb-8">
+          <p className="text-white/70 text-lg mb-8">
             Create a free account and start evaluating answer sheets in under 2 minutes.
           </p>
           <Link href="/signup" className="inline-flex items-center gap-2 bg-white text-blue-600 font-bold px-8 py-4 rounded-xl hover:bg-blue-50 transition-colors shadow-lg group">

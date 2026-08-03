@@ -68,7 +68,7 @@ export function DashboardHeader({ title, subtitle }: { title?: string; subtitle?
       <div className="flex items-center gap-3">
         <Link
           href="/upload"
-          className="hidden sm:inline-flex items-center gap-2 bg-ink text-white text-sm font-semibold px-4 py-2 rounded-xl hover:opacity-90 transition-opacity"
+          className="hidden sm:inline-flex items-center gap-2 bg-fixed-ink text-white text-sm font-semibold px-4 py-2 rounded-xl hover:opacity-90 transition-opacity"
         >
           <Plus className="w-4 h-4" />
           New Evaluation
@@ -83,7 +83,7 @@ export function DashboardHeader({ title, subtitle }: { title?: string; subtitle?
         <div className="relative" ref={dropdownRef}>
           <button
             onClick={() => setIsOpen(!isOpen)}
-            className="w-9 h-9 rounded-xl bg-ink flex items-center justify-center text-white text-sm font-bold shadow-sm hover:opacity-95 transition-opacity"
+            className="w-9 h-9 rounded-xl bg-fixed-ink flex items-center justify-center text-white text-sm font-bold shadow-sm hover:opacity-95 transition-opacity"
             title="User Profile Menu"
           >
             {session?.user?.name?.[0]?.toUpperCase() || "U"}

@@ -36,6 +36,7 @@ const productMoments = [
     description:
       "Every uploaded sheet comes back as a question-by-question breakdown — marks awarded, marks lost, and the reasoning behind each one, not just a single score at the top.",
     screenshotCaption: "the evaluation report for a completed answer sheet",
+    screenshotSrc: "/screenshots/evaluation-report.png",
     reverse: false,
   },
   {
@@ -45,6 +46,7 @@ const productMoments = [
     description:
       "Subject-wise averages, score trends over time, and the topics that are actually costing marks — visualized across every evaluation on the account, not just the last one.",
     screenshotCaption: "the analytics dashboard showing performance trends",
+    screenshotSrc: "/screenshots/analytics-dashboard.png",
     reverse: true,
   },
   {
@@ -54,6 +56,7 @@ const productMoments = [
     description:
       "Pick a subject, grade, topic, and difficulty, and GetAhead assembles a new paper with a full mark scheme — ready to print or assign, with no two papers alike.",
     screenshotCaption: "the question paper generator output",
+    screenshotSrc: "/screenshots/question-paper-generator.png",
     reverse: false,
   },
 ];
@@ -157,7 +160,7 @@ export default function HomeClient({ accuracy }: { accuracy: AccuracySummary | n
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <Link href="/" className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-ink flex items-center justify-center">
+              <div className="w-8 h-8 rounded-lg bg-fixed-ink flex items-center justify-center">
                 <Brain className="w-4 h-4 text-white" />
               </div>
               <span
@@ -196,7 +199,7 @@ export default function HomeClient({ accuracy }: { accuracy: AccuracySummary | n
               {isAuthenticated ? (
                 <Link
                   href="/dashboard"
-                  className="text-sm font-semibold text-white bg-ink rounded-lg px-5 py-2 hover:opacity-90 transition-opacity shadow-sm whitespace-nowrap"
+                  className="text-sm font-semibold text-white bg-fixed-ink rounded-lg px-5 py-2 hover:opacity-90 transition-opacity shadow-sm whitespace-nowrap"
                 >
                   Go to Dashboard
                 </Link>
@@ -210,7 +213,7 @@ export default function HomeClient({ accuracy }: { accuracy: AccuracySummary | n
                   </Link>
                   <Link
                     href="/signup"
-                    className="text-sm font-semibold text-white bg-ink rounded-lg px-5 py-2 hover:opacity-90 transition-opacity shadow-sm whitespace-nowrap"
+                    className="text-sm font-semibold text-white bg-fixed-ink rounded-lg px-5 py-2 hover:opacity-90 transition-opacity shadow-sm whitespace-nowrap"
                   >
                     Start Free
                   </Link>
@@ -261,7 +264,7 @@ export default function HomeClient({ accuracy }: { accuracy: AccuracySummary | n
             {isAuthenticated ? (
               <Link
                 href="/dashboard"
-                className="block text-white bg-ink rounded-lg px-4 py-2 text-sm font-semibold text-center"
+                className="block text-white bg-fixed-ink rounded-lg px-4 py-2 text-sm font-semibold text-center"
               >
                 Go to Dashboard
               </Link>
@@ -275,7 +278,7 @@ export default function HomeClient({ accuracy }: { accuracy: AccuracySummary | n
                 </Link>
                 <Link
                   href="/signup"
-                  className="block text-white bg-ink rounded-lg px-4 py-2 text-sm font-semibold text-center"
+                  className="block text-white bg-fixed-ink rounded-lg px-4 py-2 text-sm font-semibold text-center"
                 >
                   Start Free
                 </Link>
@@ -305,7 +308,7 @@ export default function HomeClient({ accuracy }: { accuracy: AccuracySummary | n
               <div className="flex flex-wrap gap-4 mb-10">
                 <Link
                   href={ctaUrl}
-                  className="inline-flex items-center gap-2 bg-ink text-white font-semibold px-6 py-3 rounded-xl hover:opacity-90 transition-opacity shadow-lg shadow-blue-500/25 group"
+                  className="inline-flex items-center gap-2 bg-fixed-ink text-white font-semibold px-6 py-3 rounded-xl hover:opacity-90 transition-opacity shadow-lg shadow-blue-500/25 group"
                 >
                   Start free evaluation
                   <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
@@ -382,7 +385,7 @@ export default function HomeClient({ accuracy }: { accuracy: AccuracySummary | n
                 className={`grid md:grid-cols-2 gap-10 items-center ${moment.reverse ? "" : ""}`}
               >
                 <div className={moment.reverse ? "md:order-2" : ""}>
-                  <div className="w-10 h-10 rounded-lg bg-ink flex items-center justify-center mb-4">
+                  <div className="w-10 h-10 rounded-lg bg-fixed-ink flex items-center justify-center mb-4">
                     <moment.icon className="w-5 h-5 text-white" />
                   </div>
                   <span className="text-blue-600 font-semibold text-xs uppercase tracking-wider">
@@ -397,7 +400,7 @@ export default function HomeClient({ accuracy }: { accuracy: AccuracySummary | n
                   <p className="text-gray-600 leading-relaxed">{moment.description}</p>
                 </div>
                 <div className={moment.reverse ? "md:order-1" : ""}>
-                  <ScreenshotSlot alt={moment.title} caption={moment.screenshotCaption} />
+                  <ScreenshotSlot src={moment.screenshotSrc} alt={moment.title} caption={moment.screenshotCaption} />
                 </div>
               </motion.div>
             ))}
@@ -406,17 +409,17 @@ export default function HomeClient({ accuracy }: { accuracy: AccuracySummary | n
       </section>
 
       {/* Accuracy — a real, measured figure, not a testimonial */}
-      <section id="accuracy" className={`py-20 ${isDark ? "bg-gray-900" : "bg-white"}`}>
+      <section id="accuracy" className="py-20 bg-white">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <span className="text-teal-600 font-semibold text-sm uppercase tracking-wider">Accuracy</span>
             <h2
-              className={`text-3xl md:text-4xl font-bold mt-2 mb-4 ${isDark ? "text-white" : "text-gray-900"}`}
+              className="text-3xl md:text-4xl font-bold mt-2 mb-4 text-gray-900"
               style={{ fontFamily: "var(--font-display)" }}
             >
               How close is the AI to a real teacher?
             </h2>
-            <p className={`max-w-2xl mx-auto text-lg ${isDark ? "text-gray-400" : "text-gray-600"}`}>
+            <p className="max-w-2xl mx-auto text-lg text-gray-600">
               We measure it, we don&apos;t just claim it — against a golden set of real, teacher-marked answer sheets, re-run on every change to the grading prompt or rubric.
             </p>
           </div>
@@ -424,35 +427,35 @@ export default function HomeClient({ accuracy }: { accuracy: AccuracySummary | n
           {accuracy ? (
             <>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-10">
-                <div className={`text-center rounded-2xl p-6 border ${isDark ? "border-gray-800 bg-gray-950" : "border-gray-100 bg-gray-50"}`}>
+                <div className="text-center rounded-2xl p-6 border border-gray-100 bg-gray-50">
                   <Target className="w-6 h-6 text-teal-500 mx-auto mb-2" />
                   <p className="text-3xl font-bold" style={{ fontFamily: "var(--font-display)" }}>
                     {accuracy.mae}
                   </p>
-                  <p className={`text-sm mt-1 ${isDark ? "text-gray-400" : "text-gray-600"}`}>
+                  <p className="text-sm mt-1 text-gray-600">
                     mean absolute error (marks)
                   </p>
                 </div>
-                <div className={`text-center rounded-2xl p-6 border ${isDark ? "border-gray-800 bg-gray-950" : "border-gray-100 bg-gray-50"}`}>
+                <div className="text-center rounded-2xl p-6 border border-gray-100 bg-gray-50">
                   <CheckCircle className="w-6 h-6 text-teal-500 mx-auto mb-2" />
                   <p className="text-3xl font-bold" style={{ fontFamily: "var(--font-display)" }}>
                     {accuracy.within1Pct}%
                   </p>
-                  <p className={`text-sm mt-1 ${isDark ? "text-gray-400" : "text-gray-600"}`}>
+                  <p className="text-sm mt-1 text-gray-600">
                     within 1 mark of the teacher
                   </p>
                 </div>
-                <div className={`text-center rounded-2xl p-6 border ${isDark ? "border-gray-800 bg-gray-950" : "border-gray-100 bg-gray-50"}`}>
+                <div className="text-center rounded-2xl p-6 border border-gray-100 bg-gray-50">
                   <ClipboardCheck className="w-6 h-6 text-teal-500 mx-auto mb-2" />
                   <p className="text-3xl font-bold" style={{ fontFamily: "var(--font-display)" }}>
                     {accuracy.within2Pct}%
                   </p>
-                  <p className={`text-sm mt-1 ${isDark ? "text-gray-400" : "text-gray-600"}`}>
+                  <p className="text-sm mt-1 text-gray-600">
                     within 2 marks of the teacher
                   </p>
                 </div>
               </div>
-              <p className={`text-center text-sm max-w-2xl mx-auto ${isDark ? "text-gray-500" : "text-gray-500"}`}>
+              <p className="text-center text-sm max-w-2xl mx-auto text-gray-500">
                 Methodology: {accuracy.scoredCases} real answer sheets, marked by real teachers, spanning multiple
                 subjects, grade levels, and handwriting quality — including deliberately hard cases (messy
                 handwriting, partial credit, blank answers). Last measured{" "}
@@ -460,7 +463,7 @@ export default function HomeClient({ accuracy }: { accuracy: AccuracySummary | n
               </p>
             </>
           ) : (
-            <div className={`text-center rounded-2xl p-8 border max-w-2xl mx-auto ${isDark ? "border-gray-800 bg-gray-950 text-gray-400" : "border-gray-100 bg-gray-50 text-gray-600"}`}>
+            <div className="text-center rounded-2xl p-8 border max-w-2xl mx-auto border-gray-100 bg-gray-50 text-gray-600">
               <ClipboardCheck className="w-6 h-6 text-teal-500 mx-auto mb-3" />
               <p className="text-sm">
                 We&apos;re building this golden set right now — a set of real answer sheets marked by real teachers
@@ -498,11 +501,11 @@ export default function HomeClient({ accuracy }: { accuracy: AccuracySummary | n
                 transition={{ duration: 0.5, delay: i * 0.15 }}
                 className="text-center relative"
               >
-                <div className="w-24 h-24 rounded-2xl bg-ink mx-auto mb-6 flex items-center justify-center shadow-lg shadow-blue-500/25">
+                <div className="w-24 h-24 rounded-2xl bg-fixed-ink mx-auto mb-6 flex items-center justify-center shadow-lg shadow-blue-500/25">
                   <step.icon className="w-10 h-10 text-white" />
                 </div>
                 <div
-                  className="absolute top-0 right-0 -translate-y-2 translate-x-2 bg-ink text-white text-xs font-bold w-9 h-7 rounded-full flex items-center justify-center"
+                  className="absolute top-0 right-0 -translate-y-2 translate-x-2 bg-fixed-ink text-white text-xs font-bold w-9 h-7 rounded-full flex items-center justify-center"
                   style={{ fontFamily: "var(--font-mono)" }}
                 >
                   {step.step}
@@ -587,7 +590,7 @@ export default function HomeClient({ accuracy }: { accuracy: AccuracySummary | n
       </section>
 
       {/* CTA */}
-      <section className="py-20 bg-ink">
+      <section className="py-20 bg-fixed-ink">
         <div className="max-w-4xl mx-auto px-4 text-center">
           <motion.div
             initial={{ opacity: 0, y: 24 }}
@@ -601,7 +604,7 @@ export default function HomeClient({ accuracy }: { accuracy: AccuracySummary | n
             >
               Ready to Transform Your Exam Performance?
             </h2>
-            <p className="text-blue-100 text-lg mb-8">
+            <p className="text-white/70 text-lg mb-8">
               Unlock your academic potential with GetAhead AI&apos;s precise answer sheet evaluations and question paper generators — free during beta, with a generous daily quota.
             </p>
             <Link
