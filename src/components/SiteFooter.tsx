@@ -30,11 +30,11 @@ export function SiteFooter() {
           {/* Brand */}
           <div className="col-span-2 md:col-span-2">
             <Link href="/" className="inline-flex items-center gap-2 mb-4 group">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-teal-500 flex items-center justify-center shadow-lg group-hover:shadow-blue-500/30 transition-shadow">
+              <div className="w-8 h-8 rounded-lg bg-ink flex items-center justify-center shadow-lg group-hover:shadow-blue-500/30 transition-shadow">
                 <Brain className="w-4 h-4 text-white" />
               </div>
-              <span className="text-white font-bold text-lg" style={{ fontFamily: "var(--font-poppins)" }}>
-                Get<span className="bg-gradient-to-r from-blue-400 to-teal-400 bg-clip-text text-transparent">Ahead</span>
+              <span className="text-white font-bold text-lg" style={{ fontFamily: "var(--font-display)" }}>
+                Get<span className="text-ink">Ahead</span>
               </span>
             </Link>
             <p className="text-sm leading-relaxed max-w-xs text-gray-400 mb-6">

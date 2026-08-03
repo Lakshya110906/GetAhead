@@ -30,25 +30,25 @@ export default function TeachersPage() {
   return (
     <div className="min-h-screen bg-white">
       {/* Navbar */}
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-md border-b border-gray-100">
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-white/95 border-b border-gray-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16">
           <Link href="/" className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-teal-500 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-lg bg-paper flex items-center justify-center">
               <Brain className="w-4 h-4 text-white" />
             </div>
-            <span className="font-bold text-gray-900" style={{ fontFamily: "var(--font-poppins)" }}>
-              Get<span className="bg-gradient-to-r from-blue-600 to-teal-500 bg-clip-text text-transparent">Ahead</span>
+            <span className="font-bold text-gray-900" style={{ fontFamily: "var(--font-display)" }}>
+              Get<span className="text-ink">Ahead</span>
             </span>
           </Link>
           <div className="flex items-center gap-3">
             <Link href="/login" className="text-sm text-gray-600 hover:text-gray-900 font-medium transition-colors">Sign In</Link>
-            <Link href="/signup" className="text-sm bg-gradient-to-r from-blue-600 to-teal-500 text-white font-semibold px-4 py-2 rounded-lg hover:opacity-90 transition-opacity">Get Started Free</Link>
+            <Link href="/signup" className="text-sm bg-ink text-white font-semibold px-4 py-2 rounded-lg hover:opacity-90 transition-opacity">Get Started Free</Link>
           </div>
         </div>
       </nav>
 
       {/* Hero */}
-      <section className="pt-32 pb-20 bg-gradient-to-br from-teal-50 via-green-50/30 to-blue-50/30">
+      <section className="pt-32 pb-20 bg-paper">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-16 items-center">
             <div>
@@ -56,15 +56,15 @@ export default function TeachersPage() {
                 <GraduationCap className="w-4 h-4" />
                 Built for educators
               </div>
-              <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6 leading-tight" style={{ fontFamily: "var(--font-poppins)" }}>
+              <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6 leading-tight" style={{ fontFamily: "var(--font-display)" }}>
                 Grade smarter.<br />
-                <span className="bg-gradient-to-r from-teal-600 to-blue-500 bg-clip-text text-transparent">Teach better.</span>
+                <span className="text-ink">Teach better.</span>
               </h1>
               <p className="text-xl text-gray-600 leading-relaxed mb-8">
                 GetAhead AI evaluates your students&apos; answer sheets with the consistency of an expert examiner — in seconds, not hours. Free your time for what matters: teaching.
               </p>
               <div className="flex flex-col sm:flex-row gap-3">
-                <Link href="/signup" className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-teal-600 to-blue-500 text-white font-semibold px-6 py-3 rounded-xl hover:opacity-90 transition-opacity shadow-lg">
+                <Link href="/signup" className="inline-flex items-center justify-center gap-2 bg-ink text-white font-semibold px-6 py-3 rounded-xl hover:opacity-90 transition-opacity shadow-lg">
                   Start Free <ArrowRight className="w-4 h-4" />
                 </Link>
                 <Link href="/features" className="inline-flex items-center justify-center gap-2 bg-white text-gray-700 font-medium px-6 py-3 rounded-xl border border-gray-200 hover:bg-gray-50 transition-all">
@@ -104,7 +104,7 @@ export default function TeachersPage() {
       {/* Benefits */}
       <section className="py-20 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-14">
-          <h2 className="text-3xl font-bold text-gray-900 mb-4" style={{ fontFamily: "var(--font-poppins)" }}>
+          <h2 className="text-3xl font-bold text-gray-900 mb-4" style={{ fontFamily: "var(--font-display)" }}>
             Why teachers use GetAhead AI
           </h2>
           <p className="text-gray-600 text-lg max-w-2xl mx-auto">
@@ -153,7 +153,7 @@ export default function TeachersPage() {
             const Icon = item.icon;
             return (
               <div key={item.title} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 hover:shadow-md transition-shadow">
-                <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${item.color} flex items-center justify-center mb-4`}>
+                <div className={"w-12 h-12 rounded-xl bg-ink flex items-center justify-center mb-4"}>
                   <Icon className="w-6 h-6 text-white" />
                 </div>
                 <h3 className="font-semibold text-gray-900 mb-2">{item.title}</h3>
@@ -167,7 +167,7 @@ export default function TeachersPage() {
       {/* Workflow */}
       <section className="py-20 bg-gray-50">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-3xl font-bold text-gray-900 text-center mb-12" style={{ fontFamily: "var(--font-poppins)" }}>
+          <h2 className="text-3xl font-bold text-gray-900 text-center mb-12" style={{ fontFamily: "var(--font-display)" }}>
             A typical teacher workflow
           </h2>
           <div className="grid md:grid-cols-2 gap-6 max-w-3xl mx-auto">
@@ -180,7 +180,7 @@ export default function TeachersPage() {
               { step: "6", title: "Generate follow-up paper", desc: "Create a practice paper focused on weak topics using the Question Paper Generator." },
             ].map((item) => (
               <div key={item.step} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex gap-4">
-                <div className="w-10 h-10 bg-gradient-to-br from-teal-500 to-blue-500 rounded-full flex items-center justify-center text-white font-bold flex-shrink-0">{item.step}</div>
+                <div className="w-10 h-10 bg-paper rounded-full flex items-center justify-center text-white font-bold flex-shrink-0">{item.step}</div>
                 <div>
                   <h3 className="font-semibold text-gray-900 mb-1">{item.title}</h3>
                   <p className="text-sm text-gray-600 leading-relaxed">{item.desc}</p>
@@ -195,7 +195,7 @@ export default function TeachersPage() {
       <section className="py-20 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid md:grid-cols-2 gap-12 items-center">
           <div>
-            <h2 className="text-3xl font-bold text-gray-900 mb-6" style={{ fontFamily: "var(--font-poppins)" }}>
+            <h2 className="text-3xl font-bold text-gray-900 mb-6" style={{ fontFamily: "var(--font-display)" }}>
               AI grading is more consistent than human grading
             </h2>
             <div className="space-y-4">
@@ -213,15 +213,15 @@ export default function TeachersPage() {
               ))}
             </div>
           </div>
-          <div className="bg-gradient-to-br from-teal-50 to-blue-50 rounded-2xl p-8 border border-teal-100">
+          <div className="bg-paper rounded-2xl p-8 border border-teal-100">
             <Users className="w-12 h-12 text-teal-500 mb-4" />
-            <h3 className="text-xl font-bold text-gray-900 mb-3" style={{ fontFamily: "var(--font-poppins)" }}>
+            <h3 className="text-xl font-bold text-gray-900 mb-3" style={{ fontFamily: "var(--font-display)" }}>
               For classrooms of any size
             </h3>
             <p className="text-gray-600 mb-6 leading-relaxed">
               Whether you&apos;re evaluating 5 students or 50, GetAhead AI scales with your workload. Bulk upload (multiple sheets in one go) is on the roadmap for Q3 2026.
             </p>
-            <Link href="/signup" className="inline-flex items-center gap-2 bg-gradient-to-r from-teal-600 to-blue-500 text-white font-semibold px-5 py-2.5 rounded-xl hover:opacity-90 transition-opacity text-sm">
+            <Link href="/signup" className="inline-flex items-center gap-2 bg-ink text-white font-semibold px-5 py-2.5 rounded-xl hover:opacity-90 transition-opacity text-sm">
               Start Evaluating Free <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
@@ -229,9 +229,9 @@ export default function TeachersPage() {
       </section>
 
       {/* CTA */}
-      <section className="py-24 bg-gradient-to-br from-teal-600 to-blue-600">
+      <section className="py-24 bg-ink">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl md:text-4xl font-bold text-white mb-4" style={{ fontFamily: "var(--font-poppins)" }}>
+          <h2 className="text-3xl md:text-4xl font-bold text-white mb-4" style={{ fontFamily: "var(--font-display)" }}>
             Give your students better feedback, faster
           </h2>
           <p className="text-teal-100 text-lg mb-8">

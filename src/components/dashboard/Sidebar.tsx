@@ -54,12 +54,12 @@ export function DashboardSidebar() {
         href="/"
         className={`flex items-center gap-3 px-4 py-5 border-b border-gray-100 ${collapsed ? "justify-center" : ""} hover:opacity-90 transition-opacity`}
       >
-        <div className="w-8 h-8 rounded-xl gradient-primary flex items-center justify-center flex-shrink-0">
+        <div className="w-8 h-8 rounded-xl bg-ink flex items-center justify-center flex-shrink-0">
           <Brain className="w-4 h-4 text-white" />
         </div>
         {!collapsed && (
-          <span className="font-bold text-gray-900 text-sm" style={{ fontFamily: "var(--font-poppins)" }}>
-            Get<span className="text-gradient">Ahead</span>
+          <span className="font-bold text-gray-900 text-sm" style={{ fontFamily: "var(--font-display)" }}>
+            Get<span className="text-ink">Ahead</span>
           </span>
         )}
       </Link>
@@ -76,7 +76,7 @@ export function DashboardSidebar() {
               title={collapsed ? item.label : undefined}
               className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all group ${
                 isActive
-                  ? "gradient-primary text-white shadow-sm"
+                  ? "bg-ink text-white shadow-sm"
                   : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
               } ${collapsed ? "justify-center" : ""}`}
             >
@@ -91,7 +91,7 @@ export function DashboardSidebar() {
       <div className="border-t border-gray-100 p-3 pb-16">
         {!collapsed && session?.user && (
           <div className="flex items-center gap-3 px-3 py-2 mb-2">
-            <div className="w-8 h-8 rounded-full gradient-primary flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
+            <div className="w-8 h-8 rounded-full bg-ink flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
               {session.user.name?.[0]?.toUpperCase() || "U"}
             </div>
             <div className="min-w-0">

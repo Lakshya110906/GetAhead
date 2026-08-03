@@ -84,7 +84,7 @@ export function TutorPanel({
       {!isOpen && (
         <button
           onClick={onToggle}
-          className="fixed right-6 bottom-6 z-40 bg-gradient-to-br from-blue-600 to-teal-500 hover:from-blue-700 hover:to-teal-600 text-white font-semibold p-4 rounded-full shadow-xl hover:scale-105 transition-all flex items-center gap-2 cursor-pointer no-print"
+          className="fixed right-6 bottom-6 z-40 bg-ink hover:opacity-90 text-white font-semibold p-4 rounded-full shadow-xl hover:scale-105 transition-all flex items-center gap-2 cursor-pointer no-print"
           title="Open AI Tutor"
         >
           <span className="text-sm font-semibold tracking-wide">AI Tutor</span>
@@ -133,7 +133,7 @@ export function TutorPanel({
               <div className="flex items-center gap-1.5 min-w-0 group">
                 <h2
                   className="font-bold text-gray-800 dark:text-gray-200 text-sm truncate"
-                  style={{ fontFamily: "var(--font-poppins)" }}
+                  style={{ fontFamily: "var(--font-display)" }}
                 >
                   {title}
                 </h2>

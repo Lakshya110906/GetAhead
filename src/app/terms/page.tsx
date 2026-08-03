@@ -19,31 +19,31 @@ export default function TermsPage() {
   return (
     <div className="min-h-screen bg-white">
       {/* Navbar */}
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-md border-b border-gray-100">
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-white/95 border-b border-gray-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16">
           <Link href="/" className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-teal-500 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-lg bg-ink flex items-center justify-center">
               <Brain className="w-4 h-4 text-white" />
             </div>
-            <span className="font-bold text-gray-900" style={{ fontFamily: "var(--font-poppins)" }}>
-              Get<span className="bg-gradient-to-r from-blue-600 to-teal-500 bg-clip-text text-transparent">Ahead</span>
+            <span className="font-bold text-gray-900" style={{ fontFamily: "var(--font-display)" }}>
+              Get<span className="text-ink">Ahead</span>
             </span>
           </Link>
           <div className="flex items-center gap-3">
             <Link href="/login" className="text-sm text-gray-600 hover:text-gray-900 font-medium transition-colors">Sign In</Link>
-            <Link href="/signup" className="text-sm bg-gradient-to-r from-blue-600 to-teal-500 text-white font-semibold px-4 py-2 rounded-lg hover:opacity-90 transition-opacity">Get Started Free</Link>
+            <Link href="/signup" className="text-sm bg-ink text-white font-semibold px-4 py-2 rounded-lg hover:opacity-90 transition-opacity">Get Started Free</Link>
           </div>
         </div>
       </nav>
 
       {/* Hero */}
-      <section className="pt-32 pb-12 bg-gradient-to-br from-slate-50 to-blue-50/30">
+      <section className="pt-32 pb-12 bg-paper">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="inline-flex items-center gap-2 bg-blue-100 text-blue-700 text-sm font-semibold px-4 py-1.5 rounded-full mb-6">
             <FileText className="w-4 h-4" />
             Legal agreement
           </div>
-          <h1 className="text-4xl font-bold text-gray-900 mb-4" style={{ fontFamily: "var(--font-poppins)" }}>
+          <h1 className="text-4xl font-bold text-gray-900 mb-4" style={{ fontFamily: "var(--font-display)" }}>
             Terms of Service
           </h1>
           <p className="text-gray-600 mb-3">
@@ -92,14 +92,14 @@ export default function TermsPage() {
         <div className="space-y-10">
 
           <section id="tos-1">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4" style={{ fontFamily: "var(--font-poppins)" }}>1. Acceptance of Terms</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4" style={{ fontFamily: "var(--font-display)" }}>1. Acceptance of Terms</h2>
             <p className="text-gray-700 leading-relaxed">By registering for an account or using any part of GetAhead AI, you confirm that you have read, understood, and agree to these Terms and our <Link href="/privacy" className="text-blue-600 hover:underline">Privacy Policy</Link>. If you are using GetAhead AI on behalf of an organisation (school, coaching centre, institution), you represent that you have authority to bind that organisation to these Terms.</p>
           </section>
 
           <hr className="border-gray-100" />
 
           <section id="tos-2">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4" style={{ fontFamily: "var(--font-poppins)" }}>2. Your Account</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4" style={{ fontFamily: "var(--font-display)" }}>2. Your Account</h2>
             <p className="text-gray-700 leading-relaxed mb-4">You must provide accurate information when creating your account. You are responsible for:</p>
             <ul className="list-disc pl-6 space-y-2 text-gray-700">
               <li>Maintaining the confidentiality of your password.</li>
@@ -112,7 +112,7 @@ export default function TermsPage() {
           <hr className="border-gray-100" />
 
           <section id="tos-3">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4" style={{ fontFamily: "var(--font-poppins)" }}>3. User Responsibilities</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4" style={{ fontFamily: "var(--font-display)" }}>3. User Responsibilities</h2>
             <p className="text-gray-700 leading-relaxed mb-4">By using GetAhead AI, you agree to:</p>
             <ul className="list-disc pl-6 space-y-2 text-gray-700">
               <li>Provide accurate, truthful information when creating your account.</li>
@@ -128,7 +128,7 @@ export default function TermsPage() {
           <hr className="border-gray-100" />
 
           <section id="tos-4">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4" style={{ fontFamily: "var(--font-poppins)" }}>4. Acceptable Use</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4" style={{ fontFamily: "var(--font-display)" }}>4. Acceptable Use</h2>
             <p className="text-gray-700 leading-relaxed mb-3">The following activities are explicitly prohibited on GetAhead AI:</p>
             <ul className="list-disc pl-6 space-y-2 text-gray-700">
               <li>Attempting to reverse-engineer, decompile, or scrape the platform or its AI outputs at scale.</li>
@@ -145,7 +145,7 @@ export default function TermsPage() {
           <hr className="border-gray-100" />
 
           <section id="tos-5">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4" style={{ fontFamily: "var(--font-poppins)" }}>5. AI Limitations</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4" style={{ fontFamily: "var(--font-display)" }}>5. AI Limitations</h2>
             <p className="text-gray-700 leading-relaxed mb-4">GetAhead AI uses generative AI (Google Gemini 2.5 Flash) to evaluate answer sheets and generate question papers. You acknowledge and accept the following limitations:</p>
             <ul className="list-disc pl-6 space-y-2 text-gray-700">
               <li><strong>Not infallible.</strong> AI evaluation may contain errors, particularly for highly subjective questions, niche academic topics, or unclear handwriting.</li>
@@ -159,7 +159,7 @@ export default function TermsPage() {
           <hr className="border-gray-100" />
 
           <section id="tos-6">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4" style={{ fontFamily: "var(--font-poppins)" }}>6. Intellectual Property</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4" style={{ fontFamily: "var(--font-display)" }}>6. Intellectual Property</h2>
             <p className="text-gray-700 leading-relaxed mb-4"><strong>Our IP:</strong> The GetAhead AI platform, including its design, code, branding, and AI infrastructure, is owned by GetAhead AI and protected by applicable intellectual property law. You may not copy, modify, or distribute any part of the platform without our written consent.</p>
             <p className="text-gray-700 leading-relaxed"><strong>Generated content:</strong> Question papers and evaluation reports generated by GetAhead AI for your personal use are provided to you for personal, educational use only. You may print and share individual reports for legitimate educational purposes. Commercial resale or redistribution requires written permission.</p>
           </section>
@@ -167,7 +167,7 @@ export default function TermsPage() {
           <hr className="border-gray-100" />
 
           <section id="tos-7">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4" style={{ fontFamily: "var(--font-poppins)" }}>7. Content You Upload</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4" style={{ fontFamily: "var(--font-display)" }}>7. Content You Upload</h2>
             <p className="text-gray-700 leading-relaxed mb-4">You retain full ownership of the answer sheet content you upload. By uploading content to GetAhead AI, you grant us a limited, non-exclusive licence to process that content solely for the purpose of providing the evaluation service (including sending it to the Gemini API).</p>
             <p className="text-gray-700 leading-relaxed">You represent that you have the right to upload the content you submit. Do not upload content containing personal data of minors without appropriate consent, confidential third-party material, or content that infringes third-party copyright.</p>
           </section>
@@ -175,14 +175,14 @@ export default function TermsPage() {
           <hr className="border-gray-100" />
 
           <section id="tos-8">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4" style={{ fontFamily: "var(--font-poppins)" }}>8. Privacy</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4" style={{ fontFamily: "var(--font-display)" }}>8. Privacy</h2>
             <p className="text-gray-700 leading-relaxed">Your use of GetAhead AI is also governed by our <Link href="/privacy" className="text-blue-600 hover:underline">Privacy Policy</Link>, which is incorporated into these Terms by reference. By using the Service, you consent to the collection and use of data as described in the Privacy Policy.</p>
           </section>
 
           <hr className="border-gray-100" />
 
           <section id="tos-9">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4" style={{ fontFamily: "var(--font-poppins)" }}>9. Service Availability</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4" style={{ fontFamily: "var(--font-display)" }}>9. Service Availability</h2>
             <p className="text-gray-700 leading-relaxed mb-4">We aim to keep GetAhead AI available 24/7 but do not guarantee uninterrupted service. The platform may be unavailable during:</p>
             <ul className="list-disc pl-6 space-y-2 text-gray-700">
               <li>Scheduled maintenance (we will give advance notice where possible)</li>
@@ -195,7 +195,7 @@ export default function TermsPage() {
           <hr className="border-gray-100" />
 
           <section id="tos-10">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4" style={{ fontFamily: "var(--font-poppins)" }}>10. Termination</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4" style={{ fontFamily: "var(--font-display)" }}>10. Termination</h2>
             <p className="text-gray-700 leading-relaxed mb-4"><strong>By you:</strong> You may delete your account at any time from Settings. Deletion is immediate and permanent.</p>
             <p className="text-gray-700 leading-relaxed mb-4"><strong>By us:</strong> We reserve the right to suspend or terminate your account, with or without notice, if we determine that you have violated these Terms, engaged in fraudulent or abusive behaviour, or pose a security risk to the platform or other users.</p>
             <p className="text-gray-700 leading-relaxed">Upon termination, your access to the platform and all associated data will be removed in accordance with our retention policy described in the Privacy Policy.</p>
@@ -204,7 +204,7 @@ export default function TermsPage() {
           <hr className="border-gray-100" />
 
           <section id="tos-11">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4" style={{ fontFamily: "var(--font-poppins)" }}>11. Disclaimers</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4" style={{ fontFamily: "var(--font-display)" }}>11. Disclaimers</h2>
             <p className="text-gray-700 leading-relaxed mb-4">The Service is provided &quot;as is&quot; and &quot;as available&quot; without warranties of any kind, express or implied. We specifically disclaim:</p>
             <ul className="list-disc pl-6 space-y-2 text-gray-700">
               <li>Any warranty of merchantability, fitness for a particular purpose, or non-infringement.</li>
@@ -216,7 +216,7 @@ export default function TermsPage() {
           <hr className="border-gray-100" />
 
           <section id="tos-12">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4" style={{ fontFamily: "var(--font-poppins)" }}>12. Limitation of Liability</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4" style={{ fontFamily: "var(--font-display)" }}>12. Limitation of Liability</h2>
             <p className="text-gray-700 leading-relaxed mb-4">To the maximum extent permitted by applicable law, GetAhead AI and its operators shall not be liable for:</p>
             <ul className="list-disc pl-6 space-y-2 text-gray-700">
               <li>Indirect, incidental, consequential, special, or punitive damages.</li>
@@ -229,28 +229,28 @@ export default function TermsPage() {
           <hr className="border-gray-100" />
 
           <section id="tos-13">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4" style={{ fontFamily: "var(--font-poppins)" }}>13. Indemnification</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4" style={{ fontFamily: "var(--font-display)" }}>13. Indemnification</h2>
             <p className="text-gray-700 leading-relaxed">You agree to indemnify, defend, and hold harmless GetAhead AI and its operators from any claims, damages, losses, or expenses (including reasonable legal fees) arising from: your violation of these Terms, your use of the Service, content you upload, or your violation of any third party&apos;s rights.</p>
           </section>
 
           <hr className="border-gray-100" />
 
           <section id="tos-14">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4" style={{ fontFamily: "var(--font-poppins)" }}>14. Changes to Terms</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4" style={{ fontFamily: "var(--font-display)" }}>14. Changes to Terms</h2>
             <p className="text-gray-700 leading-relaxed">We may update these Terms at any time. When we make significant changes, we will notify registered users via email at least 14 days before the changes take effect and update the &quot;Effective date&quot; at the top of this page. Your continued use of the Service after the effective date constitutes acceptance of the updated Terms.</p>
           </section>
 
           <hr className="border-gray-100" />
 
           <section id="tos-15">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4" style={{ fontFamily: "var(--font-poppins)" }}>15. Governing Law</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4" style={{ fontFamily: "var(--font-display)" }}>15. Governing Law</h2>
             <p className="text-gray-700 leading-relaxed">These Terms are governed by and construed in accordance with the laws of India. Any disputes arising from these Terms or your use of GetAhead AI shall be subject to the exclusive jurisdiction of the courts in India.</p>
           </section>
 
           <hr className="border-gray-100" />
 
           <section id="tos-16">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4" style={{ fontFamily: "var(--font-poppins)" }}>16. Contact</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4" style={{ fontFamily: "var(--font-display)" }}>16. Contact</h2>
             <p className="text-gray-700 leading-relaxed mb-4">For questions about these Terms:</p>
             <div className="bg-gray-50 rounded-2xl border border-gray-100 p-6 space-y-2">
               <p className="text-gray-700"><strong>GetAhead AI</strong></p>

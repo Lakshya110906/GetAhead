@@ -34,7 +34,7 @@ export function FlashcardMode({ cards }: FlashcardModeProps) {
   };
 
   return (
-    <div className="bg-gradient-to-br from-indigo-50/50 to-purple-50/30 dark:from-indigo-950/10 dark:to-purple-950/10 border border-indigo-100 dark:border-indigo-900/40 rounded-2xl p-4 mt-3 max-w-full">
+    <div className="bg-indigo-50/50 dark:bg-indigo-950/10 border border-indigo-100 dark:border-indigo-900/40 rounded-2xl p-4 mt-3 max-w-full">
       <div className="flex items-center justify-between mb-3 text-xs font-semibold text-indigo-600 dark:text-indigo-400">
         <span>FLASHCARD INDEX</span>
         <span>{index + 1} of {cards.length}</span>

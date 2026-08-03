@@ -111,7 +111,7 @@ export default function SupportTicketsPage() {
             {/* Header */}
             <div className="flex flex-wrap items-center justify-between gap-4">
               <div>
-                <h1 className="text-2xl font-bold text-gray-900 dark:text-white" style={{ fontFamily: "var(--font-poppins)" }}>
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-white" style={{ fontFamily: "var(--font-display)" }}>
                   My Support Tickets
                 </h1>
                 <p className="text-gray-500 text-sm">
@@ -120,7 +120,7 @@ export default function SupportTicketsPage() {
               </div>
               <Link 
                 href="/contact"
-                className="inline-flex items-center gap-1.5 bg-gradient-to-r from-blue-600 to-teal-500 text-white text-sm font-semibold px-4 py-2.5 rounded-xl hover:opacity-95 shadow-md shadow-blue-500/10 cursor-pointer"
+                className="inline-flex items-center gap-1.5 bg-ink text-white text-sm font-semibold px-4 py-2.5 rounded-xl hover:opacity-95 shadow-md shadow-blue-500/10 cursor-pointer"
               >
                 <Plus className="w-4 h-4" /> Create New Ticket
               </Link>
@@ -184,7 +184,7 @@ export default function SupportTicketsPage() {
                 <div className="w-14 h-14 rounded-2xl bg-blue-50 dark:bg-blue-950/20 flex items-center justify-center text-blue-500 mx-auto mb-4 border border-blue-100/50 dark:border-blue-900/30">
                   <MessageSquare className="w-6 h-6" />
                 </div>
-                <h3 className="font-bold text-gray-900 dark:text-white text-base mb-1" style={{ fontFamily: "var(--font-poppins)" }}>
+                <h3 className="font-bold text-gray-900 dark:text-white text-base mb-1" style={{ fontFamily: "var(--font-display)" }}>
                   No tickets found
                 </h3>
                 <p className="text-gray-500 text-sm max-w-xs mx-auto mb-5">
@@ -195,7 +195,7 @@ export default function SupportTicketsPage() {
                 {tickets.length === 0 && (
                   <Link
                     href="/contact"
-                    className="inline-flex items-center gap-1.5 bg-gradient-to-r from-blue-600 to-teal-500 text-white text-xs font-semibold px-4 py-2.5 rounded-xl hover:opacity-95 shadow-md shadow-blue-500/10 cursor-pointer"
+                    className="inline-flex items-center gap-1.5 bg-ink text-white text-xs font-semibold px-4 py-2.5 rounded-xl hover:opacity-95 shadow-md shadow-blue-500/10 cursor-pointer"
                   >
                     <Plus className="w-4 h-4" /> Create Ticket
                   </Link>

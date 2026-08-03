@@ -241,13 +241,13 @@ export default function AdminTicketDetailPage() {
       <div className="min-h-screen bg-gray-50 dark:bg-black flex items-center justify-center p-6">
         <div className="max-w-md text-center bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-8 shadow-sm">
           <ShieldAlert className="w-12 h-12 text-red-500 mx-auto mb-4 animate-bounce" />
-          <h2 className="font-bold text-gray-900 dark:text-white text-lg mb-2" style={{ fontFamily: "var(--font-poppins)" }}>
+          <h2 className="font-bold text-gray-900 dark:text-white text-lg mb-2" style={{ fontFamily: "var(--font-display)" }}>
             Access Denied / Not Found
           </h2>
           <p className="text-gray-500 text-sm mb-6">{error || "Admin verification failed or ticket missing."}</p>
           <button
             onClick={() => router.push("/admin")}
-            className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-600 to-teal-500 text-white font-semibold px-5 py-2.5 rounded-xl hover:opacity-90 transition-opacity text-sm shadow-md cursor-pointer"
+            className="inline-flex items-center gap-2 bg-ink text-white font-semibold px-5 py-2.5 rounded-xl hover:opacity-90 transition-opacity text-sm shadow-md cursor-pointer"
           >
             <ArrowLeft className="w-4 h-4" /> Back to Admin
           </button>
@@ -349,7 +349,7 @@ export default function AdminTicketDetailPage() {
                     >
                       <div className={`w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 ${
                         isSupport 
-                          ? "bg-gradient-to-br from-blue-500 to-teal-500 text-white" 
+                          ? "bg-ink text-white" 
                           : "bg-blue-600 text-white"
                       }`}>
                         {isSupport ? <CheckCircle className="w-4 h-4" /> : <User className="w-4 h-4" />}
@@ -441,7 +441,7 @@ export default function AdminTicketDetailPage() {
           
           {/* Action Box Card */}
           <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-5 shadow-sm space-y-4">
-            <h3 className="font-bold text-gray-900 dark:text-white text-sm" style={{ fontFamily: "var(--font-poppins)" }}>
+            <h3 className="font-bold text-gray-900 dark:text-white text-sm" style={{ fontFamily: "var(--font-display)" }}>
               Admin Actions
             </h3>
 
@@ -518,7 +518,7 @@ export default function AdminTicketDetailPage() {
 
           {/* User & Metadata Details Summary */}
           <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-5 shadow-sm space-y-4">
-            <h3 className="font-bold text-gray-900 dark:text-white text-sm" style={{ fontFamily: "var(--font-poppins)" }}>
+            <h3 className="font-bold text-gray-900 dark:text-white text-sm" style={{ fontFamily: "var(--font-display)" }}>
               Ticket Details
             </h3>
 

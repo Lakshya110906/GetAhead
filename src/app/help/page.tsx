@@ -25,7 +25,7 @@ const categories = [
     id: "account",
     icon: User,
     label: "Account",
-    color: "from-blue-500 to-blue-600",
+    color: "bg-blue-600",
     bg: "bg-blue-50",
     textColor: "text-blue-700",
     articles: [
@@ -51,7 +51,7 @@ const categories = [
     id: "auth",
     icon: Lock,
     label: "Authentication",
-    color: "from-indigo-500 to-indigo-600",
+    color: "bg-indigo-600",
     bg: "bg-indigo-50",
     textColor: "text-indigo-700",
     articles: [
@@ -77,7 +77,7 @@ const categories = [
     id: "uploads",
     icon: Upload,
     label: "Uploads",
-    color: "from-teal-500 to-teal-600",
+    color: "bg-teal-600",
     bg: "bg-teal-50",
     textColor: "text-teal-700",
     articles: [
@@ -103,7 +103,7 @@ const categories = [
     id: "reports",
     icon: FileText,
     label: "Reports",
-    color: "from-green-500 to-green-600",
+    color: "bg-green-600",
     bg: "bg-green-50",
     textColor: "text-green-700",
     articles: [
@@ -129,7 +129,7 @@ const categories = [
     id: "question-papers",
     icon: GraduationCap,
     label: "Question Papers",
-    color: "from-purple-500 to-purple-600",
+    color: "bg-purple-600",
     bg: "bg-purple-50",
     textColor: "text-purple-700",
     articles: [
@@ -151,7 +151,7 @@ const categories = [
     id: "dashboard",
     icon: LayoutDashboard,
     label: "Dashboard",
-    color: "from-slate-500 to-slate-600",
+    color: "bg-slate-600",
     bg: "bg-slate-50",
     textColor: "text-slate-700",
     articles: [
@@ -161,7 +161,7 @@ const categories = [
       },
       {
         title: "How to switch between dark and light mode",
-        content: `In the sidebar, scroll to the bottom to find the Theme switcher. You can choose Default (light), Dark, Emerald, or Sunset themes. Your preference is saved automatically and persists across sessions.`,
+        content: `In the sidebar, scroll to the bottom to find the Theme switcher. You can choose Light or Dark. Your preference is saved automatically and persists across sessions.`,
       },
       {
         title: "I can't see my evaluation in the dashboard",
@@ -173,7 +173,7 @@ const categories = [
     id: "ai",
     icon: Cpu,
     label: "AI Evaluation",
-    color: "from-orange-500 to-orange-600",
+    color: "bg-orange-600",
     bg: "bg-orange-50",
     textColor: "text-orange-700",
     articles: [
@@ -195,7 +195,7 @@ const categories = [
     id: "troubleshooting",
     icon: AlertTriangle,
     label: "Troubleshooting",
-    color: "from-red-500 to-red-600",
+    color: "bg-red-600",
     bg: "bg-red-50",
     textColor: "text-red-700",
     articles: [
@@ -237,27 +237,27 @@ export default function HelpCenterPage() {
   return (
     <div className="min-h-screen bg-white">
       {/* Navbar */}
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-md border-b border-gray-100">
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-white/95 border-b border-gray-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16">
           <Link href="/" className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-teal-500 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-lg bg-ink flex items-center justify-center">
               <Brain className="w-4 h-4 text-white" />
             </div>
-            <span className="font-bold text-gray-900" style={{ fontFamily: "var(--font-poppins)" }}>
-              Get<span className="bg-gradient-to-r from-blue-600 to-teal-500 bg-clip-text text-transparent">Ahead</span>
+            <span className="font-bold text-gray-900" style={{ fontFamily: "var(--font-display)" }}>
+              Get<span className="text-ink">Ahead</span>
             </span>
           </Link>
           <div className="flex items-center gap-3">
             <Link href="/login" className="text-sm text-gray-600 hover:text-gray-900 font-medium transition-colors">Sign In</Link>
-            <Link href="/signup" className="text-sm bg-gradient-to-r from-blue-600 to-teal-500 text-white font-semibold px-4 py-2 rounded-lg hover:opacity-90 transition-opacity">Get Started Free</Link>
+            <Link href="/signup" className="text-sm bg-ink text-white font-semibold px-4 py-2 rounded-lg hover:opacity-90 transition-opacity">Get Started Free</Link>
           </div>
         </div>
       </nav>
 
       {/* Hero + Search */}
-      <section className="pt-32 pb-16 bg-gradient-to-br from-blue-600 to-teal-500">
+      <section className="pt-32 pb-16 bg-ink">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h1 className="text-4xl md:text-5xl font-bold text-white mb-4" style={{ fontFamily: "var(--font-poppins)" }}>
+          <h1 className="text-4xl md:text-5xl font-bold text-white mb-4" style={{ fontFamily: "var(--font-display)" }}>
             How can we help?
           </h1>
           <p className="text-blue-100 text-lg mb-8">
@@ -347,11 +347,11 @@ export default function HelpCenterPage() {
             {/* Articles */}
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-3 mb-6">
-                <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${currentCat.color} flex items-center justify-center`}>
+                <div className={`w-10 h-10 rounded-xl ${currentCat.color} flex items-center justify-center`}>
                   <currentCat.icon className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold text-gray-900" style={{ fontFamily: "var(--font-poppins)" }}>{currentCat.label}</h2>
+                  <h2 className="text-xl font-bold text-gray-900" style={{ fontFamily: "var(--font-display)" }}>{currentCat.label}</h2>
                   <p className="text-sm text-gray-500">{currentCat.articles.length} articles</p>
                 </div>
               </div>
@@ -387,13 +387,13 @@ export default function HelpCenterPage() {
       <section className="py-16 bg-gray-50">
         <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <Mail className="w-10 h-10 text-blue-500 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-gray-900 mb-3" style={{ fontFamily: "var(--font-poppins)" }}>
+          <h2 className="text-2xl font-bold text-gray-900 mb-3" style={{ fontFamily: "var(--font-display)" }}>
             Can&apos;t find your answer?
           </h2>
           <p className="text-gray-600 mb-6">
             Our support team responds within 24 hours on weekdays.
           </p>
-          <Link href="/contact" className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-600 to-teal-500 text-white font-semibold px-6 py-3 rounded-xl hover:opacity-90 transition-opacity">
+          <Link href="/contact" className="inline-flex items-center gap-2 bg-ink text-white font-semibold px-6 py-3 rounded-xl hover:opacity-90 transition-opacity">
             Contact Support <ArrowRight className="w-4 h-4" />
           </Link>
         </div>

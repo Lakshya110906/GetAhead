@@ -103,12 +103,12 @@ function LoginForm() {
   return (
     <div className="min-h-screen flex">
       {/* Left Panel */}
-      <div className="hidden lg:flex lg:w-1/2 gradient-primary flex-col justify-between p-12 text-white">
+      <div className="hidden lg:flex lg:w-1/2 bg-ink flex-col justify-between p-12 text-white">
         <Link href="/" className="flex items-center gap-2">
           <div className="w-9 h-9 bg-white/20 rounded-xl flex items-center justify-center">
             <Brain className="w-5 h-5 text-white" />
           </div>
-          <span className="text-xl font-bold" style={{ fontFamily: "var(--font-poppins)" }}>
+          <span className="text-xl font-bold" style={{ fontFamily: "var(--font-display)" }}>
             GetAhead AI
           </span>
         </Link>
@@ -116,7 +116,7 @@ function LoginForm() {
         <div>
           <h2
             className="text-4xl font-bold mb-4 leading-tight"
-            style={{ fontFamily: "var(--font-poppins)" }}
+            style={{ fontFamily: "var(--font-display)" }}
           >
             Welcome back to your AI study companion
           </h2>
@@ -150,17 +150,17 @@ function LoginForm() {
           className="w-full max-w-md"
         >
           <div className="lg:hidden flex items-center gap-2 mb-8">
-            <div className="w-8 h-8 rounded-xl gradient-primary flex items-center justify-center">
+            <div className="w-8 h-8 rounded-xl bg-ink flex items-center justify-center">
               <Brain className="w-4 h-4 text-white" />
             </div>
-            <span className="font-bold text-gray-900" style={{ fontFamily: "var(--font-poppins)" }}>
+            <span className="font-bold text-gray-900" style={{ fontFamily: "var(--font-display)" }}>
               GetAhead AI
             </span>
           </div>
 
           <h1
             className="text-3xl font-bold text-gray-900 mb-2"
-            style={{ fontFamily: "var(--font-poppins)" }}
+            style={{ fontFamily: "var(--font-display)" }}
           >
             Sign In
           </h1>
@@ -274,7 +274,7 @@ function LoginForm() {
               id="login-submit"
               type="submit"
               disabled={loading}
-              className="w-full gradient-primary text-white font-semibold py-3 rounded-xl hover:opacity-90 transition-opacity flex items-center justify-center gap-2 disabled:opacity-60"
+              className="w-full bg-ink text-white font-semibold py-3 rounded-xl hover:opacity-90 transition-opacity flex items-center justify-center gap-2 disabled:opacity-60"
             >
               {loading ? (
                 <Loader2 className="w-4 h-4 animate-spin" />

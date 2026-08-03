@@ -8,7 +8,7 @@ import {
 } from "recharts";
 import { TrendingUp, BarChart3, Target, Award, Loader2 } from "lucide-react";
 
-const COLORS = ["#2563EB", "#14B8A6", "#22C55E", "#F59E0B", "#EF4444", "#8B5CF6"];
+const COLORS = ["var(--ink)", "var(--tick)", "var(--graphite)", "var(--examiner)"];
 
 
 
@@ -48,7 +48,7 @@ export default function AnalyticsPage() {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900" style={{ fontFamily: "var(--font-poppins)" }}>
+          <h1 className="text-2xl font-bold text-gray-900" style={{ fontFamily: "var(--font-display)" }}>
             Analytics
           </h1>
           <p className="text-gray-500 text-sm">Deep dive into your academic performance</p>
@@ -58,7 +58,7 @@ export default function AnalyticsPage() {
           <div className="w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
             <TrendingUp className="w-8 h-8 text-blue-600" />
           </div>
-          <h3 className="text-lg font-bold text-gray-900 mb-1" style={{ fontFamily: "var(--font-poppins)" }}>
+          <h3 className="text-lg font-bold text-gray-900 mb-1" style={{ fontFamily: "var(--font-display)" }}>
             No Academic Data Yet
           </h3>
           <p className="text-gray-500 text-sm max-w-xs mx-auto mb-6">
@@ -66,7 +66,7 @@ export default function AnalyticsPage() {
           </p>
           <Link
             href="/upload"
-            className="inline-flex items-center gap-2 gradient-primary text-white font-semibold px-6 py-3 rounded-xl hover:opacity-90 transition-opacity text-sm shadow-md"
+            className="inline-flex items-center gap-2 bg-ink text-white font-semibold px-6 py-3 rounded-xl hover:opacity-90 transition-opacity text-sm shadow-md"
           >
             <BarChart3 className="w-4 h-4" /> Start Evaluation
           </Link>
@@ -78,7 +78,7 @@ export default function AnalyticsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900" style={{ fontFamily: "var(--font-poppins)" }}>
+        <h1 className="text-2xl font-bold text-gray-900" style={{ fontFamily: "var(--font-display)" }}>
           Analytics
         </h1>
         <p className="text-gray-500 text-sm">Deep dive into your academic performance</p>
@@ -99,7 +99,7 @@ export default function AnalyticsPage() {
                 <stat.icon className={`w-4 h-4 ${stat.color}`} />
               </div>
             </div>
-            <p className={`text-3xl font-bold ${stat.color}`} style={{ fontFamily: "var(--font-poppins)" }}>
+            <p className={`text-3xl font-bold font-mono ${stat.color}`} style={{ fontFamily: "var(--font-display)" }}>
               {stat.value}
             </p>
           </div>
@@ -108,22 +108,22 @@ export default function AnalyticsPage() {
 
       {/* Score Trend */}
       <div className="bg-white rounded-2xl border border-gray-100 card-shadow-md p-6">
-        <h2 className="text-lg font-bold text-gray-900 mb-5" style={{ fontFamily: "var(--font-poppins)" }}>
+        <h2 className="text-lg font-bold text-gray-900 mb-5" style={{ fontFamily: "var(--font-display)" }}>
           Monthly Score Trend
         </h2>
         <div className="h-72">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={monthly}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-              <XAxis dataKey="month" tick={{ fontSize: 12, fill: "#6b7280" }} />
-              <YAxis domain={[0, 100]} tick={{ fontSize: 12, fill: "#6b7280" }} />
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--rule)" />
+              <XAxis dataKey="month" tick={{ fontSize: 12, fill: "var(--graphite)" }} />
+              <YAxis domain={[0, 100]} tick={{ fontSize: 12, fill: "var(--graphite)" }} />
               <Tooltip
-                contentStyle={{ borderRadius: "12px", border: "1px solid #e5e7eb", fontSize: 12 }}
+                contentStyle={{ borderRadius: "12px", border: "1px solid var(--rule)", backgroundColor: "var(--paper)", color: "var(--ink)", fontSize: 12 }}
                 formatter={(value) => [`${value}%`, "Avg Score"]}
               />
-              <Line type="monotone" dataKey="score" stroke="#2563EB" strokeWidth={3}
-                dot={{ fill: "#2563EB", strokeWidth: 2, r: 5 }}
-                activeDot={{ r: 8, fill: "#2563EB" }}
+              <Line type="monotone" dataKey="score" stroke="var(--ink)" strokeWidth={3}
+                dot={{ fill: "var(--ink)", strokeWidth: 2, r: 5 }}
+                activeDot={{ r: 8, fill: "var(--ink)" }}
               />
             </LineChart>
           </ResponsiveContainer>
@@ -133,17 +133,17 @@ export default function AnalyticsPage() {
       {/* Subject Charts */}
       <div className="grid lg:grid-cols-2 gap-6">
         <div className="bg-white rounded-2xl border border-gray-100 card-shadow-md p-6">
-          <h2 className="text-lg font-bold text-gray-900 mb-5" style={{ fontFamily: "var(--font-poppins)" }}>
+          <h2 className="text-lg font-bold text-gray-900 mb-5" style={{ fontFamily: "var(--font-display)" }}>
             Subject Performance
           </h2>
           <div className="h-60">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={subjects} layout="vertical">
-                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" horizontal={false} />
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--rule)" horizontal={false} />
                 <XAxis type="number" domain={[0, 100]} tick={{ fontSize: 11 }} />
-                <YAxis type="category" dataKey="subject" tick={{ fontSize: 11, fill: "#6b7280" }} width={90} />
+                <YAxis type="category" dataKey="subject" tick={{ fontSize: 11, fill: "var(--graphite)" }} width={90} />
                 <Tooltip
-                  contentStyle={{ borderRadius: "12px", border: "1px solid #e5e7eb", fontSize: 12 }}
+                  contentStyle={{ borderRadius: "12px", border: "1px solid var(--rule)", backgroundColor: "var(--paper)", color: "var(--ink)", fontSize: 12 }}
                   formatter={(value) => [`${value}%`, "Avg Score"]}
                 />
                 <Bar dataKey="avgScore" radius={[0, 6, 6, 0]}>
@@ -157,7 +157,7 @@ export default function AnalyticsPage() {
         </div>
 
         <div className="bg-white rounded-2xl border border-gray-100 card-shadow-md p-6">
-          <h2 className="text-lg font-bold text-gray-900 mb-5" style={{ fontFamily: "var(--font-poppins)" }}>
+          <h2 className="text-lg font-bold text-gray-900 mb-5" style={{ fontFamily: "var(--font-display)" }}>
             Evaluations by Subject
           </h2>
           <div className="h-60">
@@ -177,7 +177,7 @@ export default function AnalyticsPage() {
                   ))}
                 </Pie>
                 <Tooltip
-                  contentStyle={{ borderRadius: "12px", border: "1px solid #e5e7eb", fontSize: 12 }}
+                  contentStyle={{ borderRadius: "12px", border: "1px solid var(--rule)", backgroundColor: "var(--paper)", color: "var(--ink)", fontSize: 12 }}
                   formatter={(value, name) => [value, name]}
                 />
                 <Legend iconType="circle" iconSize={10} />
@@ -189,19 +189,19 @@ export default function AnalyticsPage() {
 
       {/* Evaluations Count Chart */}
       <div className="bg-white rounded-2xl border border-gray-100 card-shadow-md p-6">
-        <h2 className="text-lg font-bold text-gray-900 mb-5" style={{ fontFamily: "var(--font-poppins)" }}>
+        <h2 className="text-lg font-bold text-gray-900 mb-5" style={{ fontFamily: "var(--font-display)" }}>
           Evaluations per Month
         </h2>
         <div className="h-52">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={monthly}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-              <XAxis dataKey="month" tick={{ fontSize: 12, fill: "#6b7280" }} />
-              <YAxis tick={{ fontSize: 12, fill: "#6b7280" }} />
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--rule)" />
+              <XAxis dataKey="month" tick={{ fontSize: 12, fill: "var(--graphite)" }} />
+              <YAxis tick={{ fontSize: 12, fill: "var(--graphite)" }} />
               <Tooltip
-                contentStyle={{ borderRadius: "12px", border: "1px solid #e5e7eb", fontSize: 12 }}
+                contentStyle={{ borderRadius: "12px", border: "1px solid var(--rule)", backgroundColor: "var(--paper)", color: "var(--ink)", fontSize: 12 }}
               />
-              <Bar dataKey="evaluations" fill="#14B8A6" radius={[6, 6, 0, 0]} />
+              <Bar dataKey="evaluations" fill="var(--tick)" radius={[6, 6, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>

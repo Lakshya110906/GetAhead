@@ -20,31 +20,31 @@ export default function PrivacyPage() {
   return (
     <div className="min-h-screen bg-white">
       {/* Navbar */}
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-md border-b border-gray-100">
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-white/95 border-b border-gray-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16">
           <Link href="/" className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-teal-500 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-lg bg-ink flex items-center justify-center">
               <Brain className="w-4 h-4 text-white" />
             </div>
-            <span className="font-bold text-gray-900" style={{ fontFamily: "var(--font-poppins)" }}>
-              Get<span className="bg-gradient-to-r from-blue-600 to-teal-500 bg-clip-text text-transparent">Ahead</span>
+            <span className="font-bold text-gray-900" style={{ fontFamily: "var(--font-display)" }}>
+              Get<span className="text-ink">Ahead</span>
             </span>
           </Link>
           <div className="flex items-center gap-3">
             <Link href="/login" className="text-sm text-gray-600 hover:text-gray-900 font-medium transition-colors">Sign In</Link>
-            <Link href="/signup" className="text-sm bg-gradient-to-r from-blue-600 to-teal-500 text-white font-semibold px-4 py-2 rounded-lg hover:opacity-90 transition-opacity">Get Started Free</Link>
+            <Link href="/signup" className="text-sm bg-ink text-white font-semibold px-4 py-2 rounded-lg hover:opacity-90 transition-opacity">Get Started Free</Link>
           </div>
         </div>
       </nav>
 
       {/* Hero */}
-      <section className="pt-32 pb-12 bg-gradient-to-br from-slate-50 to-blue-50/30">
+      <section className="pt-32 pb-12 bg-paper">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="inline-flex items-center gap-2 bg-blue-100 text-blue-700 text-sm font-semibold px-4 py-1.5 rounded-full mb-6">
             <Shield className="w-4 h-4" />
             Your privacy matters
           </div>
-          <h1 className="text-4xl font-bold text-gray-900 mb-4" style={{ fontFamily: "var(--font-poppins)" }}>
+          <h1 className="text-4xl font-bold text-gray-900 mb-4" style={{ fontFamily: "var(--font-display)" }}>
             Privacy Policy
           </h1>
           <p className="text-gray-600 mb-3">
@@ -90,7 +90,7 @@ export default function PrivacyPage() {
         <div className="prose prose-gray max-w-none space-y-10">
 
           <section id="section-1">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4" style={{ fontFamily: "var(--font-poppins)" }}>1. Information We Collect</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4" style={{ fontFamily: "var(--font-display)" }}>1. Information We Collect</h2>
             <h3 className="text-lg font-semibold text-gray-900 mb-2">a) Account Information</h3>
             <p className="text-gray-700 leading-relaxed mb-4">When you create an account, we collect: your full name, email address, hashed password (we never store plain-text passwords), and your selected role (Student, Teacher, or Institution).</p>
             <h3 className="text-lg font-semibold text-gray-900 mb-2">b) Evaluation Data</h3>
@@ -106,7 +106,7 @@ export default function PrivacyPage() {
           <hr className="border-gray-100" />
 
           <section id="section-2">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4" style={{ fontFamily: "var(--font-poppins)" }}>2. Why We Collect It</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4" style={{ fontFamily: "var(--font-display)" }}>2. Why We Collect It</h2>
             <ul className="space-y-3 text-gray-700">
               {[
                 { label: "Account data", reason: "To create and manage your account, authenticate you, and allow you to access your evaluations." },
@@ -126,7 +126,7 @@ export default function PrivacyPage() {
           <hr className="border-gray-100" />
 
           <section id="section-3">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4" style={{ fontFamily: "var(--font-poppins)" }}>3. How We Use Your Data</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4" style={{ fontFamily: "var(--font-display)" }}>3. How We Use Your Data</h2>
             <p className="text-gray-700 leading-relaxed mb-4">We use your data solely to provide and improve the GetAhead AI service. Specifically:</p>
             <ul className="list-disc pl-6 space-y-2 text-gray-700">
               <li>To authenticate you and maintain your session</li>
@@ -143,7 +143,7 @@ export default function PrivacyPage() {
           <hr className="border-gray-100" />
 
           <section id="section-4">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4" style={{ fontFamily: "var(--font-poppins)" }}>4. AI Processing</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4" style={{ fontFamily: "var(--font-display)" }}>4. AI Processing</h2>
             <p className="text-gray-700 leading-relaxed mb-4">GetAhead AI uses the Google Gemini API to evaluate answer sheets and generate question papers. When you submit an evaluation:</p>
             <ul className="list-disc pl-6 space-y-2 text-gray-700">
               <li>The OCR-extracted text from your answer sheet is sent to the Gemini API as part of a structured prompt.</li>
@@ -156,7 +156,7 @@ export default function PrivacyPage() {
           <hr className="border-gray-100" />
 
           <section id="section-5">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4" style={{ fontFamily: "var(--font-poppins)" }}>5. Cookies</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4" style={{ fontFamily: "var(--font-display)" }}>5. Cookies</h2>
             <p className="text-gray-700 leading-relaxed mb-4">GetAhead AI uses the following cookies:</p>
             <div className="overflow-x-auto">
               <table className="w-full text-sm border border-gray-100 rounded-xl overflow-hidden">
@@ -188,7 +188,7 @@ export default function PrivacyPage() {
           <hr className="border-gray-100" />
 
           <section id="section-6">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4" style={{ fontFamily: "var(--font-poppins)" }}>6. Authentication &amp; Sessions</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4" style={{ fontFamily: "var(--font-display)" }}>6. Authentication &amp; Sessions</h2>
             <p className="text-gray-700 leading-relaxed mb-4">GetAhead AI uses NextAuth (Auth.js) with database-backed sessions. This means:</p>
             <ul className="list-disc pl-6 space-y-2 text-gray-700">
               <li>Your session is stored as a record in our secure database — not as a browser-decodable JWT.</li>
@@ -202,7 +202,7 @@ export default function PrivacyPage() {
           <hr className="border-gray-100" />
 
           <section id="section-7">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4" style={{ fontFamily: "var(--font-poppins)" }}>7. Data Sharing</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4" style={{ fontFamily: "var(--font-display)" }}>7. Data Sharing</h2>
             <p className="text-gray-700 leading-relaxed mb-4">We do not sell, rent, or trade your personal data. We share data only with the following trusted sub-processors, strictly as required to operate the service:</p>
             <ul className="list-disc pl-6 space-y-2 text-gray-700">
               <li><strong>Aiven Cloud</strong> — MySQL database hosting (data encrypted at rest, SOC 2 compliant).</li>
@@ -216,7 +216,7 @@ export default function PrivacyPage() {
           <hr className="border-gray-100" />
 
           <section id="section-8">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4" style={{ fontFamily: "var(--font-poppins)" }}>8. Data Retention</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4" style={{ fontFamily: "var(--font-display)" }}>8. Data Retention</h2>
             <p className="text-gray-700 leading-relaxed mb-4">We retain your data for as long as your account is active. Specifically:</p>
             <ul className="list-disc pl-6 space-y-2 text-gray-700">
               <li>Account data and evaluations are retained indefinitely while your account is active.</li>
@@ -229,7 +229,7 @@ export default function PrivacyPage() {
           <hr className="border-gray-100" />
 
           <section id="section-9">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4" style={{ fontFamily: "var(--font-poppins)" }}>9. Your Rights</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4" style={{ fontFamily: "var(--font-display)" }}>9. Your Rights</h2>
             <p className="text-gray-700 leading-relaxed mb-4">You have the following rights regarding your personal data:</p>
             <ul className="list-disc pl-6 space-y-2 text-gray-700">
               <li><strong>Access</strong> — Request a copy of the personal data we hold about you.</li>
@@ -244,7 +244,7 @@ export default function PrivacyPage() {
           <hr className="border-gray-100" />
 
           <section id="section-10">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4" style={{ fontFamily: "var(--font-poppins)" }}>10. Data Security</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4" style={{ fontFamily: "var(--font-display)" }}>10. Data Security</h2>
             <p className="text-gray-700 leading-relaxed mb-4">We implement the following security measures to protect your data:</p>
             <ul className="list-disc pl-6 space-y-2 text-gray-700">
               <li>All traffic encrypted via HTTPS/TLS (enforced in production)</li>
@@ -263,21 +263,21 @@ export default function PrivacyPage() {
           <hr className="border-gray-100" />
 
           <section id="section-11">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4" style={{ fontFamily: "var(--font-poppins)" }}>11. Children</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4" style={{ fontFamily: "var(--font-display)" }}>11. Children</h2>
             <p className="text-gray-700 leading-relaxed">GetAhead AI is not directed at children under the age of 13. We do not knowingly collect personal data from children under 13. If you believe a child has provided us with personal data without parental consent, contact us at <a href={`mailto:${CONTACT_EMAIL}`} className="text-blue-600 hover:underline">{CONTACT_EMAIL}</a> and we will delete it promptly. For students aged 13–17, parental or guardian consent may be required depending on your jurisdiction.</p>
           </section>
 
           <hr className="border-gray-100" />
 
           <section id="section-12">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4" style={{ fontFamily: "var(--font-poppins)" }}>12. Changes to This Policy</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4" style={{ fontFamily: "var(--font-display)" }}>12. Changes to This Policy</h2>
             <p className="text-gray-700 leading-relaxed">We may update this Privacy Policy from time to time. When we make significant changes, we will update the &quot;Effective date&quot; at the top of this page and notify registered users via email at least 14 days before the changes take effect. Your continued use of GetAhead AI after the effective date constitutes acceptance of the updated policy.</p>
           </section>
 
           <hr className="border-gray-100" />
 
           <section id="section-13">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4" style={{ fontFamily: "var(--font-poppins)" }}>13. Contact Us</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4" style={{ fontFamily: "var(--font-display)" }}>13. Contact Us</h2>
             <p className="text-gray-700 leading-relaxed mb-4">For any privacy-related questions, requests, or concerns:</p>
             <div className="bg-gray-50 rounded-2xl border border-gray-100 p-6 space-y-2">
               <p className="text-gray-700"><strong>GetAhead AI</strong></p>

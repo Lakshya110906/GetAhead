@@ -261,39 +261,39 @@ export default function FeaturesPage() {
   return (
     <div className="min-h-screen bg-white">
       {/* Navbar */}
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-md border-b border-gray-100">
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-white/95 border-b border-gray-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16">
           <Link href="/" className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-teal-500 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-lg bg-paper flex items-center justify-center">
               <Brain className="w-4 h-4 text-white" />
             </div>
-            <span className="font-bold text-gray-900" style={{ fontFamily: "var(--font-poppins)" }}>
-              Get<span className="bg-gradient-to-r from-blue-600 to-teal-500 bg-clip-text text-transparent">Ahead</span>
+            <span className="font-bold text-gray-900" style={{ fontFamily: "var(--font-display)" }}>
+              Get<span className="text-ink">Ahead</span>
             </span>
           </Link>
           <div className="flex items-center gap-3">
             <Link href="/login" className="text-sm text-gray-600 hover:text-gray-900 font-medium transition-colors">Sign In</Link>
-            <Link href="/signup" className="text-sm bg-gradient-to-r from-blue-600 to-teal-500 text-white font-semibold px-4 py-2 rounded-lg hover:opacity-90 transition-opacity">Get Started Free</Link>
+            <Link href="/signup" className="text-sm bg-ink text-white font-semibold px-4 py-2 rounded-lg hover:opacity-90 transition-opacity">Get Started Free</Link>
           </div>
         </div>
       </nav>
 
       {/* Hero */}
-      <section className="pt-32 pb-20 bg-gradient-to-br from-slate-50 via-blue-50/40 to-teal-50/40">
+      <section className="pt-32 pb-20 bg-paper">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <div className="inline-flex items-center gap-2 bg-blue-100 text-blue-700 text-sm font-semibold px-4 py-1.5 rounded-full mb-6">
             <Sparkles className="w-4 h-4" />
             Powered by Gemini 2.5 Flash
           </div>
-          <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6 leading-tight" style={{ fontFamily: "var(--font-poppins)" }}>
+          <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6 leading-tight" style={{ fontFamily: "var(--font-display)" }}>
             Everything you need to<br />
-            <span className="bg-gradient-to-r from-blue-600 to-teal-500 bg-clip-text text-transparent">evaluate and excel</span>
+            <span className="text-ink">evaluate and excel</span>
           </h1>
           <p className="text-xl text-gray-600 leading-relaxed mb-10 max-w-2xl mx-auto">
             GetAhead AI combines AI evaluation, smart analytics, and question generation into a single platform built for students, teachers, and institutions.
           </p>
           <div className="flex flex-wrap items-center justify-center gap-4">
-            <Link href="/signup" className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-600 to-teal-500 text-white font-semibold px-6 py-3 rounded-xl hover:opacity-90 transition-opacity shadow-lg shadow-blue-500/20">
+            <Link href="/signup" className="inline-flex items-center gap-2 bg-ink text-white font-semibold px-6 py-3 rounded-xl hover:opacity-90 transition-opacity shadow-lg shadow-blue-500/20">
               Start Free — No Card Required <ArrowRight className="w-4 h-4" />
             </Link>
             <Link href="/how-it-works" className="inline-flex items-center gap-2 text-gray-700 font-medium px-6 py-3 rounded-xl border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-all">
@@ -328,7 +328,7 @@ export default function FeaturesPage() {
                       <Icon className="w-4 h-4" />
                       Feature
                     </div>
-                    <h2 className="text-3xl font-bold text-gray-900 mb-2" style={{ fontFamily: "var(--font-poppins)" }}>
+                    <h2 className="text-3xl font-bold text-gray-900 mb-2" style={{ fontFamily: "var(--font-display)" }}>
                       {feature.title}
                     </h2>
                     <p className="text-lg text-gray-500 mb-6 font-medium">{feature.tagline}</p>
@@ -358,7 +358,7 @@ export default function FeaturesPage() {
 
                   {/* Card */}
                   <div className={`w-full lg:w-80 flex-shrink-0 border ${feature.borderColor} rounded-2xl overflow-hidden shadow-sm`}>
-                    <div className={`bg-gradient-to-br ${feature.color} p-8 flex items-center justify-center`}>
+                    <div className={"bg-ink p-8 flex items-center justify-center"}>
                       <div className="w-20 h-20 bg-white/20 rounded-2xl flex items-center justify-center">
                         <Icon className="w-10 h-10 text-white" />
                       </div>
@@ -380,10 +380,10 @@ export default function FeaturesPage() {
       </section>
 
       {/* CTA */}
-      <section className="py-24 mt-8 bg-gradient-to-br from-blue-600 to-teal-500">
+      <section className="py-24 mt-8 bg-ink">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <Zap className="w-12 h-12 text-white/80 mx-auto mb-6" />
-          <h2 className="text-3xl md:text-4xl font-bold text-white mb-4" style={{ fontFamily: "var(--font-poppins)" }}>
+          <h2 className="text-3xl md:text-4xl font-bold text-white mb-4" style={{ fontFamily: "var(--font-display)" }}>
             Ready to use every feature?
           </h2>
           <p className="text-blue-100 text-lg mb-8">

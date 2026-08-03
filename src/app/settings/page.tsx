@@ -138,7 +138,7 @@ export default function SettingsPage() {
   return (
     <div className="max-w-5xl mx-auto space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900" style={{ fontFamily: "var(--font-poppins)" }}>
+        <h1 className="text-2xl font-bold text-gray-900" style={{ fontFamily: "var(--font-display)" }}>
           Settings
         </h1>
         <p className="text-gray-500 text-sm">Manage your account preferences</p>
@@ -153,7 +153,7 @@ export default function SettingsPage() {
               onClick={() => setActiveSection(s.id)}
               className={`w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
                 activeSection === s.id
-                  ? "gradient-primary text-white"
+                  ? "bg-ink text-white"
                   : "text-gray-600 hover:bg-gray-50"
               }`}
             >
@@ -170,13 +170,13 @@ export default function SettingsPage() {
         <div className="lg:col-span-3 bg-white rounded-2xl border border-gray-100 card-shadow-md p-6">
           {activeSection === "profile" && (
             <div>
-              <h2 className="text-lg font-bold text-gray-900 mb-6" style={{ fontFamily: "var(--font-poppins)" }}>
+              <h2 className="text-lg font-bold text-gray-900 mb-6" style={{ fontFamily: "var(--font-display)" }}>
                 Profile Information
               </h2>
 
               {/* Avatar */}
               <div className="flex items-center gap-5 mb-8">
-                <div className="w-20 h-20 gradient-primary rounded-2xl flex items-center justify-center text-white text-2xl font-bold">
+                <div className="w-20 h-20 bg-ink rounded-2xl flex items-center justify-center text-white text-2xl font-bold">
                   {session?.user?.name?.[0]?.toUpperCase() || "U"}
                 </div>
                 <div>
@@ -253,7 +253,7 @@ export default function SettingsPage() {
                   id="save-settings"
                   onClick={handleSave}
                   disabled={profileLoading}
-                  className="gradient-primary text-white font-semibold px-6 py-2.5 rounded-xl hover:opacity-90 transition-opacity text-sm flex items-center gap-2 disabled:opacity-60"
+                  className="bg-ink text-white font-semibold px-6 py-2.5 rounded-xl hover:opacity-90 transition-opacity text-sm flex items-center gap-2 disabled:opacity-60"
                 >
                   {profileLoading ? (
                     <Loader2 className="w-4 h-4 animate-spin" />
@@ -282,42 +282,26 @@ export default function SettingsPage() {
 
           {activeSection === "appearance" && (
             <div>
-              <h2 className="text-lg font-bold text-gray-900 mb-2" style={{ fontFamily: "var(--font-poppins)" }}>
+              <h2 className="text-lg font-bold text-gray-900 mb-2">
                 Appearance & Theme
               </h2>
               <p className="text-gray-500 text-xs mb-6">
-                Choose a visual theme that suits your style and workspace needs.
+                Choose light or dark mode for your workspace.
               </p>
 
               <div className="grid sm:grid-cols-2 gap-4">
                 {[
                   {
                     id: "default" as const,
-                    name: "Classic Blue (Default)",
-                    description: "Standard light theme with blue and teal highlights.",
-                    previewBg: "bg-[#f8fafc]",
-                    previewColors: ["bg-[#2563eb]", "bg-[#14b8a6]"],
+                    name: "Light",
+                    description: "Paper background, ink text, examiner-red accent.",
+                    swatchClass: "bg-paper",
                   },
                   {
                     id: "dark" as const,
-                    name: "Slate Dark",
-                    description: "Relaxing dark layout with purple and pink accents.",
-                    previewBg: "bg-[#0f172a]",
-                    previewColors: ["bg-[#8b5cf6]", "bg-[#ec4899]"],
-                  },
-                  {
-                    id: "emerald" as const,
-                    name: "Emerald Forest",
-                    description: "Crisp green theme with deep blue accents.",
-                    previewBg: "bg-[#f9fafb]",
-                    previewColors: ["bg-[#059669]", "bg-[#2563eb]"],
-                  },
-                  {
-                    id: "sunset" as const,
-                    name: "Sunset Glow",
-                    description: "Warm layout with orange and magenta highlights.",
-                    previewBg: "bg-[#fafafa]",
-                    previewColors: ["bg-[#f97316]", "bg-[#db2777]"],
+                    name: "Dark",
+                    description: "Graphite ground, paper-toned text, same examiner-red accent.",
+                    swatchClass: "theme-dark bg-paper",
                   },
                 ].map((t) => {
                   const isActive = theme === t.id;
@@ -327,20 +311,20 @@ export default function SettingsPage() {
                       onClick={() => setTheme(t.id)}
                       className={`flex flex-col text-left p-5 rounded-2xl border-2 transition-all hover:scale-[1.01] ${
                         isActive
-                          ? "border-blue-600 bg-blue-50/20"
+                          ? "border-ink bg-ink/5"
                           : "border-gray-100 hover:border-gray-200 bg-white"
                       }`}
                     >
                       {/* Preview Box */}
-                      <div className={`w-full h-24 rounded-xl ${t.previewBg} border border-gray-150 p-3 mb-4 flex items-center justify-between shadow-inner`}>
+                      <div className={`w-full h-24 rounded-xl ${t.swatchClass} border border-rule p-3 mb-4 flex items-center justify-between shadow-inner`}>
                         <div className="space-y-1.5 flex-1">
-                          <div className={`h-2.5 w-16 rounded-full opacity-60 ${t.id === "dark" ? "bg-slate-700" : "bg-gray-200"}`} />
-                          <div className={`h-2.5 w-24 rounded-full opacity-60 ${t.id === "dark" ? "bg-slate-700" : "bg-gray-200"}`} />
+                          <div className="h-2.5 w-16 rounded-full opacity-60 bg-rule" />
+                          <div className="h-2.5 w-24 rounded-full opacity-60 bg-rule" />
                         </div>
                         <div className="flex gap-1.5">
-                          {t.previewColors.map((colorClass, idx) => (
-                            <div key={idx} className={`w-6 h-6 rounded-full shadow ${colorClass}`} />
-                          ))}
+                          <div className="w-6 h-6 rounded-full shadow bg-ink" />
+                          <div className="w-6 h-6 rounded-full shadow bg-examiner" />
+                          <div className="w-6 h-6 rounded-full shadow bg-tick" />
                         </div>
                       </div>
 
@@ -355,7 +339,7 @@ export default function SettingsPage() {
 
           {activeSection === "notifications" && (
             <div>
-              <h2 className="text-lg font-bold text-gray-900 mb-2" style={{ fontFamily: "var(--font-poppins)" }}>
+              <h2 className="text-lg font-bold text-gray-900 mb-2" style={{ fontFamily: "var(--font-display)" }}>
                 Notification Preferences
               </h2>
               <p className="text-gray-500 text-xs mb-6">
@@ -425,7 +409,7 @@ export default function SettingsPage() {
               <div className="mt-8 flex items-center gap-3">
                 <button
                   onClick={handleNotificationsSave}
-                  className="gradient-primary text-white font-semibold px-6 py-2.5 rounded-xl hover:opacity-90 transition-opacity text-sm"
+                  className="bg-ink text-white font-semibold px-6 py-2.5 rounded-xl hover:opacity-90 transition-opacity text-sm"
                 >
                   {notificationsSaved ? "✓ Preferences Saved!" : "Save Preferences"}
                 </button>
@@ -435,7 +419,7 @@ export default function SettingsPage() {
 
           {activeSection === "security" && (
             <div>
-              <h2 className="text-lg font-bold text-gray-900 mb-2" style={{ fontFamily: "var(--font-poppins)" }}>
+              <h2 className="text-lg font-bold text-gray-900 mb-2" style={{ fontFamily: "var(--font-display)" }}>
                 Security Settings
               </h2>
               <p className="text-gray-500 text-xs mb-6">
@@ -495,7 +479,7 @@ export default function SettingsPage() {
                   <button
                     type="submit"
                     disabled={passwordLoading}
-                    className="gradient-primary text-white font-semibold px-6 py-2.5 rounded-xl hover:opacity-90 transition-opacity text-sm disabled:opacity-50"
+                    className="bg-ink text-white font-semibold px-6 py-2.5 rounded-xl hover:opacity-90 transition-opacity text-sm disabled:opacity-50"
                   >
                     {passwordLoading ? "Updating..." : "Update Password"}
                   </button>

@@ -108,7 +108,7 @@ export default function DashboardPage() {
       {/* Welcome */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900" style={{ fontFamily: "var(--font-poppins)" }}>
+          <h1 className="text-2xl font-bold text-gray-900" style={{ fontFamily: "var(--font-display)" }}>
             Welcome back, {firstName}! 👋
           </h1>
           <p className="text-gray-500 text-sm mt-0.5">
@@ -117,7 +117,7 @@ export default function DashboardPage() {
         </div>
         <Link
           href="/upload"
-          className="inline-flex items-center gap-2 gradient-primary text-white font-semibold px-5 py-2.5 rounded-xl hover:opacity-90 transition-opacity text-sm"
+          className="inline-flex items-center gap-2 bg-ink text-white font-semibold px-5 py-2.5 rounded-xl hover:opacity-90 transition-opacity text-sm"
         >
           <PlusCircle className="w-4 h-4" />
           New Evaluation
@@ -137,7 +137,7 @@ export default function DashboardPage() {
                 <stat.icon className="w-4 h-4 text-blue-600" />
               </div>
             </div>
-            <p className="text-3xl font-bold text-gray-900 mb-1" style={{ fontFamily: "var(--font-poppins)" }}>
+            <p className="text-3xl font-bold text-gray-900 mb-1 font-mono">
               {loading ? <Loader2 className="w-6 h-6 animate-spin text-gray-300 inline" /> : stat.value}
             </p>
             <p className={`text-xs font-medium ${stat.positive ? "text-green-600" : "text-amber-600"}`}>
@@ -151,7 +151,7 @@ export default function DashboardPage() {
       <div className="grid lg:grid-cols-2 gap-6">
         {/* Performance Trend */}
         <div className="bg-white rounded-2xl border border-gray-100 card-shadow-md p-6">
-          <h2 className="text-lg font-bold text-gray-900 mb-5" style={{ fontFamily: "var(--font-poppins)" }}>
+          <h2 className="text-lg font-bold text-gray-900 mb-5" style={{ fontFamily: "var(--font-display)" }}>
             Performance Trend
           </h2>
           <div className="h-52">
@@ -164,19 +164,19 @@ export default function DashboardPage() {
             ) : (
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={data.monthlyTrend}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                  <XAxis dataKey="month" tick={{ fontSize: 12, fill: "#6b7280" }} />
-                  <YAxis domain={[0, 100]} tick={{ fontSize: 12, fill: "#6b7280" }} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--rule)" />
+                  <XAxis dataKey="month" tick={{ fontSize: 12, fill: "var(--graphite)" }} />
+                  <YAxis domain={[0, 100]} tick={{ fontSize: 12, fill: "var(--graphite)" }} />
                   <Tooltip
-                    contentStyle={{ borderRadius: "12px", border: "1px solid #e5e7eb", fontSize: 12 }}
+                    contentStyle={{ borderRadius: "12px", border: "1px solid var(--rule)", backgroundColor: "var(--paper)", color: "var(--ink)", fontSize: 12 }}
                   />
                   <Line
                     type="monotone"
                     dataKey="score"
-                    stroke="#2563EB"
+                    stroke="var(--ink)"
                     strokeWidth={3}
-                    dot={{ fill: "#2563EB", strokeWidth: 2, r: 4 }}
-                    activeDot={{ r: 7, fill: "#2563EB" }}
+                    dot={{ fill: "var(--ink)", strokeWidth: 2, r: 4 }}
+                    activeDot={{ r: 7, fill: "var(--ink)" }}
                   />
                 </LineChart>
               </ResponsiveContainer>
@@ -186,7 +186,7 @@ export default function DashboardPage() {
 
         {/* Subject Performance */}
         <div className="bg-white rounded-2xl border border-gray-100 card-shadow-md p-6">
-          <h2 className="text-lg font-bold text-gray-900 mb-5" style={{ fontFamily: "var(--font-poppins)" }}>
+          <h2 className="text-lg font-bold text-gray-900 mb-5" style={{ fontFamily: "var(--font-display)" }}>
             Subject Performance
           </h2>
           <div className="h-52">
@@ -199,13 +199,13 @@ export default function DashboardPage() {
             ) : (
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={data.subjectPerformance}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                  <XAxis dataKey="subject" tick={{ fontSize: 11, fill: "#6b7280" }} />
-                  <YAxis domain={[0, 100]} tick={{ fontSize: 12, fill: "#6b7280" }} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--rule)" />
+                  <XAxis dataKey="subject" tick={{ fontSize: 11, fill: "var(--graphite)" }} />
+                  <YAxis domain={[0, 100]} tick={{ fontSize: 12, fill: "var(--graphite)" }} />
                   <Tooltip
-                    contentStyle={{ borderRadius: "12px", border: "1px solid #e5e7eb", fontSize: 12 }}
+                    contentStyle={{ borderRadius: "12px", border: "1px solid var(--rule)", backgroundColor: "var(--paper)", color: "var(--ink)", fontSize: 12 }}
                   />
-                  <Bar dataKey="avgScore" fill="#2563EB" radius={[6, 6, 0, 0]} />
+                  <Bar dataKey="avgScore" fill="var(--ink)" radius={[6, 6, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             )}
@@ -216,7 +216,7 @@ export default function DashboardPage() {
       {/* Recent Evaluations */}
       <div className="bg-white rounded-2xl border border-gray-100 card-shadow-md p-6">
         <div className="flex items-center justify-between mb-5">
-          <h2 className="text-lg font-bold text-gray-900" style={{ fontFamily: "var(--font-poppins)" }}>
+          <h2 className="text-lg font-bold text-gray-900" style={{ fontFamily: "var(--font-display)" }}>
             Recent Evaluations
           </h2>
           <Link href="/analytics" className="text-sm text-blue-600 font-medium hover:underline flex items-center gap-1">
@@ -235,7 +235,7 @@ export default function DashboardPage() {
             <p className="text-gray-400 text-sm mt-1">Start your first evaluation to see results here</p>
             <Link
               href="/upload"
-              className="inline-flex items-center gap-2 gradient-primary text-white text-sm font-semibold px-5 py-2.5 rounded-xl mt-4 hover:opacity-90"
+              className="inline-flex items-center gap-2 bg-ink text-white text-sm font-semibold px-5 py-2.5 rounded-xl mt-4 hover:opacity-90"
             >
               <PlusCircle className="w-4 h-4" />
               Start Evaluation
@@ -249,7 +249,7 @@ export default function DashboardPage() {
                 className="flex items-center justify-between py-3 px-4 bg-gray-50 rounded-xl hover:bg-blue-50 transition-colors group"
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 gradient-primary rounded-xl flex items-center justify-center text-white text-xs font-bold">
+                  <div className="w-10 h-10 bg-ink rounded-xl flex items-center justify-center text-white text-xs font-bold">
                     {ev.subject.slice(0, 2).toUpperCase()}
                   </div>
                   <div>
@@ -260,11 +260,11 @@ export default function DashboardPage() {
 
                 <div className="flex items-center gap-4">
                   <div className="text-right">
-                    <p className="text-sm font-bold text-gray-900">
+                    <p className="text-sm font-bold text-gray-900 font-mono">
                       {ev.obtainedMarks}/{ev.totalMarks}
                     </p>
-                    <p className={`text-xs font-semibold ${
-                      (ev.percentage ?? 0) >= 75 ? "text-green-600" : 
+                    <p className={`text-xs font-semibold font-mono ${
+                      (ev.percentage ?? 0) >= 75 ? "text-green-600" :
                       (ev.percentage ?? 0) >= 50 ? "text-amber-600" : "text-red-500"
                     }`}>
                       {ev.percentage?.toFixed(1)}%

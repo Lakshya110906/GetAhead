@@ -161,13 +161,13 @@ export default function UserTicketDetailPage() {
           <main className="flex-1 flex items-center justify-center p-6">
             <div className="max-w-md text-center bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-8 shadow-sm">
               <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4 animate-bounce" />
-              <h2 className="font-bold text-gray-900 dark:text-white text-lg mb-2" style={{ fontFamily: "var(--font-poppins)" }}>
+              <h2 className="font-bold text-gray-900 dark:text-white text-lg mb-2" style={{ fontFamily: "var(--font-display)" }}>
                 Unable to Load Ticket
               </h2>
               <p className="text-gray-500 text-sm mb-6">{error || "The ticket was not found."}</p>
               <button
                 onClick={() => router.push("/support/tickets")}
-                className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-600 to-teal-500 text-white font-semibold px-5 py-2.5 rounded-xl hover:opacity-90 transition-opacity text-sm shadow-md cursor-pointer"
+                className="inline-flex items-center gap-2 bg-ink text-white font-semibold px-5 py-2.5 rounded-xl hover:opacity-90 transition-opacity text-sm shadow-md cursor-pointer"
               >
                 <ArrowLeft className="w-4 h-4" /> Back to My Tickets
               </button>
@@ -246,7 +246,7 @@ export default function UserTicketDetailPage() {
                     >
                       <div className={`w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 ${
                         isAdmin 
-                          ? "bg-gradient-to-br from-blue-500 to-teal-500 text-white" 
+                          ? "bg-ink text-white" 
                           : "bg-blue-600 text-white"
                       }`}>
                         {isAdmin ? <LifeBuoy className="w-4 h-4" /> : <User className="w-4 h-4" />}
@@ -314,7 +314,7 @@ export default function UserTicketDetailPage() {
               
               {/* Ticket Details summary card */}
               <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-5 shadow-sm space-y-4 select-none">
-                <h3 className="font-bold text-gray-900 dark:text-white text-sm" style={{ fontFamily: "var(--font-poppins)" }}>
+                <h3 className="font-bold text-gray-900 dark:text-white text-sm" style={{ fontFamily: "var(--font-display)" }}>
                   Ticket Details
                 </h3>
 

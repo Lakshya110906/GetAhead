@@ -55,10 +55,10 @@ export function TutorChat({
         {messages.length === 0 ? (
           /* Empty state */
           <div className="h-full flex flex-col items-center justify-center text-center p-6 my-auto select-none">
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-teal-500 flex items-center justify-center text-white shadow-md shadow-blue-500/10 mb-5 animate-pulse">
+            <div className="w-16 h-16 rounded-2xl bg-ink flex items-center justify-center text-white shadow-md shadow-blue-500/10 mb-5 animate-pulse">
               <Brain className="w-8 h-8" />
             </div>
-            <h3 className="font-bold text-gray-900 dark:text-gray-100 text-lg mb-2" style={{ fontFamily: "var(--font-poppins)" }}>
+            <h3 className="font-bold text-gray-900 dark:text-gray-100 text-lg mb-2" style={{ fontFamily: "var(--font-display)" }}>
               AI Evaluation Tutor
             </h3>
             <p className="text-sm text-gray-500 dark:text-gray-400 max-w-xs leading-relaxed">
@@ -117,7 +117,7 @@ export function TutorChat({
         {/* Streaming indicator */}
         {isStreaming && messages.length > 0 && messages[messages.length - 1].role === "user" && (
           <div className="flex gap-3 mb-6">
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-blue-500 to-teal-500 text-white flex items-center justify-center flex-shrink-0 shadow-sm animate-pulse">
+            <div className="w-8 h-8 rounded-xl bg-ink text-white flex items-center justify-center flex-shrink-0 shadow-sm animate-pulse">
               <Brain className="w-4 h-4" />
             </div>
             <div className="flex flex-col max-w-[85%]">

@@ -50,16 +50,16 @@ export default function ForgotPasswordPage() {
       >
         {/* Header Logo */}
         <div className="flex items-center justify-center gap-2 mb-8 select-none">
-          <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-blue-600 to-teal-500 flex items-center justify-center text-white shadow-md shadow-blue-500/10">
+          <div className="w-10 h-10 rounded-2xl bg-ink flex items-center justify-center text-white shadow-md shadow-blue-500/10">
             <Brain className="w-5.5 h-5.5" />
           </div>
-          <span className="font-bold text-gray-900 dark:text-gray-100 text-lg" style={{ fontFamily: "var(--font-poppins)" }}>
+          <span className="font-bold text-gray-900 dark:text-gray-100 text-lg" style={{ fontFamily: "var(--font-display)" }}>
             GetAhead AI
           </span>
         </div>
 
         <div className="text-center mb-6">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2" style={{ fontFamily: "var(--font-poppins)" }}>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2" style={{ fontFamily: "var(--font-display)" }}>
             Forgot Password
           </h1>
           <p className="text-sm text-gray-500 dark:text-gray-400">
@@ -111,7 +111,7 @@ export default function ForgotPasswordPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-gradient-to-br from-blue-600 to-teal-500 text-white font-semibold py-3 rounded-2xl hover:opacity-95 transition-opacity flex items-center justify-center gap-2 disabled:opacity-60 text-sm"
+              className="w-full bg-ink text-white font-semibold py-3 rounded-2xl hover:opacity-95 transition-opacity flex items-center justify-center gap-2 disabled:opacity-60 text-sm"
             >
               {loading ? (
                 <Loader2 className="w-4 h-4 animate-spin" />

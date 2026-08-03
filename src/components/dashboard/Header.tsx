@@ -4,7 +4,6 @@ import { useSession, signOut } from "next-auth/react";
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { Bell, Plus, Search, Settings, LogOut } from "lucide-react";
-import { ThemeSlider } from "@/components/ThemeSlider";
 
 interface UserProfile {
   name: string;
@@ -49,7 +48,7 @@ export function DashboardHeader({ title, subtitle }: { title?: string; subtitle?
       <div>
         {title ? (
           <>
-            <h1 className="text-xl font-bold text-gray-900" style={{ fontFamily: "var(--font-poppins)" }}>
+            <h1 className="text-xl font-bold text-gray-900" style={{ fontFamily: "var(--font-display)" }}>
               {title}
             </h1>
             {subtitle && <p className="text-sm text-gray-500">{subtitle}</p>}
@@ -67,11 +66,9 @@ export function DashboardHeader({ title, subtitle }: { title?: string; subtitle?
       </div>
 
       <div className="flex items-center gap-3">
-        <ThemeSlider />
-
         <Link
           href="/upload"
-          className="hidden sm:inline-flex items-center gap-2 gradient-primary text-white text-sm font-semibold px-4 py-2 rounded-xl hover:opacity-90 transition-opacity"
+          className="hidden sm:inline-flex items-center gap-2 bg-ink text-white text-sm font-semibold px-4 py-2 rounded-xl hover:opacity-90 transition-opacity"
         >
           <Plus className="w-4 h-4" />
           New Evaluation
@@ -86,7 +83,7 @@ export function DashboardHeader({ title, subtitle }: { title?: string; subtitle?
         <div className="relative" ref={dropdownRef}>
           <button
             onClick={() => setIsOpen(!isOpen)}
-            className="w-9 h-9 rounded-xl gradient-primary flex items-center justify-center text-white text-sm font-bold shadow-sm hover:opacity-95 transition-opacity"
+            className="w-9 h-9 rounded-xl bg-ink flex items-center justify-center text-white text-sm font-bold shadow-sm hover:opacity-95 transition-opacity"
             title="User Profile Menu"
           >
             {session?.user?.name?.[0]?.toUpperCase() || "U"}
@@ -95,7 +92,7 @@ export function DashboardHeader({ title, subtitle }: { title?: string; subtitle?
           {isOpen && (
             <div className="absolute right-0 mt-2 w-64 bg-white border border-gray-150 rounded-2xl shadow-xl py-2 z-50 animate-fade-in text-gray-700">
               <div className="px-4 py-2.5 border-b border-gray-100">
-                <p className="font-bold text-gray-900 truncate" style={{ fontFamily: "var(--font-poppins)" }}>
+                <p className="font-bold text-gray-900 truncate" style={{ fontFamily: "var(--font-display)" }}>
                   {profile?.name || session?.user?.name}
                 </p>
                 <p className="text-xs text-gray-500 truncate mt-0.5">
