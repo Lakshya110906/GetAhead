@@ -358,19 +358,27 @@ export default function HelpCenterPage() {
               <div className="space-y-3">
                 {currentCat.articles.map((article, idx) => {
                   const key = `${activeCategory}-${idx}`;
+                  const slug = key.toLowerCase().replace(/[^a-z0-9]+/g, "-");
                   const isOpen = openArticle === key;
                   return (
                     <div key={key} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden hover:shadow-md transition-shadow">
                       <button
+                        id={`help-question-${slug}`}
                         onClick={() => setOpenArticle(isOpen ? null : key)}
                         className="w-full flex items-center justify-between p-5 text-left gap-4"
                         aria-expanded={isOpen}
+                        aria-controls={`help-answer-${slug}`}
                       >
                         <span className="font-medium text-gray-900">{article.title}</span>
-                        <ChevronDown className={`w-5 h-5 text-gray-400 flex-shrink-0 transition-transform ${isOpen ? "rotate-180" : ""}`} />
+                        <ChevronDown aria-hidden="true" className={`w-5 h-5 text-gray-400 flex-shrink-0 transition-transform ${isOpen ? "rotate-180" : ""}`} />
                       </button>
                       {isOpen && (
-                        <div className="px-5 pb-5 border-t border-gray-50">
+                        <div
+                          id={`help-answer-${slug}`}
+                          role="region"
+                          aria-labelledby={`help-question-${slug}`}
+                          className="px-5 pb-5 border-t border-gray-50"
+                        >
                           <p className="text-sm text-gray-600 leading-relaxed pt-4">{article.content}</p>
                         </div>
                       )}

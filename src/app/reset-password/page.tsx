@@ -60,7 +60,7 @@ function ResetPasswordForm() {
         setConfirmPassword("");
       }
     } catch {
-      setError("An unexpected error occurred. Please try again.");
+      setError("Couldn't reach the server to reset your password. Check your connection and try again.");
     } finally {
       setLoading(false);
     }

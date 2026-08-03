@@ -28,14 +28,14 @@ export default function ForgotPasswordPage() {
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error || "Failed to process request");
+        setError(data.error || "Couldn't send a reset link to that address. Double-check it and try again.");
       } else {
         setSuccess(true);
         setMessage(data.message || "A password reset link has been sent to your email inbox.");
         setEmail("");
       }
     } catch {
-      setError("Failed to connect to the server. Please try again.");
+      setError("Couldn't reach the server to send the reset link. Check your connection and try again.");
     } finally {
       setLoading(false);
     }

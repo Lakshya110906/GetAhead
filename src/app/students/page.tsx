@@ -19,10 +19,13 @@ import { SiteFooter } from "@/components/SiteFooter";
 export const metadata: Metadata = {
   title: "For Students — GetAhead AI",
   description: "GetAhead AI helps students get personalised AI feedback, track their performance, and prepare smarter for exams. Upload your answer sheet and get marks in 30 seconds.",
+  alternates: { canonical: "/students" },
   openGraph: {
     title: "For Students — GetAhead AI",
     description: "Personalised AI feedback, performance tracking, and smarter exam preparation — built for every student.",
+    url: "/students",
     type: "website",
+    images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "GetAhead" }],
   },
 };
 

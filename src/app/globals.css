@@ -34,13 +34,25 @@
   --color-fg: var(--ink);
   --color-fg-muted: var(--graphite);
   --color-border: var(--rule);
+
+  /* ---- Fixed (theme-invariant) palette ----
+     For surfaces that are always literal paper — e.g. the marked answer-sheet
+     hero — regardless of site theme. --ink/--graphite/--examiner/--tick
+     deliberately invert in dark mode for readability on dark UI surfaces;
+     a sheet of paper does not invert, so text sitting on one must not either.
+     Fixed at the token, not by special-casing the component. */
+  --fixed-ink: #16223A;
+  --fixed-graphite: #5A606B;
+  --fixed-examiner: #C4342C;
+  --fixed-tick: #2E7355;
+  --fixed-rule: #E2E4E9;
 }
 
 /* ===== DARK THEME — graphite ground, never pure black ===== */
 .theme-dark {
   --paper: #1C1F24;
   --ink: #ECEAE4;
-  --examiner: #E2574B;
+  --examiner: #EC7A70;
   --tick: #4FA37E;
   --graphite: #9BA1AC;
   --rule: #33373E;
@@ -71,10 +83,20 @@
   --color-graphite: var(--graphite);
   --color-rule: var(--rule);
 
+  /* Fixed (theme-invariant) slots: bg-fixed-ink / text-fixed-ink /
+     text-fixed-examiner / border-fixed-examiner / text-fixed-graphite /
+     text-fixed-tick / border-fixed-rule — for literal-paper surfaces only. */
+  --color-fixed-ink: var(--fixed-ink);
+  --color-fixed-examiner: var(--fixed-examiner);
+  --color-fixed-tick: var(--fixed-tick);
+  --color-fixed-graphite: var(--fixed-graphite);
+  --color-fixed-rule: var(--fixed-rule);
+
   /* Legacy slot remapping so existing bg-blue, text-gray, etc. utility
      classes inherit the new palette instead of the old generic SaaS blue/teal. */
   --color-blue-50: var(--color-primary-light);
   --color-blue-100: var(--color-primary-light);
+  --color-blue-500: var(--color-primary);
   --color-blue-600: var(--color-primary);
   --color-blue-700: var(--color-primary-dark);
   --color-teal-50: var(--color-secondary-light);
@@ -83,6 +105,10 @@
   --color-gray-50: var(--color-bg);
   --color-gray-900: var(--color-fg);
   --color-gray-200: var(--color-border);
+  /* Tailwind's default gray-400 (#9CA3AF) fails WCAG AA (~2.4:1) on paper/white
+     backgrounds. Route it through graphite, which clears 4.5:1 in both themes —
+     fixed at the token so every existing text-gray-400/icon usage inherits it. */
+  --color-gray-400: var(--graphite);
 
   /* Errors/corrections and success/positive states route through the
      examiner red and tick green tokens wherever the app already used
@@ -95,6 +121,11 @@
   --color-green-500: var(--tick);
   --color-green-600: var(--tick);
   --color-green-700: var(--tick);
+
+  /* Tailwind's orange-600 (#f54900) fails WCAG AA (~3.4:1) on paper/white as
+     small text — used as an "eyebrow" label color in a few places. Darken to
+     orange-700 (#c2410c, ~5:1) so it stays recognizably orange but passes. */
+  --color-orange-600: #c2410c;
 
   /* Type roles — the next/font variables (--display-font/--body-font/--mono-font,
      set on <html> in layout.tsx) are named distinctly from these Tailwind-facing

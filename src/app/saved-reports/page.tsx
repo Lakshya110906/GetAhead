@@ -319,8 +319,9 @@ export default function SavedReportsPage() {
       {activeTab === "reports" ? (
         <div className="no-print">
           {loadingReports ? (
-            <div className="flex items-center justify-center py-12">
+            <div className="flex flex-col items-center justify-center gap-3 py-12">
               <Loader2 className="w-10 h-10 animate-spin text-blue-500" />
+              <p className="text-sm text-gray-500">Loading your saved reports...</p>
             </div>
           ) : savedReports.length === 0 ? (
             <div className="bg-white rounded-3xl border border-gray-150 p-12 text-center max-w-lg mx-auto shadow-sm">
@@ -428,8 +429,9 @@ export default function SavedReportsPage() {
         // Question Papers tab view
         <div className="no-print">
           {loadingPapers ? (
-            <div className="flex items-center justify-center py-12">
+            <div className="flex flex-col items-center justify-center gap-3 py-12">
               <Loader2 className="w-10 h-10 animate-spin text-blue-500" />
+              <p className="text-sm text-gray-500">Loading your question papers...</p>
             </div>
           ) : papers.length === 0 ? (
             <div className="text-center py-16 bg-white border border-gray-100 rounded-2xl max-w-lg mx-auto">

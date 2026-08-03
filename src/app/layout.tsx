@@ -29,6 +29,7 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://getahead.ai"),
   title: {
     default: "GetAhead | AI-Powered Exam Answer Evaluation",
     template: "%s | GetAhead",
@@ -45,17 +46,28 @@ export const metadata: Metadata = {
     "GetAhead",
   ],
   authors: [{ name: "GetAhead" }],
+  alternates: { canonical: "/" },
   openGraph: {
     title: "GetAhead | AI-Powered Exam Answer Evaluation",
     description: "Instant AI-powered evaluation with detailed performance analytics.",
+    url: "/",
     type: "website",
     locale: "en_IN",
     siteName: "GetAhead",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "GetAhead — upload an answer sheet and see exactly where every mark was won or lost.",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "GetAhead | AI-Powered Exam Answer Evaluation",
     description: "Instant AI-powered evaluation with detailed performance analytics.",
+    images: ["/og-image.png"],
   },
 };
 

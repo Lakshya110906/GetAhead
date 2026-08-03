@@ -278,7 +278,7 @@ export default function ContactPage() {
 
                   {status === "error" && (
                     <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-sm" role="alert">
-                      Something went wrong. Please try again or email us directly at support@getahead.ai
+                      Your message didn&apos;t send. Try again, or email us directly at support@getahead.ai
                     </div>
                   )}
 

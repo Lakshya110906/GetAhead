@@ -94,7 +94,7 @@ function LoginForm() {
         setResendSuccess(true);
       }
     } catch {
-      setResendError("Failed to connect to server. Please try again.");
+      setResendError("Couldn't reach the server to resend the link. Check your connection and try again.");
     } finally {
       setResendLoading(false);
     }

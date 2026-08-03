@@ -74,7 +74,7 @@ function VerifyEmailForm() {
         setResendEmail("");
       }
     } catch {
-      setResendError("Failed to connect to server. Please try again.");
+      setResendError("Couldn't reach the server to resend the link. Check your connection and try again.");
     } finally {
       setResendLoading(false);
     }
@@ -170,7 +170,7 @@ function VerifyEmailForm() {
                     value={resendEmail}
                     onChange={(e) => setResendEmail(e.target.value)}
                     required
-                    className="w-full pl-9 pr-3 py-2.5 border border-gray-205 dark:border-gray-800 dark:bg-gray-950 rounded-xl text-xs focus:outline-none focus:border-blue-500"
+                    className="w-full pl-9 pr-3 py-2.5 border border-gray-205 dark:border-gray-800 dark:bg-gray-950 rounded-xl text-xs focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
                   />
                 </div>
                 <button

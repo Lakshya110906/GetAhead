@@ -266,7 +266,7 @@ Let's break down the concepts behind ${topicInfo.topic}. Would you like me to wa
             ? "AI rate limit reached. Please wait a moment and try again."
             : isTimeout
             ? "The AI took too long to respond. Please try again."
-            : "Something went wrong. Please try again.",
+            : "The tutor couldn't respond that time. Send your question again.",
         });
       } finally {
         controller.close();

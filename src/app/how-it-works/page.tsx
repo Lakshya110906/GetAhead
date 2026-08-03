@@ -212,9 +212,11 @@ export default function HowItWorksPage() {
                   </div>
 
                   <button
+                    id={`how-it-works-step-${idx}`}
                     onClick={() => setActiveStep(isOpen ? null : idx)}
                     className="w-full text-left group"
                     aria-expanded={isOpen}
+                    aria-controls={`how-it-works-detail-${idx}`}
                   >
                     <div className={`bg-white border rounded-2xl p-6 hover:border-blue-200 hover:shadow-md transition-all ${isOpen ? "border-blue-200 shadow-md" : "border-gray-100 shadow-sm"}`}>
                       <div className="flex items-start gap-4">
@@ -236,7 +238,12 @@ export default function HowItWorksPage() {
                           </div>
                           <p className="text-gray-600 text-sm mt-2 leading-relaxed">{step.description}</p>
                           {isOpen && (
-                            <div className={`mt-4 p-4 ${step.bg} border ${step.textColor.replace("text-", "border-").replace("-700", "-200")} rounded-xl`}>
+                            <div
+                              id={`how-it-works-detail-${idx}`}
+                              role="region"
+                              aria-labelledby={`how-it-works-step-${idx}`}
+                              className={`mt-4 p-4 ${step.bg} border ${step.textColor.replace("text-", "border-").replace("-700", "-200")} rounded-xl`}
+                            >
                               <p className={`text-sm ${step.textColor} leading-relaxed`}>{step.detail}</p>
                             </div>
                           )}

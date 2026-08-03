@@ -6,10 +6,13 @@ import { SiteFooter } from "@/components/SiteFooter";
 export const metadata: Metadata = {
   title: "Privacy Policy — GetAhead AI",
   description: "Read the GetAhead AI Privacy Policy to understand what data we collect, how we use it, how we protect it, and your rights as a user.",
+  alternates: { canonical: "/privacy" },
   openGraph: {
     title: "Privacy Policy — GetAhead AI",
     description: "Our privacy policy explains how we collect, use, and protect your data.",
+    url: "/privacy",
     type: "website",
+    images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "GetAhead" }],
   },
 };
 
