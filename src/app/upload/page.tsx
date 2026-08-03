@@ -104,7 +104,7 @@ export default function UploadPage() {
       setStatus("complete");
     } catch (err) {
       setStatus("error");
-      setError(err instanceof Error ? err.message : "Something went wrong");
+      setError(err instanceof Error ? err.message : "The evaluation didn't complete. Check your connection and try again.");
     }
   };
 

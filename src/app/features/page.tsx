@@ -23,10 +23,13 @@ import { SiteFooter } from "@/components/SiteFooter";
 export const metadata: Metadata = {
   title: "Features — GetAhead AI",
   description: "Explore every feature of GetAhead AI: AI answer sheet evaluation, question paper generation, performance analytics, saved reports, and more.",
+  alternates: { canonical: "/features" },
   openGraph: {
     title: "Features — GetAhead AI",
     description: "From AI-powered grading to subject-wise analytics — everything you need to evaluate, improve, and excel.",
+    url: "/features",
     type: "website",
+    images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "GetAhead" }],
   },
 };
 

@@ -334,7 +334,7 @@ export default function GeneratePaperPage() {
       }
     } catch (err) {
       console.error(err);
-      const msg = err instanceof Error ? err.message : "An unexpected error occurred during generation.";
+      const msg = err instanceof Error ? err.message : "The paper didn't finish generating. Check your connection and try again.";
       setError(msg);
       setStatus("error");
     }
@@ -468,7 +468,7 @@ ${JSON.stringify(paper, null, 2)}
       }
     } catch (err) {
       console.error(err);
-      const msg = err instanceof Error ? err.message : "An unexpected error occurred during refinement.";
+      const msg = err instanceof Error ? err.message : "The refinement didn't finish. Check your connection and try again.";
       setError(msg);
       setStatus("error");
     }

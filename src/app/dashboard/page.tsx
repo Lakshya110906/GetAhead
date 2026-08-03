@@ -225,8 +225,9 @@ export default function DashboardPage() {
         </div>
 
         {loading ? (
-          <div className="flex items-center justify-center py-8">
+          <div className="flex flex-col items-center justify-center gap-2 py-8">
             <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
+            <p className="text-sm text-gray-500">Loading your evaluations...</p>
           </div>
         ) : data.recentEvaluations.length === 0 ? (
           <div className="text-center py-10">

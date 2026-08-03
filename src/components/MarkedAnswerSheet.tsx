@@ -24,45 +24,45 @@ export function MarkedAnswerSheet() {
   const initial = reduceMotion ? "visible" : "hidden";
 
   return (
-    <div className="relative mx-auto max-w-md select-none" aria-hidden="true">
+    <div className="relative mx-auto max-w-[280px] sm:max-w-md select-none" aria-hidden="true">
       <div
-        className="relative bg-white rounded-sm shadow-2xl border border-rule"
+        className="relative bg-white rounded-sm shadow-2xl border border-fixed-rule"
         style={{ transform: "rotate(-1.2deg)" }}
       >
         {/* Sheet header strip */}
-        <div className="flex items-center justify-between px-6 py-3 border-b border-rule">
-          <span className="font-mono text-[10px] tracking-widest uppercase text-graphite">
+        <div className="flex items-center justify-between px-4 sm:px-6 py-2.5 sm:py-3 border-b border-fixed-rule">
+          <span className="font-mono text-[8px] sm:text-[10px] tracking-widest uppercase text-fixed-graphite">
             Class 12 &middot; Mathematics
           </span>
-          <span className="font-mono text-[10px] tracking-widest uppercase text-graphite">
+          <span className="font-mono text-[8px] sm:text-[10px] tracking-widest uppercase text-fixed-graphite">
             Paper 2 &middot; Q4
           </span>
         </div>
 
         <div
-          className="relative pl-16 pr-6 pt-5 pb-9"
+          className="relative pl-8 pr-4 pt-4 pb-7 sm:pl-16 sm:pr-6 sm:pt-5 sm:pb-9"
           style={{
-            backgroundImage: `repeating-linear-gradient(to bottom, transparent, transparent ${RULE_HEIGHT - 1}px, var(--rule) ${RULE_HEIGHT}px)`,
+            backgroundImage: `repeating-linear-gradient(to bottom, transparent, transparent ${RULE_HEIGHT - 1}px, var(--fixed-rule) ${RULE_HEIGHT}px)`,
             backgroundPosition: "0 8px",
           }}
         >
           {/* Margin rule, like a ruled exercise book */}
-          <div className="absolute top-0 bottom-0 left-10 w-px bg-examiner/25" />
+          <div className="absolute top-0 bottom-0 left-5 sm:left-10 w-px bg-fixed-examiner/25" />
 
           <p
-            className="font-body font-semibold text-ink text-[15px] mb-4"
+            className="font-body font-semibold text-fixed-ink text-[11px] sm:text-[15px] mb-3 sm:mb-4"
             style={{ lineHeight: `${RULE_HEIGHT}px` }}
           >
             Differentiate y&nbsp;=&nbsp;x&sup3;&nbsp;&minus;&nbsp;5x&sup2;&nbsp;+&nbsp;4x and find
             the gradient at x&nbsp;=&nbsp;2.{" "}
-            <span className="text-graphite font-mono text-sm">[5]</span>
+            <span className="text-fixed-graphite font-mono text-[10px] sm:text-sm">[5]</span>
           </p>
 
-          <div className="font-body italic text-ink/90 text-base" style={{ lineHeight: `${RULE_HEIGHT}px` }}>
+          <div className="font-body italic text-fixed-ink/90 text-xs sm:text-base" style={{ lineHeight: `${RULE_HEIGHT}px` }}>
             <p>dy/dx = 3x&sup2; &minus; 10x + 4</p>
             <p>At x = 2: 3(2)&sup2; &minus; 10(2) + 4</p>
 
-            <div className="flex items-baseline gap-3">
+            <div className="flex flex-wrap items-baseline gap-2 sm:gap-3">
               <p className="relative inline-block">
                 = 12 &minus; 20 + 4 = 4
                 <svg
@@ -74,7 +74,7 @@ export function MarkedAnswerSheet() {
                   <motion.path
                     d="M1,6 C 14,2 24,9 36,5 S 58,2 70,6 S 90,9 99,4"
                     fill="none"
-                    stroke="var(--examiner)"
+                    stroke="var(--fixed-examiner)"
                     strokeWidth="2.5"
                     strokeLinecap="round"
                     pathLength={1}
@@ -86,7 +86,7 @@ export function MarkedAnswerSheet() {
               </p>
 
               <motion.span
-                className="flex items-center justify-center w-9 h-9 rounded-full border-2 border-examiner text-examiner font-mono text-xs font-semibold flex-shrink-0"
+                className="flex items-center justify-center w-7 h-7 sm:w-9 sm:h-9 rounded-full border-2 border-fixed-examiner text-fixed-examiner font-mono text-[10px] sm:text-xs font-semibold flex-shrink-0"
                 variants={markVariants}
                 initial={initial}
                 animate="visible"
@@ -97,7 +97,7 @@ export function MarkedAnswerSheet() {
           </div>
 
           <motion.p
-            className="mt-2 flex items-center gap-1.5 text-examiner text-sm not-italic"
+            className="mt-2 flex items-center gap-1.5 text-fixed-examiner text-xs sm:text-sm not-italic"
             style={{ fontFamily: "var(--font-body)" }}
             variants={noteVariants}
             initial={initial}

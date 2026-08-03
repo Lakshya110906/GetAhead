@@ -6,10 +6,13 @@ import { SiteFooter } from "@/components/SiteFooter";
 export const metadata: Metadata = {
   title: "Terms of Service — GetAhead AI",
   description: "Read the GetAhead AI Terms of Service covering user responsibilities, acceptable use, AI limitations, intellectual property, and liability.",
+  alternates: { canonical: "/terms" },
   openGraph: {
     title: "Terms of Service — GetAhead AI",
     description: "Terms of Service for GetAhead AI — the AI-powered exam evaluation platform.",
+    url: "/terms",
     type: "website",
+    images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "GetAhead" }],
   },
 };
 

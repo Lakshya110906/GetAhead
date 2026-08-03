@@ -83,7 +83,7 @@ export default function SettingsPage() {
         setTimeout(() => setSaved(false), 2000);
       }
     } catch {
-      setProfileError("Unexpected server connection error. Please try again.");
+      setProfileError("Couldn't reach the server to save your profile. Check your connection and try again.");
     } finally {
       setProfileLoading(false);
     }
@@ -124,7 +124,7 @@ export default function SettingsPage() {
         setConfirmPassword("");
       }
     } catch {
-      setPasswordError("An unexpected error occurred");
+      setPasswordError("Couldn't reach the server to change your password. Check your connection and try again.");
     } finally {
       setPasswordLoading(false);
     }

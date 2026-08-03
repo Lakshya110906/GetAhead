@@ -20,10 +20,13 @@ import { SiteFooter } from "@/components/SiteFooter";
 export const metadata: Metadata = {
   title: "For Coaching Centers — GetAhead AI",
   description: "GetAhead AI helps coaching centers run AI-powered mock test evaluations, track student batch performance, and generate custom question papers for JEE, NEET, and board exams.",
+  alternates: { canonical: "/coaching-centers" },
   openGraph: {
     title: "For Coaching Centers — GetAhead AI",
     description: "AI mock test evaluation, batch rankings, and custom question papers for coaching centers.",
+    url: "/coaching-centers",
     type: "website",
+    images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "GetAhead" }],
   },
 };
 

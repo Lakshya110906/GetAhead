@@ -64,7 +64,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error("Change password API error:", error);
     return NextResponse.json(
-      { error: "An unexpected error occurred" },
+      { error: "Couldn't update your password due to a server error. Try again in a moment." },
       { status: 500 }
     );
   }

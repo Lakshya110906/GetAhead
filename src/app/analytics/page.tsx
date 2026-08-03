@@ -38,8 +38,9 @@ export default function AnalyticsPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
+      <div className="flex flex-col items-center justify-center gap-3 min-h-[60vh]">
         <Loader2 className="w-10 h-10 animate-spin text-blue-600" />
+        <p className="text-sm text-gray-500">Loading your analytics...</p>
       </div>
     );
   }

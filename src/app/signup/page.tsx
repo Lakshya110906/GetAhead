@@ -56,7 +56,7 @@ export default function SignupPage() {
         router.push(`/login?email=${encodeURIComponent(formData.email)}&signupSuccess=true`);
       }, 4000);
     } catch {
-      setError("Something went wrong. Please try again.");
+      setError("Couldn't reach the server to create your account. Check your connection and try again.");
       setLoading(false);
     }
   };

@@ -23,7 +23,7 @@ const footerLinks = {
 
 export function SiteFooter() {
   return (
-    <footer className="bg-gray-950 text-gray-400">
+    <footer className="bg-gray-950 text-gray-300">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 pb-8">
         {/* Top grid */}
         <div className="grid grid-cols-2 md:grid-cols-5 gap-10 mb-12">
@@ -34,10 +34,10 @@ export function SiteFooter() {
                 <Brain className="w-4 h-4 text-white" />
               </div>
               <span className="text-white font-bold text-lg" style={{ fontFamily: "var(--font-display)" }}>
-                Get<span className="text-ink">Ahead</span>
+                Get<span className="text-gray-300">Ahead</span>
               </span>
             </Link>
-            <p className="text-sm leading-relaxed max-w-xs text-gray-400 mb-6">
+            <p className="text-sm leading-relaxed max-w-xs text-gray-300 mb-6">
               AI-powered exam evaluation for students, teachers, and institutions. Upload answer sheets, get instant feedback, and track performance over time.
             </p>
           </div>
@@ -51,7 +51,7 @@ export function SiteFooter() {
                   <li key={link.href}>
                     <Link
                       href={link.href}
-                      className="text-sm text-gray-400 hover:text-white transition-colors"
+                      className="text-sm text-gray-300 hover:text-white transition-colors"
                     >
                       {link.label}
                     </Link>
@@ -63,13 +63,8 @@ export function SiteFooter() {
         </div>
 
         {/* Bottom bar */}
-        <div className="border-t border-gray-800 pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-gray-500">
+        <div className="border-t border-gray-800 pt-8 text-xs text-gray-300 text-center sm:text-left">
           <p>© {new Date().getFullYear()} GetAhead AI. All rights reserved. Built for students across India.</p>
-          <div className="flex items-center gap-4">
-            <Link href="/privacy" className="hover:text-gray-300 transition-colors">Privacy</Link>
-            <Link href="/terms" className="hover:text-gray-300 transition-colors">Terms</Link>
-            <Link href="/contact" className="hover:text-gray-300 transition-colors">Contact</Link>
-          </div>
         </div>
       </div>
     </footer>

@@ -294,19 +294,27 @@ export default function FAQPage() {
             <div className="space-y-3">
               {currentFaqs?.faqs.map((faq, idx) => {
                 const key = `${activeCategory}-${idx}`;
+                const slug = key.toLowerCase().replace(/[^a-z0-9]+/g, "-");
                 const isOpen = openItems[key];
                 return (
                   <div key={key} className="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow">
                     <button
+                      id={`faq-question-${slug}`}
                       onClick={() => toggle(key)}
                       className="w-full flex items-start justify-between p-5 text-left gap-4"
                       aria-expanded={isOpen}
+                      aria-controls={`faq-answer-${slug}`}
                     >
                       <span className="font-medium text-gray-900 text-base leading-snug">{faq.q}</span>
-                      <ChevronDown className={`w-5 h-5 text-gray-400 flex-shrink-0 mt-0.5 transition-transform ${isOpen ? "rotate-180" : ""}`} />
+                      <ChevronDown aria-hidden="true" className={`w-5 h-5 text-gray-400 flex-shrink-0 mt-0.5 transition-transform ${isOpen ? "rotate-180" : ""}`} />
                     </button>
                     {isOpen && (
-                      <div className="px-5 pb-5 border-t border-gray-50">
+                      <div
+                        id={`faq-answer-${slug}`}
+                        role="region"
+                        aria-labelledby={`faq-question-${slug}`}
+                        className="px-5 pb-5 border-t border-gray-50"
+                      >
                         <p className="text-gray-600 text-sm leading-relaxed pt-4">{faq.a}</p>
                       </div>
                     )}

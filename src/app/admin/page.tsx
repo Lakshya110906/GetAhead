@@ -367,7 +367,7 @@ export default function AdminPage() {
         fetchSettings();
       }
     } catch {
-      alert("Failed to save settings");
+      alert("Settings didn't save. Check your connection and try again.");
     }
   };
 
@@ -1206,7 +1206,19 @@ export default function AdminPage() {
                     {logs.length === 0 && (
                       <tr>
                         <td colSpan={4} className="text-center py-10 text-gray-400 font-sans">
-                          No logs found matching parameters.
+                          {logsSearch
+                            ? (
+                              <>
+                                No logs match &ldquo;{logsSearch}&rdquo;.{" "}
+                                <button
+                                  onClick={() => { setLogsSearch(""); fetchLogs(1, logType, ""); }}
+                                  className="text-blue-600 font-semibold hover:underline"
+                                >
+                                  Clear search
+                                </button>
+                              </>
+                            )
+                            : "No logs recorded yet for this category."}
                         </td>
                       </tr>
                     )}
@@ -1400,7 +1412,18 @@ export default function AdminPage() {
                 {tickets.length === 0 ? (
                   <div className="p-12 text-center text-gray-400 select-none">
                     <RefreshCw className="w-10 h-10 mx-auto mb-3 opacity-25" />
-                    <p className="font-semibold text-sm">No support tickets match these criteria</p>
+                    <p className="font-semibold text-sm">No tickets match these filters</p>
+                    <button
+                      onClick={() => {
+                        setTicketsSearch("");
+                        setTicketStatusFilter("");
+                        setTicketPriorityFilter("");
+                        setTicketCategoryFilter("");
+                      }}
+                      className="mt-3 text-blue-600 text-sm font-semibold hover:underline"
+                    >
+                      Clear filters
+                    </button>
                   </div>
                 ) : (
                   <div className="overflow-x-auto">

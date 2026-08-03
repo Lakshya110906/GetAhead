@@ -19,10 +19,13 @@ import { SiteFooter } from "@/components/SiteFooter";
 export const metadata: Metadata = {
   title: "For Institutions — GetAhead AI",
   description: "GetAhead AI helps schools and institutions centralise AI evaluation, monitor department performance, and provide consistent grading across all teachers.",
+  alternates: { canonical: "/institutions" },
   openGraph: {
     title: "For Institutions — GetAhead AI",
     description: "Centralised AI evaluation, department analytics, and administrative controls for schools and educational institutions.",
+    url: "/institutions",
     type: "website",
+    images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "GetAhead" }],
   },
 };
 
