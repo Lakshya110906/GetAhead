@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { alertOncePerDay } from "@/lib/alerts";
 
 // Approximate blended Gemini 2.0 Flash rates (USD per token). These are
 // estimates for an internal early-warning signal, not a billing-accurate
@@ -66,24 +67,6 @@ export async function getTodaysSpend(): Promise<SpendSnapshot> {
 }
 
 /**
- * Records an ops alert both to the server log (visible in Vercel's function
- * logs immediately) and to ErrorLog (visible in the admin panel's System
- * Logs tab, which already lists these) so it's durable and doesn't depend
- * on catching the log line live. There's no external channel (email/Slack)
- * wired up here — plug one in inside this function when you have one.
- */
-async function sendOpsAlert(message: string): Promise<void> {
-  console.error(`[SPEND ALERT] ${message}`);
-  try {
-    await prisma.errorLog.create({
-      data: { type: "SPEND_ALERT", message, path: "spendControl" },
-    });
-  } catch (err) {
-    console.error("[SPEND ALERT] failed to persist alert log:", err);
-  }
-}
-
-/**
  * Call this after every model call that might push spend over the alert
  * threshold. Fires at most once per day (tracked via SystemSetting) so it
  * doesn't spam once the threshold is crossed.
@@ -91,19 +74,11 @@ async function sendOpsAlert(message: string): Promise<void> {
 export async function maybeAlertHalfwayToThreshold(snapshot: SpendSnapshot): Promise<void> {
   if (snapshot.estimatedUsd < snapshot.thresholdUsd * ALERT_FRACTION) return;
 
-  const alertKey = `spend-alert-sent:${snapshot.date}`;
-  const already = await prisma.systemSetting.findUnique({ where: { key: alertKey } });
-  if (already) return;
-
-  await sendOpsAlert(
+  await alertOncePerDay(
+    "spend-alert-sent",
+    "SPEND_ALERT",
     `Estimated spend today is $${snapshot.estimatedUsd.toFixed(2)}, past ${Math.round(ALERT_FRACTION * 100)}% of the $${snapshot.thresholdUsd} daily threshold (${snapshot.totalTokens} tokens).`
   );
-
-  await prisma.systemSetting.upsert({
-    where: { key: alertKey },
-    create: { key: alertKey, value: new Date().toISOString() },
-    update: { value: new Date().toISOString() },
-  });
 }
 
 export class SpendLimitReachedError extends Error {

@@ -209,8 +209,9 @@ export default function PrivacyPage() {
             <ul className="list-disc pl-6 space-y-2 text-gray-700">
               <li><strong>Aiven Cloud</strong> — MySQL database hosting (data encrypted at rest, SOC 2 compliant).</li>
               <li><strong>Google Gemini API</strong> — AI evaluation and question generation (answer text sent per-request).</li>
-              <li><strong>Resend</strong> — Transactional email delivery (verification and password reset emails).</li>
+              <li><strong>Resend</strong> — Transactional email delivery (verification, password reset, and internal operational alerts).</li>
               <li><strong>Vercel</strong> — Application hosting and deployment infrastructure.</li>
+              <li><strong>Sentry</strong> — Server and client error tracking. Answer sheet content, OCR text, model responses, and request bodies are stripped before any error report is sent — Sentry only ever receives error messages, stack traces, and non-content metadata (e.g. which processing stage failed).</li>
             </ul>
             <p className="text-gray-700 leading-relaxed mt-4">We may disclose data to law enforcement or regulatory authorities only when legally required to do so, and only to the minimum extent necessary.</p>
           </section>
@@ -222,9 +223,9 @@ export default function PrivacyPage() {
             <p className="text-gray-700 leading-relaxed mb-4">We retain your data for as long as your account is active. Specifically:</p>
             <ul className="list-disc pl-6 space-y-2 text-gray-700">
               <li>Account data and evaluations are retained indefinitely while your account is active.</li>
-              <li>When you delete your account, all associated data (evaluations, reports, question papers, sessions) is permanently deleted within 7 days.</li>
-              <li>Audit logs are retained for 12 months for security and compliance purposes.</li>
-              <li>Error logs are retained for 30 days and then automatically purged.</li>
+              <li>When you delete your account (Settings → Security → Danger Zone), all associated data (evaluations, reports, question papers, sessions) is permanently deleted immediately — well within our 7-day commitment.</li>
+              <li>Audit logs are retained for 12 months, then automatically purged by a scheduled job.</li>
+              <li>Error logs are retained for 30 days, then automatically purged by the same scheduled job.</li>
             </ul>
           </section>
 
@@ -257,7 +258,7 @@ export default function PrivacyPage() {
               <li>Security headers: Content-Security-Policy, X-Frame-Options, X-Content-Type-Options, Referrer-Policy</li>
               <li>Input validation on all API endpoints using Zod</li>
               <li>Role-based access control — data is isolated per user account</li>
-              <li>Regular dependency audits and security patches</li>
+              <li>Automated weekly dependency vulnerability scanning and update pull requests, plus a scan on every dependency change</li>
             </ul>
             <p className="text-gray-700 leading-relaxed mt-4">Despite our best efforts, no system is perfectly secure. In the event of a data breach affecting your personal data, we will notify affected users within 72 hours via email.</p>
           </section>

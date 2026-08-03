@@ -10,6 +10,8 @@ import { MAX_UPLOAD_BYTES } from "@/app/api/uploads/route";
 import { consumeQuota, QuotaExceededError } from "@/lib/quota";
 import { assertSpendGateOpen, SpendLimitReachedError } from "@/lib/spendControl";
 import { assertDeclaredTypeMatches } from "@/lib/fileSignature";
+import { logger } from "@/lib/logger";
+import { captureException } from "@/lib/errorTracking";
 
 // after() keeps the worker call running past the point the response is
 // sent, so this stays fast for the client while the real work (which can
@@ -125,6 +127,8 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    logger.info("Evaluation enqueued", { jobId: job.id, stage: "enqueue", userId, subject, examType, pageCount });
+
     // Fire the worker in the background of this same invocation. The
     // cron sweep is the backstop if this never runs or the function dies
     // before it finishes — the job row is already durably QUEUED either way.
@@ -132,13 +136,15 @@ export async function POST(request: NextRequest) {
       try {
         await processSpecificJob(job.id);
       } catch (err) {
-        console.error(`Background worker trigger failed for job ${job.id}:`, err);
+        logger.error("Background worker trigger failed", { jobId: job.id, stage: "worker-trigger", error: String(err) });
+        captureException(err, { jobId: job.id, stage: "worker-trigger" });
       }
     });
 
     return NextResponse.json({ jobId: job.id }, { status: 202 });
   } catch (error) {
-    console.error("Enqueue evaluation error:", error);
+    logger.error("Enqueue evaluation error", { stage: "enqueue", error: String(error) });
+    captureException(error, { stage: "enqueue" });
     return NextResponse.json(
       { error: "Couldn't queue your evaluation due to a server error. Try again in a moment." },
       { status: 500 }
