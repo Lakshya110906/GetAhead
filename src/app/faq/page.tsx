@@ -11,7 +11,7 @@ const faqCategories = [
     faqs: [
       {
         q: "How do I create a GetAhead AI account?",
-        a: "Go to getahead.ai and click 'Get Started Free'. Enter your name, email, and password, select your role (Student, Teacher, or Institution), and click Create Account. You'll receive a verification email within a few seconds.",
+        a: "Go to getahead.ai and click 'Get Started Free'. Enter your name, email, and password, select your role (Student, Teacher, or Institution), and click Create Account. You're signed in immediately and land straight on your dashboard.",
       },
       {
         q: "Is GetAhead AI free to use?",
@@ -37,14 +37,6 @@ const faqCategories = [
       {
         q: "I forgot my password. How do I reset it?",
         a: "On the login page, click 'Forgot Password?'. Enter your registered email address and we'll send a reset link within seconds. The link is valid for 1 hour. If you don't see the email, check your spam folder.",
-      },
-      {
-        q: "Why do I need to verify my email?",
-        a: "Email verification ensures the address belongs to you and protects your account from unauthorised access. It also allows us to reliably send you password reset emails if you ever get locked out.",
-      },
-      {
-        q: "My verification link expired. What should I do?",
-        a: "Go to the login page and click 'Resend Verification Email'. Enter your email and we'll send a fresh link. Verification links expire after 24 hours for security.",
       },
       {
         q: "Can I stay signed in across sessions?",

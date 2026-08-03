@@ -5,7 +5,7 @@ import Link from "next/link";
 import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
-import { Brain, Mail, Lock, Eye, EyeOff, ArrowRight, Loader2, CheckCircle } from "lucide-react";
+import { Brain, Mail, Lock, Eye, EyeOff, ArrowRight, Loader2 } from "lucide-react";
 
 function LoginForm() {
   const router = useRouter();
@@ -15,32 +15,21 @@ function LoginForm() {
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [signupSuccess, setSignupSuccess] = useState(false);
-  
-  // Resend verification link states
-  const [resendLoading, setResendLoading] = useState(false);
-  const [resendSuccess, setResendSuccess] = useState(false);
-  const [resendError, setResendError] = useState("");
+  const [justSignedUp, setJustSignedUp] = useState(false);
 
   useEffect(() => {
-    const emailParam = searchParams.get("email");
-    const successParam = searchParams.get("signupSuccess");
-    setTimeout(() => {
-      if (emailParam) {
-        setEmail(emailParam);
-      }
-      if (successParam === "true") {
-        setSignupSuccess(true);
+    const t = setTimeout(() => {
+      if (searchParams.get("justSignedUp") === "true") {
+        setJustSignedUp(true);
       }
     }, 0);
+    return () => clearTimeout(t);
   }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError("");
-    setResendSuccess(false);
-    setResendError("");
 
     const result = await signIn("credentials", {
       email,
@@ -49,9 +38,7 @@ function LoginForm() {
     });
 
     if (result?.error) {
-      if (result.error === "Email not verified") {
-        setError("Email not verified");
-      } else if (result.error === "Your account has been suspended") {
+      if (result.error === "Your account has been suspended") {
         setError("Your account has been suspended. Please contact support.");
       } else {
         setError("Invalid email or password. Please try again.");
@@ -70,31 +57,6 @@ function LoginForm() {
       const sessionRes = await fetch("/api/auth/session");
       const session = await sessionRes.json();
       router.push(session?.user?.role === "ADMIN" ? "/admin" : "/dashboard");
-    }
-  };
-
-  const handleResendVerification = async () => {
-    if (!email) return;
-    setResendLoading(true);
-    setResendError("");
-    setResendSuccess(false);
-
-    try {
-      const res = await fetch("/api/auth/verify-email/resend", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        setResendError(data.error || "Failed to resend link");
-      } else {
-        setResendSuccess(true);
-      }
-    } catch {
-      setResendError("Couldn't reach the server to resend the link. Check your connection and try again.");
-    } finally {
-      setResendLoading(false);
     }
   };
 
@@ -169,46 +131,13 @@ function LoginForm() {
             </Link>
           </p>
 
-          {signupSuccess && (
-            <div className="bg-green-50 border border-green-200 text-green-800 rounded-xl px-4 py-3 text-sm mb-6 flex items-start gap-2.5 shadow-sm">
-              <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
-              <div>
-                <p className="font-semibold">Account created successfully!</p>
-                <p className="text-xs text-green-700 mt-0.5">Please sign in with your new credentials to continue.</p>
-              </div>
+          {justSignedUp && (
+            <div className="bg-amber-50 border border-amber-200 text-amber-800 rounded-xl px-4 py-3 text-sm mb-6">
+              Your account was created, but we couldn&apos;t sign you in automatically. Please sign in below.
             </div>
           )}
 
-          {error && error === "Email not verified" && (
-            <div className="bg-amber-50 border border-amber-200 text-amber-800 rounded-xl p-4 text-sm mb-6 space-y-3">
-              <p className="font-semibold">Email Verification Required</p>
-              <p className="text-xs text-amber-700 leading-relaxed">
-                Your email address is not verified yet. Please click the link we sent to your inbox to log in.
-              </p>
-              {resendSuccess ? (
-                <p className="text-xs font-bold text-green-700">
-                  ✓ A new verification link has been sent successfully.
-                </p>
-              ) : (
-                <div className="pt-1">
-                  <button
-                    type="button"
-                    onClick={handleResendVerification}
-                    disabled={resendLoading}
-                    className="inline-flex items-center gap-1.5 bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors disabled:opacity-60"
-                  >
-                    {resendLoading && <Loader2 className="w-3 h-3 animate-spin" />}
-                    Resend Verification Link
-                  </button>
-                  {resendError && (
-                    <p className="text-[11px] text-red-650 mt-1.5 font-medium">{resendError}</p>
-                  )}
-                </div>
-              )}
-            </div>
-          )}
-
-          {error && error !== "Email not verified" && (
+          {error && (
             <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-sm mb-6">
               {error}
             </div>

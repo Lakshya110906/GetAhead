@@ -3,9 +3,10 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { signIn } from "next-auth/react";
 
 import { motion } from "framer-motion";
-import { Brain, Mail, Lock, User, Eye, EyeOff, ArrowRight, Loader2, CheckCircle } from "lucide-react";
+import { Brain, Mail, Lock, User, Eye, EyeOff, ArrowRight, Loader2 } from "lucide-react";
 
 const roles = [
   { value: "STUDENT", label: "Student" },
@@ -24,7 +25,6 @@ export default function SignupPage() {
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -50,47 +50,27 @@ export default function SignupPage() {
         return;
       }
 
-      setSuccess(true);
+      // Sign the user straight in with the credentials they just typed —
+      // no separate "go check your email" step. If this specific call
+      // fails (as opposed to the signup above, which already succeeded),
+      // fall back to the login page rather than leaving a blank screen.
+      const signInResult = await signIn("credentials", {
+        email: formData.email,
+        password: formData.password,
+        redirect: false,
+      });
 
-      setTimeout(() => {
-        router.push(`/login?email=${encodeURIComponent(formData.email)}&signupSuccess=true`);
-      }, 4000);
+      if (signInResult?.error) {
+        router.push(`/login?justSignedUp=true`);
+        return;
+      }
+
+      router.push("/dashboard");
     } catch {
       setError("Couldn't reach the server to create your account. Check your connection and try again.");
       setLoading(false);
     }
   };
-
-  if (success) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 px-6">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="text-center bg-white rounded-2xl border border-gray-150 card-shadow-md p-8 max-w-sm w-full"
-        >
-          <div className="w-20 h-20 bg-green-150 rounded-full flex items-center justify-center mx-auto mb-5 shadow-inner">
-            <CheckCircle className="w-10 h-10 text-green-600" />
-          </div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2" style={{ fontFamily: "var(--font-display)" }}>
-            Account Created!
-          </h2>
-          <p className="text-gray-600 text-sm mb-6 leading-relaxed">
-            Account created successfully! Please sign in to continue.
-          </p>
-          <button
-            onClick={() => router.push(`/login?email=${encodeURIComponent(formData.email)}&signupSuccess=true`)}
-            className="w-full bg-ink text-white font-semibold py-3 rounded-xl hover:opacity-90 transition-opacity flex items-center justify-center gap-2 shadow-md"
-          >
-            Continue to Sign In <ArrowRight className="w-4 h-4" />
-          </button>
-          <p className="text-xs text-gray-400 mt-4 animate-pulse">
-            Redirecting automatically in a few seconds...
-          </p>
-        </motion.div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen flex">

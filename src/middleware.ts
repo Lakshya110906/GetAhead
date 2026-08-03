@@ -30,7 +30,6 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith("/api/auth/signup") ||
     pathname.startsWith("/api/auth/forgot-password") ||
     pathname.startsWith("/api/auth/reset-password") ||
-    pathname.startsWith("/api/auth/verify-email") ||
     pathname.startsWith("/api/auth/callback/credentials");
 
   const isEvaluationEnqueue = pathname === "/api/evaluations" && request.method === "POST";
