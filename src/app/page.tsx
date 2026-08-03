@@ -14,7 +14,6 @@ import {
   Sparkles,
   GraduationCap,
   CheckCircle,
-  Star,
   ArrowRight,
   Zap,
   Users,
@@ -66,9 +65,9 @@ const features = [
   },
   {
     icon: Shield,
-    title: "Trusted & Accurate",
+    title: "Rubric-Based Evaluation",
     description:
-      "Calibrated against professional academic grading rubrics to ensure highly reliable evaluations.",
+      "Each answer is evaluated against a structured marking scheme, with a breakdown of marks awarded per step or point.",
     color: "from-green-500 to-green-600",
     bg: "bg-green-50",
     link: "/upload",
@@ -118,7 +117,7 @@ const faqs = [
   },
   {
     question: "Is my exam paper data kept private?",
-    answer: "Yes, your privacy is our top priority. All uploaded answer sheets and generated reports are stored securely in your dashboard and never shared with third parties or used to train open models.",
+    answer: "Your uploaded answer sheets and generated reports are stored securely in your dashboard. The extracted text from your answer sheet is sent to the Google Gemini API to generate your evaluation.",
   },
   {
     question: "Does it evaluate handwritten answers?",
@@ -132,11 +131,16 @@ export default function LandingPage() {
   const isAuthenticated = status === "authenticated";
   const ctaUrl = isAuthenticated ? "/dashboard" : "/signup";
 
-  const [dbStats, setDbStats] = useState({
+  const [dbStats, setDbStats] = useState<{
+    totalUsers: number;
+    totalEvaluations: number;
+    averageTimeSeconds: number | null;
+    averagePercentage: number | null;
+  }>({
     totalUsers: 0,
     totalEvaluations: 0,
-    averageTimeSeconds: 12,
-    averagePercentage: 85
+    averageTimeSeconds: null,
+    averagePercentage: null,
   });
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -156,11 +160,19 @@ export default function LandingPage() {
   }, []);
 
   const statsList = [
-    { value: dbStats.totalEvaluations.toString(), label: "Evaluations Done", icon: CheckCircle },
-    { value: dbStats.totalUsers.toString(), label: "Registered Users", icon: Users },
-    { value: `${dbStats.averagePercentage}%`, label: "Avg. Evaluation Score", icon: TrendingUp },
-    { value: `${dbStats.averageTimeSeconds}s`, label: "Avg. Evaluation Time", icon: Zap },
-  ];
+    dbStats.totalEvaluations >= 100
+      ? { value: dbStats.totalEvaluations.toString(), label: "Evaluations Done", icon: CheckCircle }
+      : null,
+    dbStats.totalUsers >= 100
+      ? { value: dbStats.totalUsers.toString(), label: "Registered Users", icon: Users }
+      : null,
+    dbStats.averagePercentage !== null
+      ? { value: `${dbStats.averagePercentage}%`, label: "Avg. Evaluation Score", icon: TrendingUp }
+      : null,
+    dbStats.averageTimeSeconds !== null
+      ? { value: `${dbStats.averageTimeSeconds}s`, label: "Avg. Evaluation Time", icon: Zap }
+      : null,
+  ].filter((stat): stat is { value: string; label: string; icon: typeof CheckCircle } => stat !== null);
 
   const toggleDarkMode = () => { setTheme(isDark ? "default" : "dark"); };
   void toggleDarkMode; // reserved for future navbar toggle
@@ -331,33 +343,15 @@ export default function LandingPage() {
                 </Link>
               </div>
 
-              <div className="flex items-center gap-6">
-                <div className="flex -space-x-2">
-                  {["PS", "RK", "AG", "MT"].map((initials, i) => (
-                    <div
-                      key={i}
-                      className={`w-9 h-9 rounded-full border-2 border-white flex items-center justify-center text-xs font-bold text-white ${
-                        ["bg-blue-500", "bg-purple-500", "bg-teal-500", "bg-orange-500"][i]
-                      }`}
-                    >
-                      {initials}
-                    </div>
-                  ))}
-                </div>
-                <div>
-                  <div className="flex items-center gap-1 mb-0.5">
-                    {[...Array(5)].map((_, i) => (
-                      <Star
-                        key={i}
-                        className="w-4 h-4 text-yellow-400 fill-yellow-400"
-                      />
-                    ))}
+              {dbStats.totalUsers >= 100 && (
+                <div className="flex items-center gap-6">
+                  <div>
+                    <p className={`text-sm ${isDark ? "text-gray-400" : "text-gray-600"}`}>
+                      Join <strong className={isDark ? "text-white" : "text-gray-900"}>{dbStats.totalUsers}</strong> registered users on GetAhead
+                    </p>
                   </div>
-                  <p className={`text-sm ${isDark ? "text-gray-400" : "text-gray-600"}`}>
-                    Join <strong className={isDark ? "text-white" : "text-gray-900"}>{dbStats.totalUsers}</strong> registered users on GetAhead
-                  </p>
                 </div>
-              </div>
+              )}
             </motion.div>
 
             <motion.div
@@ -429,24 +423,26 @@ export default function LandingPage() {
       </section>
 
       {/* Stats Bar */}
-      <section className="py-12 bg-gray-900">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
-            {statsList.map((stat) => (
-              <div key={stat.label} className="text-center">
-                <stat.icon className="w-6 h-6 text-teal-400 mx-auto mb-2" />
-                <p
-                  className="text-3xl font-bold text-white mb-1"
-                  style={{ fontFamily: "var(--font-poppins)" }}
-                >
-                  {stat.value}
-                </p>
-                <p className="text-sm text-gray-400">{stat.label}</p>
-              </div>
-            ))}
+      {statsList.length > 0 && (
+        <section className="py-12 bg-gray-900">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
+              {statsList.map((stat) => (
+                <div key={stat.label} className="text-center">
+                  <stat.icon className="w-6 h-6 text-teal-400 mx-auto mb-2" />
+                  <p
+                    className="text-3xl font-bold text-white mb-1"
+                    style={{ fontFamily: "var(--font-poppins)" }}
+                  >
+                    {stat.value}
+                  </p>
+                  <p className="text-sm text-gray-400">{stat.label}</p>
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* Features */}
       <section id="features" className="py-20">
@@ -616,6 +612,16 @@ export default function LandingPage() {
                 >
                   <p className="p-5 text-gray-600 text-sm leading-relaxed bg-gray-50/50">
                     {faq.answer}
+                    {faq.question === "Is my exam paper data kept private?" && (
+                      <>
+                        {" "}
+                        Read our{" "}
+                        <Link href="/privacy" className="text-blue-600 hover:underline">
+                          privacy policy
+                        </Link>
+                        .
+                      </>
+                    )}
                   </p>
                 </div>
               </motion.div>

@@ -148,7 +148,7 @@ export default function PrivacyPage() {
             <ul className="list-disc pl-6 space-y-2 text-gray-700">
               <li>The OCR-extracted text from your answer sheet is sent to the Gemini API as part of a structured prompt.</li>
               <li>The response (marks and feedback) is received and stored in your account.</li>
-              <li>We do not retain your answer sheet content in GetAhead AI&apos;s own databases beyond what is shown in your evaluation report.</li>
+              <li>We retain the OCR-extracted text from your answer sheet in GetAhead AI&apos;s own database, alongside the marks and feedback, so your evaluation report remains available in your dashboard.</li>
             </ul>
             <p className="text-gray-700 leading-relaxed mt-4">Please refer to <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">Google&apos;s Privacy Policy</a> and the <a href="https://ai.google.dev/gemini-api/terms" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">Gemini API Terms of Service</a> for details on how Google handles API request data. We do not use your data to train our own AI models.</p>
           </section>

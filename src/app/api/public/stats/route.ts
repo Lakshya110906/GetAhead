@@ -12,27 +12,21 @@ export async function GET() {
 
     const totalEvaluations = completedEvaluations.length;
 
-    // Calculate actual average evaluation time in seconds
-    let averageTimeSeconds = 0;
+    // Calculate actual average evaluation time in seconds from real rows only
+    let averageTimeSeconds: number | null = null;
     if (totalEvaluations > 0) {
       const totalDurationMs = completedEvaluations.reduce((sum, ev) => {
         const duration = ev.updatedAt.getTime() - ev.createdAt.getTime();
         return sum + Math.max(0, duration);
       }, 0);
       averageTimeSeconds = Math.round(totalDurationMs / totalEvaluations / 1000);
-      // Bound it between realistic values just in case
-      if (averageTimeSeconds < 1) averageTimeSeconds = 12; // default avg duration
-    } else {
-      averageTimeSeconds = 12; // fallback if 0 evaluations
     }
 
-    // Calculate actual average score (to use as average performance grade in stats)
-    let averagePercentage = 0;
+    // Calculate actual average score from real rows only
+    let averagePercentage: number | null = null;
     if (totalEvaluations > 0) {
       const sumPercentage = completedEvaluations.reduce((sum, ev) => sum + (ev.percentage || 0), 0);
       averagePercentage = Math.round(sumPercentage / totalEvaluations);
-    } else {
-      averagePercentage = 85; // fallback baseline target
     }
 
     return NextResponse.json({
@@ -46,8 +40,8 @@ export async function GET() {
     return NextResponse.json({
       totalUsers: 0,
       totalEvaluations: 0,
-      averageTimeSeconds: 12,
-      averagePercentage: 85
+      averageTimeSeconds: null,
+      averagePercentage: null
     });
   }
 }

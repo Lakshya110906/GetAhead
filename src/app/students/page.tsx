@@ -186,28 +186,6 @@ export default function StudentsPage() {
         </div>
       </section>
 
-      {/* What students say */}
-      <section className="py-20 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-        <h2 className="text-3xl font-bold text-gray-900 text-center mb-12" style={{ fontFamily: "var(--font-poppins)" }}>
-          Built for real exam pressure
-        </h2>
-        <div className="grid md:grid-cols-3 gap-6">
-          {[
-            { subject: "Class 12 Mathematics", quote: "I used to get 68–72 in maths. After 3 months of evaluating my practice sheets with GetAhead AI, I understood my calculus errors and improved to 89." },
-            { subject: "NEET Biology", quote: "The AI pointed out I kept confusing meiosis phases. I revised that chapter specifically and it didn't cost me marks in the actual test." },
-            { subject: "Class 10 Science", quote: "Generating question papers at medium and hard difficulty and evaluating my answers helped me figure out my board exam strategy well before the date." },
-          ].map((t, i) => (
-            <div key={i} className="bg-gradient-to-br from-blue-50 to-teal-50 rounded-2xl border border-blue-100 p-6">
-              <div className="flex gap-0.5 mb-4">
-                {[...Array(5)].map((_, j) => <Star key={j} className="w-4 h-4 text-yellow-400 fill-yellow-400" />)}
-              </div>
-              <p className="text-gray-700 text-sm leading-relaxed mb-4 italic">&ldquo;{t.quote}&rdquo;</p>
-              <p className="text-xs font-semibold text-blue-700">{t.subject}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
       {/* CTA */}
       <section className="py-24 bg-gradient-to-br from-blue-600 to-teal-500">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
