@@ -265,9 +265,9 @@ export default function SignupPage() {
 
           <p className="text-xs text-gray-400 text-center mt-6">
             By creating an account, you agree to our{" "}
-            <a href="#" className="text-blue-500 hover:underline">Terms of Service</a>{" "}
+            <Link href="/terms" className="text-blue-500 hover:underline">Terms of Service</Link>{" "}
             and{" "}
-            <a href="#" className="text-blue-500 hover:underline">Privacy Policy</a>.
+            <Link href="/privacy" className="text-blue-500 hover:underline">Privacy Policy</Link>.
           </p>
         </motion.div>
       </div>
