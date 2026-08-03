@@ -26,7 +26,7 @@ export default function PrivacyPage() {
       <nav className="fixed top-0 left-0 right-0 z-50 bg-white/95 border-b border-gray-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16">
           <Link href="/" className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-ink flex items-center justify-center">
+            <div className="w-8 h-8 rounded-lg bg-fixed-ink flex items-center justify-center">
               <Brain className="w-4 h-4 text-white" />
             </div>
             <span className="font-bold text-gray-900" style={{ fontFamily: "var(--font-display)" }}>
@@ -35,7 +35,7 @@ export default function PrivacyPage() {
           </Link>
           <div className="flex items-center gap-3">
             <Link href="/login" className="text-sm text-gray-600 hover:text-gray-900 font-medium transition-colors">Sign In</Link>
-            <Link href="/signup" className="text-sm bg-ink text-white font-semibold px-4 py-2 rounded-lg hover:opacity-90 transition-opacity">Get Started Free</Link>
+            <Link href="/signup" className="text-sm bg-fixed-ink text-white font-semibold px-4 py-2 rounded-lg hover:opacity-90 transition-opacity">Get Started Free</Link>
           </div>
         </div>
       </nav>
@@ -137,7 +137,7 @@ export default function PrivacyPage() {
               <li>To display evaluation results, marks breakdowns, and AI feedback in your dashboard</li>
               <li>To generate performance analytics from your evaluation history</li>
               <li>To generate question papers based on your parameters</li>
-              <li>To send transactional emails (email verification, password reset)</li>
+              <li>To send transactional emails (password reset, support ticket notifications)</li>
               <li>To detect and prevent abuse, fraud, and security threats</li>
             </ul>
             <p className="text-gray-700 leading-relaxed mt-4">We do <strong>not</strong> use your data to serve advertisements, profile you for marketing, or sell your data to third parties.</p>
@@ -209,7 +209,7 @@ export default function PrivacyPage() {
             <ul className="list-disc pl-6 space-y-2 text-gray-700">
               <li><strong>Aiven Cloud</strong> — MySQL database hosting (data encrypted at rest, SOC 2 compliant).</li>
               <li><strong>Google Gemini API</strong> — AI evaluation and question generation (answer text sent per-request).</li>
-              <li><strong>Resend</strong> — Transactional email delivery (verification, password reset, and internal operational alerts).</li>
+              <li><strong>Resend</strong> — Transactional email delivery (password reset, support notifications, and internal operational alerts).</li>
               <li><strong>Vercel</strong> — Application hosting and deployment infrastructure.</li>
               <li><strong>Sentry</strong> — Server and client error tracking. Answer sheet content, OCR text, model responses, and request bodies are stripped before any error report is sent — Sentry only ever receives error messages, stack traces, and non-content metadata (e.g. which processing stage failed).</li>
             </ul>

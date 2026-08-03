@@ -31,7 +31,7 @@ const categories = [
     articles: [
       {
         title: "How to create a GetAhead AI account",
-        content: `Creating an account is quick and free. Visit getahead.ai and click "Get Started Free" in the top navigation. Fill in your full name, email address, and a strong password (minimum 8 characters). Select your role — Student, Teacher, or Institution — and click "Create Account". You'll receive a verification email within seconds. Click the link in the email to activate your account and access the full platform.`,
+        content: `Creating an account is quick and free. Visit getahead.ai and click "Get Started Free" in the top navigation. Fill in your full name, email address, and a strong password (minimum 8 characters). Select your role — Student, Teacher, or Institution — and click "Create Account". You're signed in immediately and land straight on your dashboard — no separate verification step.`,
       },
       {
         title: "How to change your name or profile details",
@@ -56,16 +56,12 @@ const categories = [
     textColor: "text-indigo-700",
     articles: [
       {
-        title: "Why do I need to verify my email?",
-        content: `Email verification confirms that the email address belongs to you and allows us to reliably send password reset emails. Without verification, your account is restricted. Check your inbox (and spam folder) for an email from noreply@getahead.ai. Click the verification link within 24 hours. If it expires, go to the login page and click "Resend Verification Email".`,
-      },
-      {
         title: "I forgot my password — how do I reset it?",
         content: `On the login page, click "Forgot Password?" below the password field. Enter your registered email address and click "Send Reset Link". Check your inbox for a password reset email. Click the link — it's valid for 1 hour. Enter and confirm your new password. You can then log in with the new credentials. All existing sessions will be logged out for security.`,
       },
       {
-        title: "My verification/reset link isn't working",
-        content: `Links expire after 24 hours (verification) or 1 hour (password reset). If the link expired, go to the login page and request a new one. If the link still doesn't work, try: copying and pasting the full URL from the email into your browser, clearing browser cache, or using a different browser. If problems persist, contact support@getahead.ai.`,
+        title: "My password reset link isn't working",
+        content: `Reset links expire after 1 hour. If the link expired, go to the login page and request a new one. If the link still doesn't work, try: copying and pasting the full URL from the email into your browser, clearing browser cache, or using a different browser. If problems persist, contact support@getahead.ai.`,
       },
       {
         title: "I'm getting 'Invalid credentials' on login",
@@ -240,7 +236,7 @@ export default function HelpCenterPage() {
       <nav className="fixed top-0 left-0 right-0 z-50 bg-white/95 border-b border-gray-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16">
           <Link href="/" className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-ink flex items-center justify-center">
+            <div className="w-8 h-8 rounded-lg bg-fixed-ink flex items-center justify-center">
               <Brain className="w-4 h-4 text-white" />
             </div>
             <span className="font-bold text-gray-900" style={{ fontFamily: "var(--font-display)" }}>
@@ -249,18 +245,18 @@ export default function HelpCenterPage() {
           </Link>
           <div className="flex items-center gap-3">
             <Link href="/login" className="text-sm text-gray-600 hover:text-gray-900 font-medium transition-colors">Sign In</Link>
-            <Link href="/signup" className="text-sm bg-ink text-white font-semibold px-4 py-2 rounded-lg hover:opacity-90 transition-opacity">Get Started Free</Link>
+            <Link href="/signup" className="text-sm bg-fixed-ink text-white font-semibold px-4 py-2 rounded-lg hover:opacity-90 transition-opacity">Get Started Free</Link>
           </div>
         </div>
       </nav>
 
       {/* Hero + Search */}
-      <section className="pt-32 pb-16 bg-ink">
+      <section className="pt-32 pb-16 bg-fixed-ink">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h1 className="text-4xl md:text-5xl font-bold text-white mb-4" style={{ fontFamily: "var(--font-display)" }}>
             How can we help?
           </h1>
-          <p className="text-blue-100 text-lg mb-8">
+          <p className="text-white/70 text-lg mb-8">
             Search our knowledge base or browse by category below.
           </p>
           <div className="relative max-w-xl mx-auto">
@@ -401,7 +397,7 @@ export default function HelpCenterPage() {
           <p className="text-gray-600 mb-6">
             Our support team responds within 24 hours on weekdays.
           </p>
-          <Link href="/contact" className="inline-flex items-center gap-2 bg-ink text-white font-semibold px-6 py-3 rounded-xl hover:opacity-90 transition-opacity">
+          <Link href="/contact" className="inline-flex items-center gap-2 bg-fixed-ink text-white font-semibold px-6 py-3 rounded-xl hover:opacity-90 transition-opacity">
             Contact Support <ArrowRight className="w-4 h-4" />
           </Link>
         </div>

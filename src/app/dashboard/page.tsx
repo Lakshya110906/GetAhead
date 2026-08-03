@@ -117,7 +117,7 @@ export default function DashboardPage() {
         </div>
         <Link
           href="/upload"
-          className="inline-flex items-center gap-2 bg-ink text-white font-semibold px-5 py-2.5 rounded-xl hover:opacity-90 transition-opacity text-sm"
+          className="inline-flex items-center gap-2 bg-fixed-ink text-white font-semibold px-5 py-2.5 rounded-xl hover:opacity-90 transition-opacity text-sm"
         >
           <PlusCircle className="w-4 h-4" />
           New Evaluation
@@ -236,7 +236,7 @@ export default function DashboardPage() {
             <p className="text-gray-400 text-sm mt-1">Start your first evaluation to see results here</p>
             <Link
               href="/upload"
-              className="inline-flex items-center gap-2 bg-ink text-white text-sm font-semibold px-5 py-2.5 rounded-xl mt-4 hover:opacity-90"
+              className="inline-flex items-center gap-2 bg-fixed-ink text-white text-sm font-semibold px-5 py-2.5 rounded-xl mt-4 hover:opacity-90"
             >
               <PlusCircle className="w-4 h-4" />
               Start Evaluation
@@ -250,7 +250,7 @@ export default function DashboardPage() {
                 className="flex items-center justify-between py-3 px-4 bg-gray-50 rounded-xl hover:bg-blue-50 transition-colors group"
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-ink rounded-xl flex items-center justify-center text-white text-xs font-bold">
+                  <div className="w-10 h-10 bg-fixed-ink rounded-xl flex items-center justify-center text-white text-xs font-bold">
                     {ev.subject.slice(0, 2).toUpperCase()}
                   </div>
                   <div>

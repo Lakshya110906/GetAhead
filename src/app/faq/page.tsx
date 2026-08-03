@@ -11,7 +11,7 @@ const faqCategories = [
     faqs: [
       {
         q: "How do I create a GetAhead AI account?",
-        a: "Go to getahead.ai and click 'Get Started Free'. Enter your name, email, and password, select your role (Student, Teacher, or Institution), and click Create Account. You'll receive a verification email within a few seconds.",
+        a: "Go to getahead.ai and click 'Get Started Free'. Enter your name, email, and password, select your role (Student, Teacher, or Institution), and click Create Account. You're signed in immediately and land straight on your dashboard.",
       },
       {
         q: "Is GetAhead AI free to use?",
@@ -37,14 +37,6 @@ const faqCategories = [
       {
         q: "I forgot my password. How do I reset it?",
         a: "On the login page, click 'Forgot Password?'. Enter your registered email address and we'll send a reset link within seconds. The link is valid for 1 hour. If you don't see the email, check your spam folder.",
-      },
-      {
-        q: "Why do I need to verify my email?",
-        a: "Email verification ensures the address belongs to you and protects your account from unauthorised access. It also allows us to reliably send you password reset emails if you ever get locked out.",
-      },
-      {
-        q: "My verification link expired. What should I do?",
-        a: "Go to the login page and click 'Resend Verification Email'. Enter your email and we'll send a fresh link. Verification links expire after 24 hours for security.",
       },
       {
         q: "Can I stay signed in across sessions?",
@@ -230,7 +222,7 @@ export default function FAQPage() {
       <nav className="fixed top-0 left-0 right-0 z-50 bg-white/95 border-b border-gray-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16">
           <Link href="/" className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-ink flex items-center justify-center">
+            <div className="w-8 h-8 rounded-lg bg-fixed-ink flex items-center justify-center">
               <Brain className="w-4 h-4 text-white" />
             </div>
             <span className="font-bold text-gray-900" style={{ fontFamily: "var(--font-display)" }}>
@@ -239,7 +231,7 @@ export default function FAQPage() {
           </Link>
           <div className="flex items-center gap-3">
             <Link href="/login" className="text-sm text-gray-600 hover:text-gray-900 font-medium transition-colors">Sign In</Link>
-            <Link href="/signup" className="text-sm bg-ink text-white font-semibold px-4 py-2 rounded-lg hover:opacity-90 transition-opacity">Get Started Free</Link>
+            <Link href="/signup" className="text-sm bg-fixed-ink text-white font-semibold px-4 py-2 rounded-lg hover:opacity-90 transition-opacity">Get Started Free</Link>
           </div>
         </div>
       </nav>
@@ -336,7 +328,7 @@ export default function FAQPage() {
             Our support team responds within 24 hours on weekdays. You can also browse the Help Center for detailed guides.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-            <Link href="/contact" className="inline-flex items-center gap-2 bg-ink text-white font-semibold px-6 py-3 rounded-xl hover:opacity-90 transition-opacity">
+            <Link href="/contact" className="inline-flex items-center gap-2 bg-fixed-ink text-white font-semibold px-6 py-3 rounded-xl hover:opacity-90 transition-opacity">
               Contact Support <ArrowRight className="w-4 h-4" />
             </Link>
             <Link href="/help" className="inline-flex items-center gap-2 bg-white text-gray-700 font-medium px-6 py-3 rounded-xl border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-all">

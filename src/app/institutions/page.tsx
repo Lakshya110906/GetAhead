@@ -45,7 +45,7 @@ export default function InstitutionsPage() {
           </Link>
           <div className="flex items-center gap-3">
             <Link href="/login" className="text-sm text-gray-600 hover:text-gray-900 font-medium transition-colors">Sign In</Link>
-            <Link href="/signup" className="text-sm bg-ink text-white font-semibold px-4 py-2 rounded-lg hover:opacity-90 transition-opacity">Get Started Free</Link>
+            <Link href="/signup" className="text-sm bg-fixed-ink text-white font-semibold px-4 py-2 rounded-lg hover:opacity-90 transition-opacity">Get Started Free</Link>
           </div>
         </div>
       </nav>
@@ -67,7 +67,7 @@ export default function InstitutionsPage() {
                 GetAhead AI brings AI-powered evaluation to your entire institution — with centralised access, consistent grading standards, and performance insights across every department.
               </p>
               <div className="flex flex-col sm:flex-row gap-3">
-                <Link href="/signup" className="inline-flex items-center justify-center gap-2 bg-ink text-white font-semibold px-6 py-3 rounded-xl hover:opacity-90 transition-opacity shadow-lg">
+                <Link href="/signup" className="inline-flex items-center justify-center gap-2 bg-fixed-ink text-white font-semibold px-6 py-3 rounded-xl hover:opacity-90 transition-opacity shadow-lg">
                   Get Started Free <ArrowRight className="w-4 h-4" />
                 </Link>
                 <Link href="/contact" className="inline-flex items-center justify-center gap-2 bg-white text-gray-700 font-medium px-6 py-3 rounded-xl border border-gray-200 hover:bg-gray-50 transition-all">
@@ -210,7 +210,7 @@ export default function InstitutionsPage() {
       </section>
 
       {/* CTA */}
-      <section className="py-24 bg-ink">
+      <section className="py-24 bg-fixed-ink">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl md:text-4xl font-bold text-white mb-4" style={{ fontFamily: "var(--font-display)" }}>
             Bring AI evaluation to your institution
