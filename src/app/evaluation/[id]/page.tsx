@@ -219,7 +219,7 @@ export default function EvaluationPage() {
         </p>
         <button
           onClick={() => router.push("/dashboard")}
-          className="inline-flex items-center gap-2 bg-ink text-white font-semibold px-6 py-3 rounded-xl hover:opacity-90 transition-opacity text-sm shadow-md"
+          className="inline-flex items-center gap-2 bg-fixed-ink text-white font-semibold px-6 py-3 rounded-xl hover:opacity-90 transition-opacity text-sm shadow-md"
         >
           <ArrowLeft className="w-4 h-4" /> Back to Dashboard
         </button>
@@ -274,7 +274,7 @@ export default function EvaluationPage() {
           </button>
           <button
             onClick={handlePrint}
-            className="inline-flex items-center gap-2 bg-ink text-white text-sm font-medium px-4 py-2 rounded-xl hover:opacity-90 transition-opacity"
+            className="inline-flex items-center gap-2 bg-fixed-ink text-white text-sm font-medium px-4 py-2 rounded-xl hover:opacity-90 transition-opacity"
           >
             <Download className="w-4 h-4" />
             PDF / Print
@@ -517,7 +517,7 @@ export default function EvaluationPage() {
       {/* AI Feedback */}
       <div className="bg-white rounded-2xl border border-gray-100 card-shadow-md p-6">
         <div className="flex items-center gap-2 mb-5">
-          <div className="w-9 h-9 bg-ink rounded-xl flex items-center justify-center">
+          <div className="w-9 h-9 bg-fixed-ink rounded-xl flex items-center justify-center">
             <Brain className="w-4 h-4 text-white" />
           </div>
           <h2 className="text-lg font-bold text-gray-900" style={{ fontFamily: "var(--font-display)" }}>

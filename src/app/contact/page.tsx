@@ -80,7 +80,7 @@ export default function ContactPage() {
             Thanks for reaching out. We have successfully registered your support request as ticket <strong>#TKT-{ticketNumber}</strong>. We&apos;ll get back to you at <strong>{formData.email}</strong> within 24 hours on weekdays.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <Link href="/" className="inline-flex items-center gap-2 bg-ink text-white font-semibold px-5 py-2.5 rounded-xl hover:opacity-90 transition-opacity">
+            <Link href="/" className="inline-flex items-center gap-2 bg-fixed-ink text-white font-semibold px-5 py-2.5 rounded-xl hover:opacity-90 transition-opacity">
               Back to Home
             </Link>
             <Link href="/support/tickets" className="inline-flex items-center gap-2 bg-white text-gray-700 font-medium px-5 py-2.5 rounded-xl border border-gray-200 hover:bg-gray-50 transition-all">
@@ -98,7 +98,7 @@ export default function ContactPage() {
       <nav className="fixed top-0 left-0 right-0 z-50 bg-white/95 border-b border-gray-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16">
           <Link href="/" className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-ink flex items-center justify-center">
+            <div className="w-8 h-8 rounded-lg bg-fixed-ink flex items-center justify-center">
               <Brain className="w-4 h-4 text-white" />
             </div>
             <span className="font-bold text-gray-900" style={{ fontFamily: "var(--font-display)" }}>
@@ -107,7 +107,7 @@ export default function ContactPage() {
           </Link>
           <div className="flex items-center gap-3">
             <Link href="/login" className="text-sm text-gray-600 hover:text-gray-900 font-medium transition-colors">Sign In</Link>
-            <Link href="/signup" className="text-sm bg-ink text-white font-semibold px-4 py-2 rounded-lg hover:opacity-90 transition-opacity">Get Started Free</Link>
+            <Link href="/signup" className="text-sm bg-fixed-ink text-white font-semibold px-4 py-2 rounded-lg hover:opacity-90 transition-opacity">Get Started Free</Link>
           </div>
         </div>
       </nav>
@@ -285,7 +285,7 @@ export default function ContactPage() {
                   <button
                     type="submit"
                     disabled={status === "submitting"}
-                    className="w-full bg-ink text-white font-semibold py-3 rounded-xl hover:opacity-90 transition-opacity flex items-center justify-center gap-2 disabled:opacity-60"
+                    className="w-full bg-fixed-ink text-white font-semibold py-3 rounded-xl hover:opacity-90 transition-opacity flex items-center justify-center gap-2 disabled:opacity-60"
                   >
                     {status === "submitting" ? (
                       <><Loader2 className="w-4 h-4 animate-spin" /> Sending…</>

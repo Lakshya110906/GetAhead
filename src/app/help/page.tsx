@@ -236,7 +236,7 @@ export default function HelpCenterPage() {
       <nav className="fixed top-0 left-0 right-0 z-50 bg-white/95 border-b border-gray-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16">
           <Link href="/" className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-ink flex items-center justify-center">
+            <div className="w-8 h-8 rounded-lg bg-fixed-ink flex items-center justify-center">
               <Brain className="w-4 h-4 text-white" />
             </div>
             <span className="font-bold text-gray-900" style={{ fontFamily: "var(--font-display)" }}>
@@ -245,18 +245,18 @@ export default function HelpCenterPage() {
           </Link>
           <div className="flex items-center gap-3">
             <Link href="/login" className="text-sm text-gray-600 hover:text-gray-900 font-medium transition-colors">Sign In</Link>
-            <Link href="/signup" className="text-sm bg-ink text-white font-semibold px-4 py-2 rounded-lg hover:opacity-90 transition-opacity">Get Started Free</Link>
+            <Link href="/signup" className="text-sm bg-fixed-ink text-white font-semibold px-4 py-2 rounded-lg hover:opacity-90 transition-opacity">Get Started Free</Link>
           </div>
         </div>
       </nav>
 
       {/* Hero + Search */}
-      <section className="pt-32 pb-16 bg-ink">
+      <section className="pt-32 pb-16 bg-fixed-ink">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h1 className="text-4xl md:text-5xl font-bold text-white mb-4" style={{ fontFamily: "var(--font-display)" }}>
             How can we help?
           </h1>
-          <p className="text-blue-100 text-lg mb-8">
+          <p className="text-white/70 text-lg mb-8">
             Search our knowledge base or browse by category below.
           </p>
           <div className="relative max-w-xl mx-auto">
@@ -397,7 +397,7 @@ export default function HelpCenterPage() {
           <p className="text-gray-600 mb-6">
             Our support team responds within 24 hours on weekdays.
           </p>
-          <Link href="/contact" className="inline-flex items-center gap-2 bg-ink text-white font-semibold px-6 py-3 rounded-xl hover:opacity-90 transition-opacity">
+          <Link href="/contact" className="inline-flex items-center gap-2 bg-fixed-ink text-white font-semibold px-6 py-3 rounded-xl hover:opacity-90 transition-opacity">
             Contact Support <ArrowRight className="w-4 h-4" />
           </Link>
         </div>

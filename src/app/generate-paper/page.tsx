@@ -684,7 +684,7 @@ ${JSON.stringify(paper, null, 2)}
                       onClick={() => setDifficulty(level)}
                       className={`py-3 rounded-xl border text-sm font-semibold transition-all ${
                         difficulty === level
-                          ? "bg-ink text-white border-transparent shadow-sm"
+                          ? "bg-fixed-ink text-white border-transparent shadow-sm"
                           : "border-gray-200 text-gray-600 bg-gray-50 hover:bg-white hover:text-gray-900"
                       }`}
                     >
@@ -867,7 +867,7 @@ ${JSON.stringify(paper, null, 2)}
 
             <button
               type="submit"
-              className="w-full py-4 rounded-xl text-white font-bold bg-ink shadow-lg hover:opacity-90 active:scale-[0.99] transition-all flex items-center justify-center gap-2 text-base"
+              className="w-full py-4 rounded-xl text-white font-bold bg-fixed-ink shadow-lg hover:opacity-90 active:scale-[0.99] transition-all flex items-center justify-center gap-2 text-base"
             >
               <GraduationCap className="w-5 h-5" />
               Generate Question Paper
@@ -880,7 +880,7 @@ ${JSON.stringify(paper, null, 2)}
       {status === "generating" && (
         <div className="space-y-4 no-print">
           {/* Header */}
-          <div className="bg-ink rounded-2xl p-6 text-white shadow-lg">
+          <div className="bg-fixed-ink rounded-2xl p-6 text-white shadow-lg">
             <div className="flex items-center gap-3 mb-2">
               <div className="w-9 h-9 bg-white/20 rounded-xl flex items-center justify-center">
                 <Loader2 className="w-5 h-5 animate-spin" />
@@ -889,7 +889,7 @@ ${JSON.stringify(paper, null, 2)}
                 <h2 className="text-lg font-bold" style={{ fontFamily: "var(--font-display)" }}>
                   AI Agent Pipeline Running
                 </h2>
-                <p className="text-blue-100 text-xs">3 specialized agents collaborating to build your exam paper</p>
+                <p className="text-white/70 text-xs">3 specialized agents collaborating to build your exam paper</p>
               </div>
             </div>
             {/* Agent pipeline progress dots */}
@@ -1002,6 +1002,22 @@ ${JSON.stringify(paper, null, 2)}
       {/* Paper Presentation Screen */}
       {status === "complete" && paper && (
         <div className="space-y-6">
+          {/* Degraded-generation warning — shown when the AI pipeline hit a
+              problem (usually a transient rate limit) and fell back to
+              either an unreviewed draft or a fully generic placeholder.
+              reviewNotes is the one place that fallback is recorded. */}
+          {(paper.reviewNotes || []).some((n) => n.startsWith("⚠️")) && (
+            <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 text-amber-800 p-4 rounded-2xl text-sm no-print">
+              <AlertTriangle className="w-5 h-5 flex-shrink-0 mt-0.5 text-amber-600" />
+              <div>
+                <p className="font-semibold">This paper wasn&apos;t fully AI-reviewed</p>
+                <p className="text-amber-700 mt-0.5">
+                  {paper.reviewNotes!.find((n) => n.startsWith("⚠️"))}
+                </p>
+              </div>
+            </div>
+          )}
+
           {/* Controls toolbar */}
           <div className="flex flex-col sm:flex-row flex-wrap items-start sm:items-center justify-between gap-2 sm:gap-3 bg-white border border-gray-100 p-3 sm:p-4 rounded-2xl shadow-sm no-print">
             <div className="flex gap-1.5 sm:gap-2 flex-wrap">
@@ -1047,7 +1063,7 @@ ${JSON.stringify(paper, null, 2)}
               </button>
               <button
                 onClick={handlePrint}
-                className="flex items-center gap-1.5 bg-ink px-4 py-2 rounded-xl text-sm font-bold text-white shadow-md hover:opacity-95 transition-colors"
+                className="flex items-center gap-1.5 bg-fixed-ink px-4 py-2 rounded-xl text-sm font-bold text-white shadow-md hover:opacity-95 transition-colors"
               >
                 <Printer className="w-4 h-4" /> Print / PDF
               </button>
@@ -1260,7 +1276,7 @@ ${JSON.stringify(paper, null, 2)}
                                       savePaperEdits(updatedPaper);
                                       setEditingIndex(null);
                                     }}
-                                    className="px-3 py-1.5 text-xs font-bold text-white bg-ink rounded-lg shadow-sm"
+                                    className="px-3 py-1.5 text-xs font-bold text-white bg-fixed-ink rounded-lg shadow-sm"
                                   >
                                     Save Question
                                   </button>
@@ -1317,7 +1333,7 @@ ${JSON.stringify(paper, null, 2)}
             {/* AI Refinement Feedback Card */}
             <div className="bg-white rounded-3xl border border-gray-100 shadow-md p-6 mt-6 no-print space-y-4 animate-fade-in">
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-ink flex items-center justify-center text-white flex-shrink-0">
+                <div className="w-8 h-8 rounded-lg bg-fixed-ink flex items-center justify-center text-white flex-shrink-0">
                   <Sparkles className="w-4 h-4" />
                 </div>
                 <div>
@@ -1341,7 +1357,7 @@ ${JSON.stringify(paper, null, 2)}
                 <button
                   onClick={handleAIRefine}
                   disabled={!aiFeedback.trim()}
-                  className="inline-flex items-center gap-2 bg-ink text-white font-semibold text-sm px-5 py-3.5 rounded-xl hover:opacity-90 transition-opacity shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
+                  className="inline-flex items-center gap-2 bg-fixed-ink text-white font-semibold text-sm px-5 py-3.5 rounded-xl hover:opacity-90 transition-opacity shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
                 >
                   <Sparkles className="w-4 h-4" />
                   Apply Tweaks
@@ -1394,12 +1410,24 @@ ${JSON.stringify(paper, null, 2)}
                     Quality & Reviewer Audit Notes
                   </h3>
                   <ul className="mt-3 space-y-2">
-                    {(paper.reviewNotes || []).map((note, idx) => (
-                      <li key={idx} className="flex items-start gap-2 bg-green-50 text-green-800 px-4 py-2.5 rounded-xl text-sm font-semibold">
-                        <CheckCircle className="w-4 h-4 text-green-600 flex-shrink-0 mt-0.5" />
-                        <span>{note}</span>
-                      </li>
-                    ))}
+                    {(paper.reviewNotes || []).map((note, idx) => {
+                      const isWarning = note.startsWith("⚠️");
+                      return (
+                        <li
+                          key={idx}
+                          className={`flex items-start gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold ${
+                            isWarning ? "bg-amber-50 text-amber-800" : "bg-green-50 text-green-800"
+                          }`}
+                        >
+                          {isWarning ? (
+                            <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+                          ) : (
+                            <CheckCircle className="w-4 h-4 text-green-600 flex-shrink-0 mt-0.5" />
+                          )}
+                          <span>{note}</span>
+                        </li>
+                      );
+                    })}
                   </ul>
                 </div>
               </div>
