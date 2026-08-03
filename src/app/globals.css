@@ -1,166 +1,80 @@
 @import "tailwindcss";
 
-/* ===== CSS Custom Properties ===== */
+/* =============================================================================
+   DESIGN TOKENS — single source of truth for color and type.
+   Subject: the marked answer sheet. Ruled paper, examiner's red pen,
+   marginal mark allocations, green ticks, graphite pencil.
+   No component may hardcode a hex value or a font size — use the
+   Tailwind utilities these tokens back (bg-paper, text-ink, text-examiner,
+   text-tick, text-graphite, border-rule, font-display, font-body, font-mono)
+   or the CSS custom properties directly (var(--paper), var(--ink), ...).
+   ========================================================================== */
+
 :root {
-  --color-primary: #2563eb;
-  --color-primary-dark: #1d4ed8;
-  --color-primary-light: #eff6ff;
-  --color-secondary: #14b8a6;
-  --color-secondary-dark: #0d9488;
-  --color-secondary-light: #f0fdfa;
-  --color-bg: #f8fafc;
-  --color-surface: #ffffff;
-  --color-surface-2: #f1f5f9;
-  --color-fg: #1f2937;
-  --color-fg-muted: #6b7280;
-  --color-border: #e2e8f0;
-  --font-inter: "Inter", sans-serif;
-  --font-poppins: "Poppins", sans-serif;
+  /* ---- Raw palette ---- */
+  --paper: #FAFAF8;
+  --ink: #16223A;
+  --examiner: #C4342C;
+  --tick: #2E7355;
+  --graphite: #5A606B;
+  --rule: #E2E4E9;
+
+  /* ---- Semantic roles (light theme) ----
+     Ink stands in for the general interactive/brand color — it is the pen,
+     not the mark. Examiner red is reserved for corrections and scores only. */
+  --color-primary: var(--ink);
+  --color-primary-dark: #0E1830;
+  --color-primary-light: #EEF0F4;
+  --color-secondary: var(--tick);
+  --color-secondary-dark: #21563F;
+  --color-secondary-light: #E9F2EC;
+  --color-bg: var(--paper);
+  --color-surface: #FFFFFF;
+  --color-surface-2: #F2F2EE;
+  --color-fg: var(--ink);
+  --color-fg-muted: var(--graphite);
+  --color-border: var(--rule);
 }
 
-/* ===== DARK THEME ===== */
+/* ===== DARK THEME — graphite ground, never pure black ===== */
 .theme-dark {
-  --color-primary: #818cf8;
-  --color-primary-dark: #6366f1;
-  --color-primary-light: #1e1b4b;
-  --color-secondary: #34d399;
-  --color-secondary-dark: #10b981;
-  --color-secondary-light: #064e3b;
-  --color-bg: #000000;
-  --color-surface: #0a0a0a;
-  --color-surface-2: #161616;
-  --color-fg: #ffffff;
-  --color-fg-muted: #a3a3a3;
-  --color-border: #222222;
+  --paper: #1C1F24;
+  --ink: #ECEAE4;
+  --examiner: #E2574B;
+  --tick: #4FA37E;
+  --graphite: #9BA1AC;
+  --rule: #33373E;
+
+  --color-primary: var(--ink);
+  --color-primary-dark: #FFFFFF;
+  --color-primary-light: #2A2E35;
+  --color-secondary: var(--tick);
+  --color-secondary-dark: #6BC198;
+  --color-secondary-light: #22302A;
+  --color-bg: #1C1F24;
+  --color-surface: #23262C;
+  --color-surface-2: #2A2E35;
+  --color-fg: var(--ink);
+  --color-fg-muted: var(--graphite);
+  --color-border: var(--rule);
 }
 
-/* ── Dark Mode Global Overrides ─────────────────────────────────────────────── */
-
-/* Backgrounds */
-.theme-dark body { background-color: #000000 !important; color: #ffffff !important; }
-.theme-dark .bg-gray-950 { background-color: #000000 !important; }
-
-/* Surfaces: white → dark surface */
-.theme-dark .bg-white { background-color: #0a0a0a !important; }
-.theme-dark .bg-gray-50 { background-color: #121212 !important; }
-.theme-dark .bg-gray-100 { background-color: #1a1a1a !important; }
-.theme-dark .bg-gray-200 { background-color: #262626 !important; }
-
-/* Text */
-.theme-dark .text-gray-900 { color: #ffffff !important; }
-.theme-dark .text-gray-800 { color: #f5f5f5 !important; }
-.theme-dark .text-gray-700 { color: #e5e5e5 !important; }
-.theme-dark .text-gray-600 { color: #a3a3a3 !important; }
-.theme-dark .text-gray-500 { color: #737373 !important; }
-.theme-dark .text-gray-400 { color: #525252 !important; }
-
-/* Borders */
-.theme-dark .border-gray-100 { border-color: #161616 !important; }
-.theme-dark .border-gray-200 { border-color: #222222 !important; }
-.theme-dark .border-t { border-color: #222222; }
-.theme-dark .divide-gray-100 > * { border-color: #161616 !important; }
-.theme-dark .divide-gray-200 > * { border-color: #222222 !important; }
-
-/* Hover backgrounds in dark */
-.theme-dark .hover\:bg-gray-50:hover { background-color: #27272a !important; }
-.theme-dark .hover\:bg-gray-100:hover { background-color: #3f3f46 !important; }
-.theme-dark .hover\:bg-white:hover { background-color: #27272a !important; }
-.theme-dark .hover\:text-gray-900:hover { color: #fafafa !important; }
-
-/* Focus */
-.theme-dark .focus\:bg-white:focus { background-color: #27272a !important; }
-
-/* Shadow cards */
-.theme-dark .card-shadow { box-shadow: 0 1px 3px 0 rgba(0,0,0,0.4), 0 1px 2px -1px rgba(0,0,0,0.3) !important; }
-.theme-dark .card-shadow-md { box-shadow: 0 4px 12px 0 rgba(0,0,0,0.5) !important; }
-.theme-dark .card-shadow-lg { box-shadow: 0 10px 25px 0 rgba(0,0,0,0.6) !important; }
-
-/* Form inputs */
-.theme-dark input,
-.theme-dark textarea,
-.theme-dark select {
-  background-color: #27272a !important;
-  border-color: #3f3f46 !important;
-  color: #fafafa !important;
-}
-.theme-dark input::placeholder,
-.theme-dark textarea::placeholder { color: #71717a !important; }
-.theme-dark select option { background-color: #18181b; color: #fafafa; }
-
-/* Specific accent bg chips that stay light-colored on dark bg */
-.theme-dark .bg-blue-50 { background-color: #1e3a5f !important; }
-.theme-dark .bg-indigo-50 { background-color: #1e1b4b !important; }
-.theme-dark .bg-purple-50 { background-color: #2e1065 !important; }
-.theme-dark .bg-green-50 { background-color: #052e16 !important; }
-.theme-dark .bg-teal-50 { background-color: #042f2e !important; }
-.theme-dark .bg-orange-50 { background-color: #431407 !important; }
-.theme-dark .bg-red-50 { background-color: #450a0a !important; }
-.theme-dark .bg-yellow-50 { background-color: #422006 !important; }
-.theme-dark .bg-pink-50 { background-color: #500724 !important; }
-
-/* Text on colored chips in dark */
-.theme-dark .text-blue-600 { color: #818cf8 !important; }
-.theme-dark .text-blue-700 { color: #a5b4fc !important; }
-.theme-dark .text-indigo-700 { color: #c7d2fe !important; }
-.theme-dark .text-purple-700 { color: #d8b4fe !important; }
-.theme-dark .text-teal-600 { color: #2dd4bf !important; }
-.theme-dark .text-green-700 { color: #4ade80 !important; }
-.theme-dark .text-red-700 { color: #f87171 !important; }
-
-/* Borders on colored chips */
-.theme-dark .border-blue-100 { border-color: #1e3a5f !important; }
-.theme-dark .border-blue-200 { border-color: #1d4ed8 !important; }
-.theme-dark .border-indigo-100 { border-color: #1e1b4b !important; }
-.theme-dark .border-purple-100 { border-color: #2e1065 !important; }
-.theme-dark .border-green-100 { border-color: #052e16 !important; }
-
-/* Dashboard sidebar */
-.theme-dark aside.bg-white { background-color: #18181b !important; border-color: #27272a !important; }
-.theme-dark header.bg-white { background-color: #18181b !important; border-color: #27272a !important; }
-
-/* Scrollbar dark */
-.theme-dark .scrollbar-thin {
-  scrollbar-color: #3f3f46 transparent;
-}
-.theme-dark .scrollbar-thin::-webkit-scrollbar-thumb { background-color: #3f3f46; }
-
-/* gradient-hero in dark */
-.theme-dark .gradient-hero {
-  background: linear-gradient(135deg, #09090b 0%, #0f172a 50%, #0c0a1e 100%) !important;
-}
-
-.theme-emerald {
-  --color-primary: #059669;
-  --color-primary-dark: #047857;
-  --color-primary-light: #ecfdf5;
-  --color-secondary: #2563eb;
-  --color-secondary-dark: #1d4ed8;
-  --color-secondary-light: #eff6ff;
-  --color-bg: #f9fafb;
-  --color-surface: #ffffff;
-  --color-surface-2: #f3f4f6;
-  --color-fg: #111827;
-  --color-fg-muted: #6b7280;
-  --color-border: #e5e7eb;
-}
-
-.theme-sunset {
-  --color-primary: #f97316;
-  --color-primary-dark: #ea580c;
-  --color-primary-light: #fff7ed;
-  --color-secondary: #db2777;
-  --color-secondary-dark: #be185d;
-  --color-secondary-light: #fff1f2;
-  --color-bg: #fafafa;
-  --color-surface: #ffffff;
-  --color-surface-2: #f4f4f5;
-  --color-fg: #18181b;
-  --color-fg-muted: #71717a;
-  --color-border: #e4e4e7;
-}
-
+/* Tailwind v4 in-CSS theme registration: this is the only place raw
+   Tailwind color/font utility classes are wired to the tokens above. */
 @theme {
+  /* Semantic slots usable directly as Tailwind utilities:
+     bg-paper / text-ink / text-examiner / text-tick / text-graphite / border-rule */
+  --color-paper: var(--paper);
+  --color-ink: var(--ink);
+  --color-examiner: var(--examiner);
+  --color-tick: var(--tick);
+  --color-graphite: var(--graphite);
+  --color-rule: var(--rule);
+
+  /* Legacy slot remapping so existing bg-blue, text-gray, etc. utility
+     classes inherit the new palette instead of the old generic SaaS blue/teal. */
   --color-blue-50: var(--color-primary-light);
+  --color-blue-100: var(--color-primary-light);
   --color-blue-600: var(--color-primary);
   --color-blue-700: var(--color-primary-dark);
   --color-teal-50: var(--color-secondary-light);
@@ -169,6 +83,27 @@
   --color-gray-50: var(--color-bg);
   --color-gray-900: var(--color-fg);
   --color-gray-200: var(--color-border);
+
+  /* Errors/corrections and success/positive states route through the
+     examiner red and tick green tokens wherever the app already used
+     red-* / green-* utility classes for that purpose. */
+  --color-red-50: color-mix(in srgb, var(--examiner) 10%, var(--color-surface));
+  --color-red-500: var(--examiner);
+  --color-red-600: var(--examiner);
+  --color-red-700: var(--examiner);
+  --color-green-50: color-mix(in srgb, var(--tick) 10%, var(--color-surface));
+  --color-green-500: var(--tick);
+  --color-green-600: var(--tick);
+  --color-green-700: var(--tick);
+
+  /* Type roles — the next/font variables (--display-font/--body-font/--mono-font,
+     set on <html> in layout.tsx) are named distinctly from these Tailwind-facing
+     theme keys on purpose: a theme key referencing its own name is a circular
+     custom property and silently breaks the whole @theme block. */
+  --font-display: var(--display-font), Georgia, serif;
+  --font-body: var(--body-font), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--mono-font), ui-monospace, "SFMono-Regular", monospace;
+  --font-sans: var(--body-font), ui-sans-serif, system-ui, sans-serif;
 }
 
 /* ===== Base Reset ===== */
@@ -183,55 +118,33 @@ html {
 body {
   background-color: var(--color-bg);
   color: var(--color-fg);
-  font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  font-family: var(--font-body);
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   margin: 0;
 }
 
-h1, h2, h3, h4, h5, h6 {
-  font-family: var(--font-poppins), ui-sans-serif, system-ui, sans-serif;
-  font-weight: 700;
-  line-height: 1.2;
-  margin: 0;
-}
-
-/* ===== Gradient Utilities ===== */
-.gradient-primary {
-  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
-}
-
-.gradient-hero {
-  background: linear-gradient(135deg, #f8fafc 0%, #f0fdfa 50%, #eff6ff 100%);
-}
-
-.text-gradient {
-  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
+/* ===== Type scale — explicit sizes and weights, one definition per level.
+   Numeric data (marks, scores, percentages, timings) should use font-mono. ===== */
+h1 { font-family: var(--font-display); font-weight: 700; font-size: 2.75rem; line-height: 1.15; margin: 0; }
+h2 { font-family: var(--font-display); font-weight: 700; font-size: 2.125rem; line-height: 1.2; margin: 0; }
+h3 { font-family: var(--font-display); font-weight: 600; font-size: 1.625rem; line-height: 1.25; margin: 0; }
+h4 { font-family: var(--font-display); font-weight: 600; font-size: 1.25rem; line-height: 1.3; margin: 0; }
+h5 { font-family: var(--font-display); font-weight: 600; font-size: 1.0625rem; line-height: 1.35; margin: 0; }
+h6 { font-family: var(--font-display); font-weight: 600; font-size: 0.9375rem; line-height: 1.4; margin: 0; }
 
 /* ===== Card Shadows ===== */
 .card-shadow {
-  box-shadow: 0 1px 3px 0 rgba(0,0,0,0.06), 0 1px 2px -1px rgba(0,0,0,0.04);
+  box-shadow: 0 1px 3px 0 rgba(22,34,58,0.06), 0 1px 2px -1px rgba(22,34,58,0.04);
 }
 
 .card-shadow-md {
-  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.08), 0 2px 4px -2px rgba(0,0,0,0.04);
+  box-shadow: 0 4px 6px -1px rgba(22,34,58,0.08), 0 2px 4px -2px rgba(22,34,58,0.04);
 }
 
 .card-shadow-lg {
-  box-shadow: 0 10px 15px -3px rgba(0,0,0,0.08), 0 4px 6px -4px rgba(0,0,0,0.04);
-}
-
-/* ===== Glassmorphism ===== */
-.glass {
-  background: rgba(255,255,255,0.7);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border: 1px solid rgba(255,255,255,0.5);
+  box-shadow: 0 10px 15px -3px rgba(22,34,58,0.08), 0 4px 6px -4px rgba(22,34,58,0.04);
 }
 
 /* ===== Animations ===== */
@@ -260,25 +173,74 @@ h1, h2, h3, h4, h5, h6 {
 /* ===== Scrollbar ===== */
 .scrollbar-thin {
   scrollbar-width: thin;
-  scrollbar-color: #e2e8f0 transparent;
+  scrollbar-color: var(--rule) transparent;
 }
 .scrollbar-thin::-webkit-scrollbar { width: 4px; }
 .scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
-.scrollbar-thin::-webkit-scrollbar-thumb { background-color: #e2e8f0; border-radius: 20px; }
+.scrollbar-thin::-webkit-scrollbar-thumb { background-color: var(--rule); border-radius: 20px; }
 
 /* ===== Focus Ring ===== */
 *:focus-visible {
-  outline: 2px solid #2563eb;
+  outline: 2px solid var(--ink);
   outline-offset: 2px;
 }
 
 /* ===== Selection ===== */
 ::selection {
-  background-color: rgba(37, 99, 235, 0.15);
-  color: #1f2937;
+  background-color: color-mix(in srgb, var(--ink) 15%, transparent);
+  color: var(--ink);
 }
 
 .theme-dark ::selection {
-  background-color: rgba(129, 140, 248, 0.3);
-  color: #fafafa;
+  background-color: color-mix(in srgb, var(--ink) 30%, transparent);
+  color: var(--ink);
 }
+
+/* ── Dark mode: raw Tailwind utility classes that fall outside the
+   remapped slots above (literal bg-white/text-gray-900/etc.) still need
+   an explicit override so every surface follows the graphite ground. ── */
+.theme-dark body { background-color: var(--color-bg); color: var(--color-fg); }
+.theme-dark .bg-gray-950 { background-color: #17191D; }
+
+.theme-dark .bg-white { background-color: var(--color-surface); }
+.theme-dark .bg-gray-100 { background-color: var(--color-surface-2); }
+
+.theme-dark .text-gray-900 { color: var(--ink); }
+.theme-dark .text-gray-800 { color: var(--ink); }
+.theme-dark .text-gray-700 { color: var(--ink); }
+.theme-dark .text-gray-600 { color: var(--graphite); }
+.theme-dark .text-gray-500 { color: var(--graphite); }
+.theme-dark .text-gray-400 { color: var(--graphite); }
+
+.theme-dark .border-gray-100 { border-color: var(--rule); }
+.theme-dark .border-gray-200 { border-color: var(--rule); }
+.theme-dark .border-t { border-color: var(--rule); }
+.theme-dark .divide-gray-100 > * { border-color: var(--rule); }
+.theme-dark .divide-gray-200 > * { border-color: var(--rule); }
+
+.theme-dark .hover\:bg-gray-50:hover { background-color: var(--color-surface-2); }
+.theme-dark .hover\:bg-gray-100:hover { background-color: var(--color-surface-2); }
+.theme-dark .hover\:bg-white:hover { background-color: var(--color-surface-2); }
+.theme-dark .hover\:text-gray-900:hover { color: var(--ink); }
+.theme-dark .focus\:bg-white:focus { background-color: var(--color-surface-2); }
+
+.theme-dark .card-shadow { box-shadow: 0 1px 3px 0 rgba(0,0,0,0.4), 0 1px 2px -1px rgba(0,0,0,0.3); }
+.theme-dark .card-shadow-md { box-shadow: 0 4px 12px 0 rgba(0,0,0,0.5); }
+.theme-dark .card-shadow-lg { box-shadow: 0 10px 25px 0 rgba(0,0,0,0.6); }
+
+.theme-dark input,
+.theme-dark textarea,
+.theme-dark select {
+  background-color: var(--color-surface-2);
+  border-color: var(--rule);
+  color: var(--ink);
+}
+.theme-dark input::placeholder,
+.theme-dark textarea::placeholder { color: var(--graphite); }
+.theme-dark select option { background-color: var(--color-surface); color: var(--ink); }
+
+.theme-dark aside.bg-white { background-color: var(--color-surface); border-color: var(--rule); }
+.theme-dark header.bg-white { background-color: var(--color-surface); border-color: var(--rule); }
+
+.theme-dark .scrollbar-thin { scrollbar-color: var(--rule) transparent; }
+.theme-dark .scrollbar-thin::-webkit-scrollbar-thumb { background-color: var(--rule); }

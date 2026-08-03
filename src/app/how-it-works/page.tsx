@@ -153,33 +153,33 @@ export default function HowItWorksPage() {
   return (
     <div className="min-h-screen bg-white">
       {/* Navbar */}
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-md border-b border-gray-100">
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-white/95 border-b border-gray-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16">
           <Link href="/" className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-teal-500 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-lg bg-paper flex items-center justify-center">
               <Brain className="w-4 h-4 text-white" />
             </div>
-            <span className="font-bold text-gray-900" style={{ fontFamily: "var(--font-poppins)" }}>
-              Get<span className="bg-gradient-to-r from-blue-600 to-teal-500 bg-clip-text text-transparent">Ahead</span>
+            <span className="font-bold text-gray-900" style={{ fontFamily: "var(--font-display)" }}>
+              Get<span className="text-ink">Ahead</span>
             </span>
           </Link>
           <div className="flex items-center gap-3">
             <Link href="/login" className="text-sm text-gray-600 hover:text-gray-900 font-medium transition-colors">Sign In</Link>
-            <Link href="/signup" className="text-sm bg-gradient-to-r from-blue-600 to-teal-500 text-white font-semibold px-4 py-2 rounded-lg hover:opacity-90 transition-opacity">Get Started Free</Link>
+            <Link href="/signup" className="text-sm bg-ink text-white font-semibold px-4 py-2 rounded-lg hover:opacity-90 transition-opacity">Get Started Free</Link>
           </div>
         </div>
       </nav>
 
       {/* Hero */}
-      <section className="pt-32 pb-20 bg-gradient-to-br from-slate-50 via-blue-50/40 to-teal-50/40">
+      <section className="pt-32 pb-20 bg-paper">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <div className="inline-flex items-center gap-2 bg-teal-100 text-teal-700 text-sm font-semibold px-4 py-1.5 rounded-full mb-6">
             <Zap className="w-4 h-4" />
             Evaluate in under 30 seconds
           </div>
-          <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6 leading-tight" style={{ fontFamily: "var(--font-poppins)" }}>
+          <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6 leading-tight" style={{ fontFamily: "var(--font-display)" }}>
             From upload to insights —<br />
-            <span className="bg-gradient-to-r from-blue-600 to-teal-500 bg-clip-text text-transparent">here&apos;s exactly how it works</span>
+            <span className="text-ink">here&apos;s exactly how it works</span>
           </h1>
           <p className="text-xl text-gray-600 leading-relaxed mb-10 max-w-2xl mx-auto">
             GetAhead AI is designed to be fast and simple. Follow the 12-step journey from account creation to downloading your first report.
@@ -198,7 +198,7 @@ export default function HowItWorksPage() {
       <section className="py-20 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="relative">
           {/* Vertical line */}
-          <div className="absolute left-6 top-8 bottom-8 w-px bg-gradient-to-b from-blue-200 via-teal-200 to-purple-200 hidden lg:block" />
+          <div className="absolute left-6 top-8 bottom-8 w-px bg-ink hidden lg:block" />
 
           <div className="space-y-8">
             {steps.map((step, idx) => {
@@ -207,7 +207,7 @@ export default function HowItWorksPage() {
               return (
                 <div key={step.number} className="relative lg:pl-20">
                   {/* Step number circle */}
-                  <div className={`hidden lg:flex absolute left-0 top-4 w-12 h-12 rounded-full bg-gradient-to-br ${step.color} items-center justify-center shadow-lg text-white font-bold text-sm z-10`}>
+                  <div className={"hidden lg:flex absolute left-0 top-4 w-12 h-12 rounded-full bg-ink items-center justify-center shadow-lg text-white font-bold text-sm z-10"}>
                     {step.number}
                   </div>
 
@@ -218,7 +218,7 @@ export default function HowItWorksPage() {
                   >
                     <div className={`bg-white border rounded-2xl p-6 hover:border-blue-200 hover:shadow-md transition-all ${isOpen ? "border-blue-200 shadow-md" : "border-gray-100 shadow-sm"}`}>
                       <div className="flex items-start gap-4">
-                        <div className={`w-10 h-10 lg:w-12 lg:h-12 rounded-xl bg-gradient-to-br ${step.color} flex items-center justify-center flex-shrink-0 shadow-sm lg:hidden`}>
+                        <div className={"w-10 h-10 lg:w-12 lg:h-12 rounded-xl bg-ink flex items-center justify-center flex-shrink-0 shadow-sm lg:hidden"}>
                           <Icon className="w-5 h-5 text-white" />
                         </div>
                         <div className={`w-10 h-10 rounded-xl ${step.bg} hidden lg:flex items-center justify-center flex-shrink-0`}>
@@ -228,7 +228,7 @@ export default function HowItWorksPage() {
                           <div className="flex items-center justify-between gap-3">
                             <div>
                               <span className={`text-xs font-bold uppercase tracking-wide ${step.textColor} block mb-0.5`}>Step {step.number}</span>
-                              <h3 className="text-lg font-semibold text-gray-900" style={{ fontFamily: "var(--font-poppins)" }}>
+                              <h3 className="text-lg font-semibold text-gray-900" style={{ fontFamily: "var(--font-display)" }}>
                                 {step.title}
                               </h3>
                             </div>
@@ -254,7 +254,7 @@ export default function HowItWorksPage() {
       {/* Summary Cards */}
       <section className="py-16 bg-gray-50">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-2xl font-bold text-gray-900 text-center mb-10" style={{ fontFamily: "var(--font-poppins)" }}>
+          <h2 className="text-2xl font-bold text-gray-900 text-center mb-10" style={{ fontFamily: "var(--font-display)" }}>
             The complete GetAhead AI experience
           </h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
@@ -267,7 +267,7 @@ export default function HowItWorksPage() {
               const Icon = item.icon;
               return (
                 <div key={item.label} className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm text-center">
-                  <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-teal-500 rounded-xl flex items-center justify-center mx-auto mb-3">
+                  <div className="w-12 h-12 bg-paper rounded-xl flex items-center justify-center mx-auto mb-3">
                     <Icon className="w-6 h-6 text-white" />
                   </div>
                   <p className="font-semibold text-gray-900 text-sm mb-1">{item.label}</p>
@@ -280,9 +280,9 @@ export default function HowItWorksPage() {
       </section>
 
       {/* CTA */}
-      <section className="py-24 bg-gradient-to-br from-blue-600 to-teal-500">
+      <section className="py-24 bg-ink">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl md:text-4xl font-bold text-white mb-4" style={{ fontFamily: "var(--font-poppins)" }}>
+          <h2 className="text-3xl md:text-4xl font-bold text-white mb-4" style={{ fontFamily: "var(--font-display)" }}>
             Ready to try it yourself?
           </h2>
           <p className="text-blue-100 text-lg mb-8">

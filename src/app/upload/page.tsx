@@ -111,7 +111,7 @@ export default function UploadPage() {
   return (
     <div className="max-w-4xl mx-auto">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-1" style={{ fontFamily: "var(--font-poppins)" }}>
+        <h1 className="text-3xl font-bold text-gray-900 mb-1" style={{ fontFamily: "var(--font-display)" }}>
           New Evaluation
         </h1>
         <p className="text-gray-500">Upload your answer sheet and let AI evaluate it instantly</p>
@@ -122,7 +122,7 @@ export default function UploadPage() {
         <div className="lg:col-span-3 space-y-5">
           {/* Dropzone */}
           <div className="bg-white rounded-2xl border border-gray-100 card-shadow-md p-6">
-            <h2 className="text-lg font-bold text-gray-900 mb-4" style={{ fontFamily: "var(--font-poppins)" }}>
+            <h2 className="text-lg font-bold text-gray-900 mb-4" style={{ fontFamily: "var(--font-display)" }}>
               Upload Answer Sheet
             </h2>
 
@@ -151,7 +151,7 @@ export default function UploadPage() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold text-gray-900 text-sm truncate">{file.name}</p>
-                  <p className="text-gray-500 text-xs mt-0.5">
+                  <p className="text-gray-500 text-xs mt-0.5 font-mono">
                     {(file.size / 1024 / 1024).toFixed(2)} MB
                   </p>
                 </div>
@@ -167,7 +167,7 @@ export default function UploadPage() {
 
           {/* Settings */}
           <div className="bg-white rounded-2xl border border-gray-100 card-shadow-md p-6 space-y-5">
-            <h2 className="text-lg font-bold text-gray-900" style={{ fontFamily: "var(--font-poppins)" }}>
+            <h2 className="text-lg font-bold text-gray-900" style={{ fontFamily: "var(--font-display)" }}>
               Evaluation Settings
             </h2>
 
@@ -229,7 +229,7 @@ export default function UploadPage() {
         {/* Status Panel */}
         <div className="lg:col-span-2">
           <div className="bg-white rounded-2xl border border-gray-100 card-shadow-md p-6 sticky top-6">
-            <h2 className="text-lg font-bold text-gray-900 mb-5" style={{ fontFamily: "var(--font-poppins)" }}>
+            <h2 className="text-lg font-bold text-gray-900 mb-5" style={{ fontFamily: "var(--font-display)" }}>
               Evaluation Status
             </h2>
 
@@ -258,7 +258,7 @@ export default function UploadPage() {
                       step.done
                         ? "bg-green-100 text-green-600"
                         : step.active
-                        ? "gradient-primary text-white"
+                        ? "bg-ink text-white"
                         : "bg-gray-100 text-gray-400"
                     }`}
                   >
@@ -284,11 +284,11 @@ export default function UploadPage() {
               <div className="mb-5">
                 <div className="flex justify-between text-xs text-gray-500 mb-1.5">
                   <span>Uploading...</span>
-                  <span>{progress}%</span>
+                  <span className="font-mono">{progress}%</span>
                 </div>
                 <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
                   <div
-                    className="h-full gradient-primary rounded-full transition-all duration-200"
+                    className="h-full bg-ink rounded-full transition-all duration-200"
                     style={{ width: `${progress}%` }}
                   />
                 </div>
@@ -320,7 +320,7 @@ export default function UploadPage() {
                 <button
                   id="view-results"
                   onClick={() => router.push(`/evaluation/${evaluationId}`)}
-                  className="w-full gradient-primary text-white font-semibold py-3 rounded-xl hover:opacity-90 transition-opacity flex items-center justify-center gap-2"
+                  className="w-full bg-ink text-white font-semibold py-3 rounded-xl hover:opacity-90 transition-opacity flex items-center justify-center gap-2"
                 >
                   View Results <ArrowRight className="w-4 h-4" />
                 </button>
@@ -330,7 +330,7 @@ export default function UploadPage() {
                 id="start-evaluation"
                 onClick={handleEvaluate}
                 disabled={!file || !subject || !grade || status !== "idle"}
-                className="w-full gradient-primary text-white font-semibold py-3 rounded-xl hover:opacity-90 transition-opacity flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
+                className="w-full bg-ink text-white font-semibold py-3 rounded-xl hover:opacity-90 transition-opacity flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 {status === "idle" ? (
                   <>

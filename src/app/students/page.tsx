@@ -30,25 +30,25 @@ export default function StudentsPage() {
   return (
     <div className="min-h-screen bg-white">
       {/* Navbar */}
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-md border-b border-gray-100">
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-white/95 border-b border-gray-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16">
           <Link href="/" className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-teal-500 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-lg bg-ink flex items-center justify-center">
               <Brain className="w-4 h-4 text-white" />
             </div>
-            <span className="font-bold text-gray-900" style={{ fontFamily: "var(--font-poppins)" }}>
-              Get<span className="bg-gradient-to-r from-blue-600 to-teal-500 bg-clip-text text-transparent">Ahead</span>
+            <span className="font-bold text-gray-900" style={{ fontFamily: "var(--font-display)" }}>
+              Get<span className="text-ink">Ahead</span>
             </span>
           </Link>
           <div className="flex items-center gap-3">
             <Link href="/login" className="text-sm text-gray-600 hover:text-gray-900 font-medium transition-colors">Sign In</Link>
-            <Link href="/signup" className="text-sm bg-gradient-to-r from-blue-600 to-teal-500 text-white font-semibold px-4 py-2 rounded-lg hover:opacity-90 transition-opacity">Get Started Free</Link>
+            <Link href="/signup" className="text-sm bg-ink text-white font-semibold px-4 py-2 rounded-lg hover:opacity-90 transition-opacity">Get Started Free</Link>
           </div>
         </div>
       </nav>
 
       {/* Hero */}
-      <section className="pt-32 pb-20 bg-gradient-to-br from-blue-50 via-indigo-50/30 to-teal-50/30">
+      <section className="pt-32 pb-20 bg-paper">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-16 items-center">
             <div>
@@ -56,15 +56,15 @@ export default function StudentsPage() {
                 <Star className="w-4 h-4" />
                 Designed for every student
               </div>
-              <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6 leading-tight" style={{ fontFamily: "var(--font-poppins)" }}>
+              <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6 leading-tight" style={{ fontFamily: "var(--font-display)" }}>
                 Study smarter.<br />
-                <span className="bg-gradient-to-r from-blue-600 to-teal-500 bg-clip-text text-transparent">Score higher.</span>
+                <span className="text-ink">Score higher.</span>
               </h1>
               <p className="text-xl text-gray-600 leading-relaxed mb-8">
                 GetAhead AI gives you instant, personalised feedback on every answer sheet — so you know exactly what to fix before your real exam.
               </p>
               <div className="flex flex-col sm:flex-row gap-3">
-                <Link href="/signup" className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-teal-500 text-white font-semibold px-6 py-3 rounded-xl hover:opacity-90 transition-opacity shadow-lg shadow-blue-500/20">
+                <Link href="/signup" className="inline-flex items-center justify-center gap-2 bg-ink text-white font-semibold px-6 py-3 rounded-xl hover:opacity-90 transition-opacity shadow-lg">
                   Start for Free <ArrowRight className="w-4 h-4" />
                 </Link>
                 <Link href="/how-it-works" className="inline-flex items-center justify-center gap-2 bg-white text-gray-700 font-medium px-6 py-3 rounded-xl border border-gray-200 hover:bg-gray-50 transition-all">
@@ -74,15 +74,15 @@ export default function StudentsPage() {
             </div>
             <div className="grid grid-cols-2 gap-4">
               {[
-                { icon: Zap, label: "Evaluate in 30 seconds", color: "from-blue-500 to-blue-600" },
-                { icon: MessageSquare, label: "AI feedback per question", color: "from-teal-500 to-teal-600" },
-                { icon: TrendingUp, label: "Track your progress", color: "from-purple-500 to-purple-600" },
-                { icon: Target, label: "Know what to study next", color: "from-orange-500 to-orange-600" },
+                { icon: Zap, label: "Evaluate in 30 seconds" },
+                { icon: MessageSquare, label: "AI feedback per question" },
+                { icon: TrendingUp, label: "Track your progress" },
+                { icon: Target, label: "Know what to study next" },
               ].map((item) => {
                 const Icon = item.icon;
                 return (
                   <div key={item.label} className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
-                    <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${item.color} flex items-center justify-center mb-3`}>
+                    <div className="w-10 h-10 rounded-xl bg-ink flex items-center justify-center mb-3">
                       <Icon className="w-5 h-5 text-white" />
                     </div>
                     <p className="text-sm font-semibold text-gray-800">{item.label}</p>
@@ -97,7 +97,7 @@ export default function StudentsPage() {
       {/* Why Students */}
       <section className="py-20 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-14">
-          <h2 className="text-3xl font-bold text-gray-900 mb-4" style={{ fontFamily: "var(--font-poppins)" }}>
+          <h2 className="text-3xl font-bold text-gray-900 mb-4" style={{ fontFamily: "var(--font-display)" }}>
             Why students choose GetAhead AI
           </h2>
           <p className="text-gray-600 text-lg max-w-2xl mx-auto">
@@ -152,7 +152,7 @@ export default function StudentsPage() {
             const Icon = item.icon;
             return (
               <div key={item.title} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 hover:shadow-md transition-shadow">
-                <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${item.color} flex items-center justify-center mb-4`}>
+                <div className={"w-12 h-12 rounded-xl bg-ink flex items-center justify-center mb-4"}>
                   <Icon className="w-6 h-6 text-white" />
                 </div>
                 <h3 className="font-semibold text-gray-900 mb-2">{item.title}</h3>
@@ -166,7 +166,7 @@ export default function StudentsPage() {
       {/* Student Workflow */}
       <section className="py-20 bg-gray-50">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-3xl font-bold text-gray-900 text-center mb-12" style={{ fontFamily: "var(--font-poppins)" }}>
+          <h2 className="text-3xl font-bold text-gray-900 text-center mb-12" style={{ fontFamily: "var(--font-display)" }}>
             A typical student workflow
           </h2>
           <div className="grid md:grid-cols-4 gap-6">
@@ -177,7 +177,7 @@ export default function StudentsPage() {
               { step: "4", title: "Revise and repeat", desc: "Focus your revision on the specific topics the AI flagged. Generate a new paper. Evaluate again." },
             ].map((item) => (
               <div key={item.step} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 text-center">
-                <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-teal-500 rounded-full flex items-center justify-center text-white font-bold mx-auto mb-4">{item.step}</div>
+                <div className="w-10 h-10 bg-paper rounded-full flex items-center justify-center text-white font-bold mx-auto mb-4">{item.step}</div>
                 <h3 className="font-semibold text-gray-900 mb-2">{item.title}</h3>
                 <p className="text-sm text-gray-600 leading-relaxed">{item.desc}</p>
               </div>
@@ -187,9 +187,9 @@ export default function StudentsPage() {
       </section>
 
       {/* CTA */}
-      <section className="py-24 bg-gradient-to-br from-blue-600 to-teal-500">
+      <section className="py-24 bg-ink">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl md:text-4xl font-bold text-white mb-4" style={{ fontFamily: "var(--font-poppins)" }}>
+          <h2 className="text-3xl md:text-4xl font-bold text-white mb-4" style={{ fontFamily: "var(--font-display)" }}>
             Your next evaluation is 30 seconds away
           </h2>
           <p className="text-blue-100 text-lg mb-8">Create a free account and upload your first answer sheet today. No card required.</p>

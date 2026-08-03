@@ -266,7 +266,7 @@ export default function SavedReportsPage() {
       {/* Page Header */}
       <div className="flex items-center justify-between no-print">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900" style={{ fontFamily: "var(--font-poppins)" }}>
+          <h1 className="text-2xl font-bold text-gray-900" style={{ fontFamily: "var(--font-display)" }}>
             Saved Repository
           </h1>
           <p className="text-gray-500 text-sm">All your evaluations and generated assets in one place</p>
@@ -275,7 +275,7 @@ export default function SavedReportsPage() {
         {activeTab === "reports" ? (
           <Link
             href="/upload"
-            className="inline-flex items-center gap-2 gradient-primary text-white text-sm font-semibold px-4 py-2.5 rounded-xl hover:opacity-90 transition-opacity"
+            className="inline-flex items-center gap-2 bg-ink text-white text-sm font-semibold px-4 py-2.5 rounded-xl hover:opacity-90 transition-opacity"
           >
             <PlusCircle className="w-4 h-4" />
             New Evaluation
@@ -283,7 +283,7 @@ export default function SavedReportsPage() {
         ) : (
           <Link
             href="/generate-paper"
-            className="inline-flex items-center gap-2 gradient-primary text-white text-sm font-semibold px-4 py-2.5 rounded-xl hover:opacity-90 transition-opacity"
+            className="inline-flex items-center gap-2 bg-ink text-white text-sm font-semibold px-4 py-2.5 rounded-xl hover:opacity-90 transition-opacity"
           >
             <PlusCircle className="w-4 h-4" />
             Generate Paper
@@ -327,7 +327,7 @@ export default function SavedReportsPage() {
               <div className="w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
                 <BookMarked className="w-8 h-8 text-blue-600" />
               </div>
-              <h3 className="text-lg font-bold text-gray-900 mb-1" style={{ fontFamily: "var(--font-poppins)" }}>
+              <h3 className="text-lg font-bold text-gray-900 mb-1" style={{ fontFamily: "var(--font-display)" }}>
                 No Saved Reports Yet
               </h3>
               <p className="text-gray-500 text-sm max-w-xs mx-auto mb-6">
@@ -335,7 +335,7 @@ export default function SavedReportsPage() {
               </p>
               <Link
                 href="/upload"
-                className="inline-flex items-center gap-2 gradient-primary text-white font-semibold px-6 py-3 rounded-xl hover:opacity-90 transition-opacity text-sm shadow-md"
+                className="inline-flex items-center gap-2 bg-ink text-white font-semibold px-6 py-3 rounded-xl hover:opacity-90 transition-opacity text-sm shadow-md"
               >
                 <FileText className="w-4 h-4" /> Start First Evaluation
               </Link>
@@ -375,11 +375,11 @@ export default function SavedReportsPage() {
                     </button>
 
                     <div className="flex items-start justify-between mb-4">
-                      <div className="w-12 h-12 gradient-primary rounded-xl flex items-center justify-center text-white font-bold text-sm">
+                      <div className="w-12 h-12 bg-ink rounded-xl flex items-center justify-center text-white font-bold text-sm">
                         {report.subject.slice(0, 2).toUpperCase()}
                       </div>
                       <span
-                        className={`text-xs px-2.5 py-1 rounded-full font-semibold ${
+                        className={`text-xs px-2.5 py-1 rounded-full font-semibold font-mono ${
                           pct >= 80
                             ? "bg-green-100 text-green-700"
                             : pct >= 60
@@ -391,7 +391,7 @@ export default function SavedReportsPage() {
                       </span>
                     </div>
 
-                    <h3 className="font-bold text-gray-900 mb-0.5" style={{ fontFamily: "var(--font-poppins)" }}>
+                    <h3 className="font-bold text-gray-900 mb-0.5" style={{ fontFamily: "var(--font-display)" }}>
                       {report.subject}
                     </h3>
                     <p className="text-gray-500 text-xs mb-4">{report.grade} • {formattedDate}</p>
@@ -401,7 +401,7 @@ export default function SavedReportsPage() {
                         className="h-full rounded-full"
                         style={{
                           width: `${pct}%`,
-                          background: pct >= 80 ? "#22C55E" : pct >= 60 ? "#F59E0B" : "#EF4444",
+                          background: pct >= 80 ? "var(--tick)" : pct >= 60 ? "var(--examiner)" : "var(--examiner)",
                         }}
                       />
                     </div>
@@ -434,7 +434,7 @@ export default function SavedReportsPage() {
           ) : papers.length === 0 ? (
             <div className="text-center py-16 bg-white border border-gray-100 rounded-2xl max-w-lg mx-auto">
               <GraduationCap className="w-16 h-16 text-gray-200 mx-auto mb-4" />
-              <h3 className="text-lg font-bold text-gray-900" style={{ fontFamily: "var(--font-poppins)" }}>
+              <h3 className="text-lg font-bold text-gray-900" style={{ fontFamily: "var(--font-display)" }}>
                 No saved question papers
               </h3>
               <p className="text-gray-500 text-sm mt-1 max-w-xs mx-auto">
@@ -442,7 +442,7 @@ export default function SavedReportsPage() {
               </p>
               <Link
                 href="/generate-paper"
-                className="inline-flex items-center gap-2 gradient-primary text-white text-sm font-semibold px-5 py-2.5 rounded-xl mt-6 hover:opacity-90 shadow-md"
+                className="inline-flex items-center gap-2 bg-ink text-white text-sm font-semibold px-5 py-2.5 rounded-xl mt-6 hover:opacity-90 shadow-md"
               >
                 <PlusCircle className="w-4 h-4" /> Generate First Paper
               </Link>
@@ -480,7 +480,7 @@ export default function SavedReportsPage() {
                     </span>
                   </div>
 
-                  <h3 className="font-bold text-gray-900 mb-0.5 text-sm truncate pr-6" style={{ fontFamily: "var(--font-poppins)" }}>
+                  <h3 className="font-bold text-gray-900 mb-0.5 text-sm truncate pr-6" style={{ fontFamily: "var(--font-display)" }}>
                     {p.title}
                   </h3>
                   <p className="text-gray-500 text-xs mb-4">
@@ -542,7 +542,7 @@ export default function SavedReportsPage() {
                 </button>
                 <button
                   onClick={handlePrint}
-                  className="flex items-center gap-1 gradient-primary text-white px-3 py-1.5 rounded-xl text-xs font-bold shadow hover:opacity-95"
+                  className="flex items-center gap-1 bg-ink text-white px-3 py-1.5 rounded-xl text-xs font-bold shadow hover:opacity-95"
                 >
                   <Printer className="w-3.5 h-3.5" /> Print / PDF
                 </button>

@@ -25,6 +25,7 @@ import {
 import { useTheme } from "@/components/ThemeProvider";
 import { ThemeSlider } from "@/components/ThemeSlider";
 import { SiteFooter } from "@/components/SiteFooter";
+import { MarkedAnswerSheet } from "@/components/MarkedAnswerSheet";
 
 const features = [
   {
@@ -180,18 +181,18 @@ export default function LandingPage() {
   return (
     <div className={`min-h-screen ${isDark ? "bg-gray-950" : "bg-white"} transition-colors duration-300`}>
       {/* Navbar */}
-      <nav className={`fixed top-0 left-0 right-0 z-50 backdrop-blur-md border-b transition-colors duration-300 ${isDark ? "bg-gray-950/90 border-gray-800" : "bg-white/90 border-gray-100"}` }>
+      <nav className={`fixed top-0 left-0 right-0 z-50 border-b transition-colors duration-300 ${isDark ? "bg-gray-950/95 border-gray-800" : "bg-white/95 border-gray-100"}` }>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <Link href="/" className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg gradient-primary flex items-center justify-center">
+              <div className="w-8 h-8 rounded-lg bg-ink flex items-center justify-center">
                 <Brain className="w-4 h-4 text-white" />
               </div>
               <span
                 className={`text-xl font-bold ${isDark ? "text-white" : "text-gray-900"}`}
-                style={{ fontFamily: "var(--font-poppins)" }}
+                style={{ fontFamily: "var(--font-display)" }}
               >
-                Get<span className="text-gradient">Ahead</span>
+                Get<span className="text-ink">Ahead</span>
               </span>
             </Link>
 
@@ -223,7 +224,7 @@ export default function LandingPage() {
               {isAuthenticated ? (
                 <Link
                   href="/dashboard"
-                  className="text-sm font-semibold text-white gradient-primary rounded-lg px-5 py-2 hover:opacity-90 transition-opacity shadow-sm whitespace-nowrap"
+                  className="text-sm font-semibold text-white bg-ink rounded-lg px-5 py-2 hover:opacity-90 transition-opacity shadow-sm whitespace-nowrap"
                 >
                   Go to Dashboard
                 </Link>
@@ -237,7 +238,7 @@ export default function LandingPage() {
                   </Link>
                   <Link
                     href="/signup"
-                    className="text-sm font-semibold text-white gradient-primary rounded-lg px-5 py-2 hover:opacity-90 transition-opacity shadow-sm whitespace-nowrap"
+                    className="text-sm font-semibold text-white bg-ink rounded-lg px-5 py-2 hover:opacity-90 transition-opacity shadow-sm whitespace-nowrap"
                   >
                     Start Free
                   </Link>
@@ -279,7 +280,7 @@ export default function LandingPage() {
             {isAuthenticated ? (
               <Link
                 href="/dashboard"
-                className="block text-white gradient-primary rounded-lg px-4 py-2 text-sm font-semibold text-center"
+                className="block text-white bg-ink rounded-lg px-4 py-2 text-sm font-semibold text-center"
               >
                 Go to Dashboard
               </Link>
@@ -293,7 +294,7 @@ export default function LandingPage() {
                 </Link>
                 <Link
                   href="/signup"
-                  className="block text-white gradient-primary rounded-lg px-4 py-2 text-sm font-semibold text-center"
+                  className="block text-white bg-ink rounded-lg px-4 py-2 text-sm font-semibold text-center"
                 >
                   Start Free
                 </Link>
@@ -304,7 +305,7 @@ export default function LandingPage() {
       </nav>
 
       {/* Hero */}
-      <section className={`pt-24 pb-20 overflow-hidden transition-colors duration-300 ${isDark ? "bg-gray-950" : "gradient-hero"}`}>
+      <section className={`pt-24 pb-20 overflow-hidden transition-colors duration-300 ${isDark ? "bg-gray-950" : "bg-paper"}`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <motion.div
@@ -312,33 +313,23 @@ export default function LandingPage() {
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.6 }}
             >
-              <div className={`inline-flex items-center gap-2 border rounded-full px-4 py-1.5 text-sm font-medium mb-6 ${isDark ? "bg-blue-950 border-blue-800 text-blue-300" : "bg-blue-50 border-blue-100 text-blue-700"}`}>
-                <Sparkles className="w-4 h-4" />
-                <span>Powered by Gemini 2.5 Flash</span>
-              </div>
-
               <h1
                 className={`text-4xl md:text-5xl lg:text-6xl font-bold leading-tight mb-6 ${isDark ? "text-white" : "text-gray-900"}`}
-                style={{ fontFamily: "var(--font-poppins)" }}
+                style={{ fontFamily: "var(--font-display)" }}
               >
-                <span className="text-gradient">AI-Powered</span>
-                <br />
-                Exam Answer
-                <br />
-                Evaluation
+                Upload an answer sheet and see exactly where every mark was won or lost.
               </h1>
 
               <p className={`text-lg mb-8 max-w-lg leading-relaxed ${isDark ? "text-gray-300" : "text-gray-600"}`}>
-                Upload your answer sheets and get <strong>instant, accurate evaluation</strong> with
-                detailed feedback, marks breakdown, and personalized study recommendations.
+                Handwritten or typed, one sheet or many — get a full marks breakdown, question-by-question feedback, and what to study next, in seconds.
               </p>
 
               <div className="flex flex-wrap gap-4 mb-10">
                 <Link
                   href={ctaUrl}
-                  className="inline-flex items-center gap-2 gradient-primary text-white font-semibold px-6 py-3 rounded-xl hover:opacity-90 transition-opacity shadow-lg shadow-blue-500/25 group"
+                  className="inline-flex items-center gap-2 bg-ink text-white font-semibold px-6 py-3 rounded-xl hover:opacity-90 transition-opacity shadow-lg shadow-blue-500/25 group"
                 >
-                  Start Free Evaluation
+                  Start free evaluation
                   <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                 </Link>
               </div>
@@ -354,70 +345,9 @@ export default function LandingPage() {
               )}
             </motion.div>
 
-            <motion.div
-              initial={{ opacity: 0, y: 24 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-              className="relative hidden lg:block"
-            >
-              {/* Dashboard Preview */}
-              <div className="bg-white rounded-2xl shadow-2xl overflow-hidden border border-gray-100">
-                <div className="bg-gradient-to-r from-blue-600 to-teal-500 p-4 text-white">
-                  <div className="flex items-center gap-2 mb-3">
-                    <div className="w-3 h-3 rounded-full bg-white/30" />
-                    <div className="w-3 h-3 rounded-full bg-white/30" />
-                    <div className="w-3 h-3 rounded-full bg-white/30" />
-                    <span className="ml-2 text-sm font-medium opacity-90">Evaluation Complete ✓</span>
-                  </div>
-                  <div className="flex items-end gap-4">
-                    <div>
-                      <p className="text-sm opacity-75">Mathematics — Grade 12</p>
-                      <p className="text-4xl font-bold">82.5%</p>
-                    </div>
-                    <div className="text-right ml-auto">
-                      <p className="text-sm opacity-75">Grade</p>
-                      <p className="text-2xl font-bold">A</p>
-                    </div>
-                  </div>
-                </div>
-                <div className="p-4 space-y-3">
-                  {[
-                    { topic: "Algebra", score: 85, color: "bg-blue-500" },
-                    { topic: "Calculus", score: 78, color: "bg-teal-500" },
-                    { topic: "Statistics", score: 90, color: "bg-green-500" },
-                    { topic: "Geometry", score: 72, color: "bg-orange-500" },
-                  ].map((item) => (
-                    <div key={item.topic} className="flex items-center gap-3">
-                      <span className="text-sm text-gray-600 w-20">{item.topic}</span>
-                      <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
-                        <div
-                          className={`h-full ${item.color} rounded-full`}
-                          style={{ width: `${item.score}%` }}
-                        />
-                      </div>
-                      <span className="text-sm font-semibold text-gray-700 w-10 text-right">
-                        {item.score}%
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Floating Cards */}
-              <div className="absolute -top-4 -right-4 bg-white rounded-xl shadow-lg p-3 border border-gray-100 animate-float">
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-                  <span className="text-xs font-semibold text-gray-700">AI Evaluating...</span>
-                </div>
-              </div>
-
-              <div className="absolute -bottom-4 -left-4 bg-white rounded-xl shadow-lg p-3 border border-gray-100 animate-float" style={{ animationDelay: "1s" }}>
-                <div className="flex items-center gap-2">
-                  <Sparkles className="w-4 h-4 text-teal-500" />
-                  <span className="text-xs font-semibold text-gray-700">Report Ready!</span>
-                </div>
-              </div>
-            </motion.div>
+            <div className="relative hidden lg:block">
+              <MarkedAnswerSheet />
+            </div>
           </div>
         </div>
       </section>
@@ -432,7 +362,7 @@ export default function LandingPage() {
                   <stat.icon className="w-6 h-6 text-teal-400 mx-auto mb-2" />
                   <p
                     className="text-3xl font-bold text-white mb-1"
-                    style={{ fontFamily: "var(--font-poppins)" }}
+                    style={{ fontFamily: "var(--font-display)" }}
                   >
                     {stat.value}
                   </p>
@@ -451,7 +381,7 @@ export default function LandingPage() {
             <span className="text-blue-600 font-semibold text-sm uppercase tracking-wider">Features</span>
             <h2
               className={`text-3xl md:text-4xl font-bold mt-2 mb-4 ${isDark ? "text-white" : "text-gray-900"}`}
-              style={{ fontFamily: "var(--font-poppins)" }}
+              style={{ fontFamily: "var(--font-display)" }}
             >
               Everything You Need to Excel
             </h2>
@@ -477,14 +407,14 @@ export default function LandingPage() {
                       className={`w-12 h-12 rounded-xl ${feature.bg} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}
                     >
                       <div
-                        className={`w-6 h-6 bg-gradient-to-r ${feature.color} rounded-md flex items-center justify-center`}
+                        className="w-6 h-6 bg-ink rounded-md flex items-center justify-center"
                       >
                         <feature.icon className="w-3.5 h-3.5 text-white" />
                       </div>
                     </div>
                     <h3
                       className="text-lg font-bold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors"
-                      style={{ fontFamily: "var(--font-poppins)" }}
+                      style={{ fontFamily: "var(--font-display)" }}
                     >
                       {feature.title}
                     </h3>
@@ -504,7 +434,7 @@ export default function LandingPage() {
             <span className="text-teal-600 font-semibold text-sm uppercase tracking-wider">Process</span>
             <h2
               className="text-3xl md:text-4xl font-bold text-gray-900 mt-2 mb-4"
-              style={{ fontFamily: "var(--font-poppins)" }}
+              style={{ fontFamily: "var(--font-display)" }}
             >
               Get Results in 3 Simple Steps
             </h2>
@@ -512,7 +442,7 @@ export default function LandingPage() {
 
           <div className="grid md:grid-cols-3 gap-8 relative">
             {/* Connector line */}
-            <div className="hidden md:block absolute top-12 left-1/4 right-1/4 h-0.5 bg-gradient-to-r from-blue-200 to-teal-200" />
+            <div className="hidden md:block absolute top-12 left-1/4 right-1/4 h-0.5" style={{ background: "var(--rule)" }} />
 
             {steps.map((step, i) => (
               <motion.div
@@ -523,7 +453,7 @@ export default function LandingPage() {
                 transition={{ duration: 0.5, delay: i * 0.15 }}
                 className="text-center relative"
               >
-                <div className="w-24 h-24 rounded-2xl gradient-primary mx-auto mb-6 flex items-center justify-center shadow-lg shadow-blue-500/25">
+                <div className="w-24 h-24 rounded-2xl bg-ink mx-auto mb-6 flex items-center justify-center shadow-lg shadow-blue-500/25">
                   <step.icon className="w-10 h-10 text-white" />
                 </div>
                 <div className="absolute top-0 right-0 -translate-y-2 translate-x-2 bg-gray-900 text-white text-xs font-bold w-7 h-7 rounded-full flex items-center justify-center">
@@ -531,7 +461,7 @@ export default function LandingPage() {
                 </div>
                 <h3
                   className="text-xl font-bold text-gray-900 mb-3"
-                  style={{ fontFamily: "var(--font-poppins)" }}
+                  style={{ fontFamily: "var(--font-display)" }}
                 >
                   {step.title}
                 </h3>
@@ -543,13 +473,12 @@ export default function LandingPage() {
       </section>
 
       {/* Pricing Banner — Free for Everyone */}
-      <section id="free-tier" className="py-20 bg-gradient-to-r from-blue-900 to-indigo-900 text-white relative overflow-hidden">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(59,130,246,0.15),transparent_60%)] pointer-events-none" />
+      <section id="free-tier" className="py-20 bg-ink text-white relative overflow-hidden">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
           <div className="w-16 h-16 bg-blue-500/20 rounded-2xl flex items-center justify-center mx-auto mb-6 border border-blue-500/30">
             <Sparkles className="w-8 h-8 text-blue-300 animate-pulse" />
           </div>
-          <h2 className="text-3xl md:text-5xl font-extrabold mb-4" style={{ fontFamily: "var(--font-poppins)" }}>
+          <h2 className="text-3xl md:text-5xl font-extrabold mb-4" style={{ fontFamily: "var(--font-display)" }}>
             100% Free For Everyone
           </h2>
           <p className="text-blue-100 text-lg md:text-xl max-w-2xl mx-auto mb-10 leading-relaxed">
@@ -576,7 +505,7 @@ export default function LandingPage() {
             <span className="text-orange-600 font-semibold text-sm uppercase tracking-wider">FAQ</span>
             <h2
               className="text-3xl md:text-4xl font-bold text-gray-900 mt-2"
-              style={{ fontFamily: "var(--font-poppins)" }}
+              style={{ fontFamily: "var(--font-display)" }}
             >
               Frequently Asked Questions
             </h2>
@@ -631,7 +560,7 @@ export default function LandingPage() {
       </section>
 
       {/* CTA */}
-      <section className="py-20 gradient-primary">
+      <section className="py-20 bg-ink">
         <div className="max-w-4xl mx-auto px-4 text-center">
           <motion.div
             initial={{ opacity: 0, y: 24 }}
@@ -641,7 +570,7 @@ export default function LandingPage() {
             <GraduationCap className="w-16 h-16 text-white/80 mx-auto mb-6" />
             <h2
               className="text-3xl md:text-4xl font-bold text-white mb-4"
-              style={{ fontFamily: "var(--font-poppins)" }}
+              style={{ fontFamily: "var(--font-display)" }}
             >
               Ready to Transform Your Exam Performance?
             </h2>

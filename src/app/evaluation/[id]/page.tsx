@@ -211,7 +211,7 @@ export default function EvaluationPage() {
         <div className="w-16 h-16 bg-red-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
           <AlertTriangle className="w-8 h-8 text-red-500" />
         </div>
-        <h2 className="text-xl font-bold text-gray-900" style={{ fontFamily: "var(--font-poppins)" }}>
+        <h2 className="text-xl font-bold text-gray-900" style={{ fontFamily: "var(--font-display)" }}>
           Evaluation Not Found
         </h2>
         <p className="text-gray-500 text-sm mt-2 mb-6">
@@ -219,7 +219,7 @@ export default function EvaluationPage() {
         </p>
         <button
           onClick={() => router.push("/dashboard")}
-          className="inline-flex items-center gap-2 gradient-primary text-white font-semibold px-6 py-3 rounded-xl hover:opacity-90 transition-opacity text-sm shadow-md"
+          className="inline-flex items-center gap-2 bg-ink text-white font-semibold px-6 py-3 rounded-xl hover:opacity-90 transition-opacity text-sm shadow-md"
         >
           <ArrowLeft className="w-4 h-4" /> Back to Dashboard
         </button>
@@ -244,7 +244,7 @@ export default function EvaluationPage() {
             <ArrowLeft className="w-4 h-4 text-gray-500" />
           </button>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900" style={{ fontFamily: "var(--font-poppins)" }}>
+            <h1 className="text-2xl font-bold text-gray-900" style={{ fontFamily: "var(--font-display)" }}>
               {data.subject} — Evaluation Report
             </h1>
             <p className="text-gray-500 text-sm">
@@ -274,7 +274,7 @@ export default function EvaluationPage() {
           </button>
           <button
             onClick={handlePrint}
-            className="inline-flex items-center gap-2 gradient-primary text-white text-sm font-medium px-4 py-2 rounded-xl hover:opacity-90 transition-opacity"
+            className="inline-flex items-center gap-2 bg-ink text-white text-sm font-medium px-4 py-2 rounded-xl hover:opacity-90 transition-opacity"
           >
             <Download className="w-4 h-4" />
             PDF / Print
@@ -321,7 +321,7 @@ export default function EvaluationPage() {
                 <card.icon className={`w-4 h-4 ${card.color}`} />
               </div>
             </div>
-            <p className={`text-3xl font-bold ${card.color}`} style={{ fontFamily: "var(--font-poppins)" }}>
+            <p className={`text-3xl font-bold font-mono ${card.color}`}>
               {card.value}
             </p>
           </div>
@@ -332,7 +332,7 @@ export default function EvaluationPage() {
       <div className="bg-white rounded-2xl border border-gray-100 card-shadow-md p-6">
         <div className="flex items-center justify-between mb-3">
           <span className="text-sm font-medium text-gray-600">Overall Performance</span>
-          <span className={`text-sm font-bold ${pct >= 75 ? "text-green-600" : "text-amber-600"}`}>
+          <span className={`text-sm font-bold font-mono ${pct >= 75 ? "text-green-600" : "text-amber-600"}`}>
             {pct.toFixed(1)}%
           </span>
         </div>
@@ -341,7 +341,7 @@ export default function EvaluationPage() {
             className="h-full rounded-full transition-all duration-1000"
             style={{
               width: `${pct}%`,
-              background: pct >= 75 ? "linear-gradient(90deg, #22C55E, #14B8A6)" : "linear-gradient(90deg, #F59E0B, #EF4444)",
+              background: pct >= 75 ? "var(--tick)" : "var(--examiner)",
             }}
           />
         </div>
@@ -357,21 +357,21 @@ export default function EvaluationPage() {
       {breakdown.length > 0 && (
         <div className="grid lg:grid-cols-2 gap-6">
           <div className="bg-white rounded-2xl border border-gray-100 card-shadow-md p-6">
-            <h2 className="text-lg font-bold text-gray-900 mb-5" style={{ fontFamily: "var(--font-poppins)" }}>
+            <h2 className="text-lg font-bold text-gray-900 mb-5" style={{ fontFamily: "var(--font-display)" }}>
               Topic-wise Marks
             </h2>
             <div className="h-56">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={breakdown}>
-                  <XAxis dataKey="topic" tick={{ fontSize: 11, fill: "#6b7280" }} />
-                  <YAxis domain={[0, 100]} tick={{ fontSize: 11, fill: "#6b7280" }} />
+                  <XAxis dataKey="topic" tick={{ fontSize: 11, fill: "var(--graphite)" }} />
+                  <YAxis domain={[0, 100]} tick={{ fontSize: 11, fill: "var(--graphite)" }} />
                   <Tooltip
-                    contentStyle={{ borderRadius: "12px", border: "1px solid #e5e7eb", fontSize: 12 }}
+                    contentStyle={{ borderRadius: "12px", border: "1px solid var(--rule)", backgroundColor: "var(--paper)", color: "var(--ink)", fontSize: 12 }}
                     formatter={(value) => [`${value}%`, "Score"]}
                   />
                   <Bar
                     dataKey="percentage"
-                    fill="#2563EB"
+                    fill="var(--ink)"
                     radius={[6, 6, 0, 0]}
                   />
                 </BarChart>
@@ -380,20 +380,20 @@ export default function EvaluationPage() {
           </div>
 
           <div className="bg-white rounded-2xl border border-gray-100 card-shadow-md p-6">
-            <h2 className="text-lg font-bold text-gray-900 mb-5" style={{ fontFamily: "var(--font-poppins)" }}>
+            <h2 className="text-lg font-bold text-gray-900 mb-5" style={{ fontFamily: "var(--font-display)" }}>
               Performance Radar
             </h2>
             <div className="h-56">
               <ResponsiveContainer width="100%" height="100%">
                 <RadarChart data={breakdown}>
-                  <PolarGrid stroke="#f0f0f0" />
-                  <PolarAngleAxis dataKey="topic" tick={{ fontSize: 10, fill: "#6b7280" }} />
+                  <PolarGrid stroke="var(--rule)" />
+                  <PolarAngleAxis dataKey="topic" tick={{ fontSize: 10, fill: "var(--graphite)" }} />
                   <PolarRadiusAxis domain={[0, 100]} tick={{ fontSize: 10 }} />
                   <Radar
                     name="Marks"
                     dataKey="percentage"
-                    stroke="#2563EB"
-                    fill="#2563EB"
+                    stroke="var(--ink)"
+                    fill="var(--ink)"
                     fillOpacity={0.2}
                   />
                 </RadarChart>
@@ -406,7 +406,7 @@ export default function EvaluationPage() {
       {/* Topic Detail Table */}
       {breakdown.length > 0 && (
         <div className="bg-white rounded-2xl border border-gray-100 card-shadow-md p-6">
-          <h2 className="text-lg font-bold text-gray-900 mb-5" style={{ fontFamily: "var(--font-poppins)" }}>
+          <h2 className="text-lg font-bold text-gray-900 mb-5" style={{ fontFamily: "var(--font-display)" }}>
             Topic-wise Breakdown
           </h2>
           <div className="overflow-x-auto">
@@ -433,7 +433,7 @@ export default function EvaluationPage() {
                       }`}
                     >
                       <td className="py-3 text-sm font-semibold text-gray-900 dark:text-gray-100">{item.topic}</td>
-                      <td className="py-3 text-sm text-gray-600 dark:text-gray-400 text-center">
+                      <td className="py-3 text-sm text-gray-600 dark:text-gray-400 text-center font-mono">
                         {item.obtainedMarks}/{item.totalMarks}
                       </td>
                       <td className="py-3 text-center">
@@ -445,14 +445,14 @@ export default function EvaluationPage() {
                                 width: `${item.percentage}%`,
                                 background:
                                   item.percentage >= 80
-                                    ? "#22C55E"
+                                    ? "var(--tick)"
                                     : item.percentage >= 60
-                                    ? "#F59E0B"
-                                    : "#EF4444",
+                                    ? "var(--examiner)"
+                                    : "var(--examiner)",
                               }}
                             />
                           </div>
-                          <span className={`text-xs font-bold ${
+                          <span className={`text-xs font-bold font-mono ${
                             item.percentage >= 80
                               ? "text-green-600"
                               : item.percentage >= 60
@@ -478,7 +478,7 @@ export default function EvaluationPage() {
         <div className="bg-white rounded-2xl border-l-4 border-green-400 border border-gray-100 card-shadow-md p-6">
           <div className="flex items-center gap-2 mb-4">
             <CheckCircle className="w-5 h-5 text-green-500" />
-            <h2 className="text-lg font-bold text-gray-900" style={{ fontFamily: "var(--font-poppins)" }}>
+            <h2 className="text-lg font-bold text-gray-900" style={{ fontFamily: "var(--font-display)" }}>
               Strengths
             </h2>
           </div>
@@ -497,7 +497,7 @@ export default function EvaluationPage() {
         <div className="bg-white rounded-2xl border-l-4 border-amber-400 border border-gray-100 card-shadow-md p-6">
           <div className="flex items-center gap-2 mb-4">
             <AlertTriangle className="w-5 h-5 text-amber-500" />
-            <h2 className="text-lg font-bold text-gray-900" style={{ fontFamily: "var(--font-poppins)" }}>
+            <h2 className="text-lg font-bold text-gray-900" style={{ fontFamily: "var(--font-display)" }}>
               Areas to Improve
             </h2>
           </div>
@@ -517,10 +517,10 @@ export default function EvaluationPage() {
       {/* AI Feedback */}
       <div className="bg-white rounded-2xl border border-gray-100 card-shadow-md p-6">
         <div className="flex items-center gap-2 mb-5">
-          <div className="w-9 h-9 gradient-primary rounded-xl flex items-center justify-center">
+          <div className="w-9 h-9 bg-ink rounded-xl flex items-center justify-center">
             <Brain className="w-4 h-4 text-white" />
           </div>
-          <h2 className="text-lg font-bold text-gray-900" style={{ fontFamily: "var(--font-poppins)" }}>
+          <h2 className="text-lg font-bold text-gray-900" style={{ fontFamily: "var(--font-display)" }}>
             AI Overall Feedback
           </h2>
         </div>
@@ -533,7 +533,7 @@ export default function EvaluationPage() {
       <div className="bg-white rounded-2xl border border-gray-100 card-shadow-md p-6">
         <div className="flex items-center gap-2 mb-5">
           <Lightbulb className="w-5 h-5 text-amber-500" />
-          <h2 className="text-lg font-bold text-gray-900" style={{ fontFamily: "var(--font-poppins)" }}>
+          <h2 className="text-lg font-bold text-gray-900" style={{ fontFamily: "var(--font-display)" }}>
             Study Recommendations
           </h2>
         </div>
@@ -587,7 +587,7 @@ export default function EvaluationPage() {
           }
           .card-shadow-md {
             box-shadow: none !important;
-            border: 1px solid #e5e7eb !important;
+            border: 1px solid var(--rule) !important;
           }
         }
       `}</style>

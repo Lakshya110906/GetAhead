@@ -388,15 +388,15 @@ export default function AdminPage() {
       <div className="min-h-screen flex items-center justify-center bg-gray-50 px-6">
         <div className="max-w-md w-full bg-white rounded-3xl border border-gray-150 p-8 card-shadow-md">
           <div className="flex items-center gap-2 mb-6">
-            <div className="w-8 h-8 rounded-xl gradient-primary flex items-center justify-center text-white">
+            <div className="w-8 h-8 rounded-xl bg-ink flex items-center justify-center text-white">
               <Shield className="w-4 h-4" />
             </div>
-            <span className="font-bold text-gray-900" style={{ fontFamily: "var(--font-poppins)" }}>
+            <span className="font-bold text-gray-900" style={{ fontFamily: "var(--font-display)" }}>
               GetAhead Admin Panel
             </span>
           </div>
 
-          <h1 className="text-2xl font-bold text-gray-900 mb-2" style={{ fontFamily: "var(--font-poppins)" }}>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2" style={{ fontFamily: "var(--font-display)" }}>
             Authorized Sign In
           </h1>
           <p className="text-gray-500 text-xs mb-6">
@@ -430,7 +430,7 @@ export default function AdminPage() {
             <button
               type="submit"
               disabled={loggingIn}
-              className="w-full gradient-primary text-white font-semibold py-3 rounded-xl hover:opacity-90 transition-opacity flex items-center justify-center gap-2 disabled:opacity-60 text-sm shadow-sm"
+              className="w-full bg-ink text-white font-semibold py-3 rounded-xl hover:opacity-90 transition-opacity flex items-center justify-center gap-2 disabled:opacity-60 text-sm shadow-sm"
             >
               {loggingIn ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
@@ -454,7 +454,7 @@ export default function AdminPage() {
             <Shield className="w-5 h-5" />
           </div>
           <div>
-            <h1 className="font-bold text-gray-900 text-base" style={{ fontFamily: "var(--font-poppins)" }}>
+            <h1 className="font-bold text-gray-900 text-base" style={{ fontFamily: "var(--font-display)" }}>
               Admin Panel
             </h1>
             <p className="text-gray-500 text-xxs leading-none mt-0.5">GetAhead AI Management System</p>
@@ -533,7 +533,7 @@ export default function AdminPage() {
                         <card.icon className={`w-4.5 h-4.5 ${card.color}`} />
                       </div>
                     </div>
-                    <p className="text-3xl font-extrabold text-gray-900" style={{ fontFamily: "var(--font-poppins)" }}>
+                    <p className="text-3xl font-extrabold text-gray-900 font-mono" style={{ fontFamily: "var(--font-display)" }}>
                       {card.val}
                     </p>
                   </div>
@@ -548,11 +548,11 @@ export default function AdminPage() {
                   <div className="h-60">
                     <ResponsiveContainer width="100%" height="100%">
                       <LineChart data={stats.charts.evalsPerDay}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
+                        <CartesianGrid strokeDasharray="3 3" stroke="var(--rule)" />
                         <XAxis dataKey="date" tick={{ fontSize: 11 }} />
                         <YAxis tick={{ fontSize: 11 }} />
                         <Tooltip />
-                        <Line type="monotone" dataKey="evaluations" stroke="#2563eb" strokeWidth={3} />
+                        <Line type="monotone" dataKey="evaluations" stroke="var(--ink)" strokeWidth={3} />
                       </LineChart>
                     </ResponsiveContainer>
                   </div>
@@ -564,11 +564,11 @@ export default function AdminPage() {
                   <div className="h-60">
                     <ResponsiveContainer width="100%" height="100%">
                       <BarChart data={stats.charts.usersOverTime}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
+                        <CartesianGrid strokeDasharray="3 3" stroke="var(--rule)" />
                         <XAxis dataKey="date" tick={{ fontSize: 11 }} />
                         <YAxis tick={{ fontSize: 11 }} />
                         <Tooltip />
-                        <Bar dataKey="users" fill="#10b981" radius={[4, 4, 0, 0]} />
+                        <Bar dataKey="users" fill="var(--tick)" radius={[4, 4, 0, 0]} />
                       </BarChart>
                     </ResponsiveContainer>
                   </div>
@@ -581,7 +581,7 @@ export default function AdminPage() {
           {activeTab === "users" && (
             <div className="space-y-6 animate-fadeIn">
               <div className="flex flex-wrap items-center justify-between gap-4">
-                <h2 className="text-lg font-bold text-gray-900" style={{ fontFamily: "var(--font-poppins)" }}>
+                <h2 className="text-lg font-bold text-gray-900" style={{ fontFamily: "var(--font-display)" }}>
                   Registered Users
                 </h2>
                 <div className="relative">
@@ -700,7 +700,7 @@ export default function AdminPage() {
 
               {/* Reset Password Modal */}
               {passwordResetUser && (
-                <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-6">
+                <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-6">
                   <div className="bg-white rounded-3xl border border-gray-150 p-6 max-w-sm w-full card-shadow-md space-y-4">
                     <h3 className="font-bold text-gray-900 text-lg">Reset Password</h3>
                     {resetSuccess ? (
@@ -730,7 +730,7 @@ export default function AdminPage() {
                             setResetSuccess(true);
                             setTimeout(() => { setPasswordResetUser(null); setResetSuccess(false); }, 1500);
                           }}
-                          className="px-4 py-2 gradient-primary text-white rounded-xl font-semibold"
+                          className="px-4 py-2 bg-ink text-white rounded-xl font-semibold"
                         >
                           Confirm Reset
                         </button>
@@ -746,7 +746,7 @@ export default function AdminPage() {
           {activeTab === "evaluations" && (
             <div className="space-y-6 animate-fadeIn">
               <div className="flex flex-wrap items-center justify-between gap-4">
-                <h2 className="text-lg font-bold text-gray-900" style={{ fontFamily: "var(--font-poppins)" }}>
+                <h2 className="text-lg font-bold text-gray-900" style={{ fontFamily: "var(--font-display)" }}>
                   All Evaluations
                 </h2>
                 <div className="relative">
@@ -842,7 +842,7 @@ export default function AdminPage() {
           {activeTab === "papers" && (
             <div className="space-y-6 animate-fadeIn">
               <div className="flex flex-wrap items-center justify-between gap-4">
-                <h2 className="text-lg font-bold text-gray-900" style={{ fontFamily: "var(--font-poppins)" }}>
+                <h2 className="text-lg font-bold text-gray-900" style={{ fontFamily: "var(--font-display)" }}>
                   Generated Question Papers
                 </h2>
                 <div className="relative">
@@ -936,7 +936,7 @@ export default function AdminPage() {
 
               {/* Preview Modal */}
               {paperPreview && (
-                <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-6">
+                <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-6">
                   <div className="bg-white rounded-3xl border border-gray-150 p-6 max-w-2xl w-full card-shadow-md space-y-4 max-h-[80vh] flex flex-col">
                     <h3 className="font-bold text-gray-900 text-lg shrink-0">{paperPreview.title}</h3>
                     <div className="flex-1 overflow-y-auto bg-gray-50 rounded-xl p-4 border border-gray-200 text-xs font-mono whitespace-pre-wrap">
@@ -958,7 +958,7 @@ export default function AdminPage() {
                       </button>
                       <button
                         onClick={() => setPaperPreview(null)}
-                        className="px-4 py-2 gradient-primary text-white rounded-xl font-semibold"
+                        className="px-4 py-2 bg-ink text-white rounded-xl font-semibold"
                       >
                         Close Preview
                       </button>
@@ -972,7 +972,7 @@ export default function AdminPage() {
           {/* TAB 5: DATABASE PANEL */}
           {activeTab === "database" && dbInfo && (
             <div className="space-y-6 animate-fadeIn">
-              <h2 className="text-lg font-bold text-gray-900" style={{ fontFamily: "var(--font-poppins)" }}>
+              <h2 className="text-lg font-bold text-gray-900" style={{ fontFamily: "var(--font-display)" }}>
                 Database Administration
               </h2>
 
@@ -1038,7 +1038,7 @@ export default function AdminPage() {
           {activeTab === "health" && (
             <div className="space-y-6 animate-fadeIn">
               <div className="flex items-center justify-between">
-                <h2 className="text-lg font-bold text-gray-900" style={{ fontFamily: "var(--font-poppins)" }}>
+                <h2 className="text-lg font-bold text-gray-900" style={{ fontFamily: "var(--font-display)" }}>
                   System Health Metrics
                 </h2>
                 <button
@@ -1246,7 +1246,7 @@ export default function AdminPage() {
             <div className="space-y-6 animate-fadeIn">
               <div className="flex flex-wrap justify-between items-center gap-4">
                 <div>
-                  <h2 className="text-xl font-bold text-gray-900" style={{ fontFamily: "var(--font-poppins)" }}>
+                  <h2 className="text-xl font-bold text-gray-900" style={{ fontFamily: "var(--font-display)" }}>
                     Support Tickets Center
                   </h2>
                   <p className="text-gray-500 text-sm">
@@ -1280,7 +1280,7 @@ export default function AdminPage() {
                           <card.icon className={`w-4.5 h-4.5 ${card.color}`} />
                         </div>
                       </div>
-                      <p className="text-3xl font-extrabold text-gray-900" style={{ fontFamily: "var(--font-poppins)" }}>
+                      <p className="text-3xl font-extrabold text-gray-900 font-mono" style={{ fontFamily: "var(--font-display)" }}>
                         {card.val}
                       </p>
                     </div>
@@ -1302,11 +1302,11 @@ export default function AdminPage() {
                           { name: "Feature Request", tickets: ticketStats.categoryCounts?.feature || 0 },
                           { name: "Other Support", tickets: ticketStats.categoryCounts?.other || 0 },
                         ]}>
-                          <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
+                          <CartesianGrid strokeDasharray="3 3" stroke="var(--rule)" />
                           <XAxis dataKey="name" tick={{ fontSize: 11 }} />
                           <YAxis tick={{ fontSize: 11 }} />
                           <Tooltip />
-                          <Bar dataKey="tickets" fill="#4f46e5" radius={[4, 4, 0, 0]} />
+                          <Bar dataKey="tickets" fill="var(--ink)" radius={[4, 4, 0, 0]} />
                         </BarChart>
                       </ResponsiveContainer>
                     </div>
@@ -1514,7 +1514,7 @@ export default function AdminPage() {
           {/* TAB 8: SYSTEM SETTINGS */}
           {activeTab === "settings" && (
             <div className="space-y-6 animate-fadeIn">
-              <h2 className="text-lg font-bold text-gray-900" style={{ fontFamily: "var(--font-poppins)" }}>
+              <h2 className="text-lg font-bold text-gray-900" style={{ fontFamily: "var(--font-display)" }}>
                 Global App Settings
               </h2>
 

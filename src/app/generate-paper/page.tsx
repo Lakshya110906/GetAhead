@@ -76,7 +76,7 @@ function AgentCard({
         <span className="text-xl mt-0.5">{icon}</span>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <p className="text-sm font-bold text-gray-900 truncate" style={{ fontFamily: "var(--font-poppins)" }}>{name}</p>
+            <p className="text-sm font-bold text-gray-900 truncate" style={{ fontFamily: "var(--font-display)" }}>{name}</p>
             {status === "active" && (
               <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full ${c.badge}`}>
                 <span className={`w-1.5 h-1.5 rounded-full ${c.dot} animate-pulse`} />
@@ -563,7 +563,7 @@ ${JSON.stringify(paper, null, 2)}
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6 no-print">
         <div>
-          <h1 className="text-xl sm:text-2xl font-extrabold text-gray-900 flex items-center gap-2 sm:gap-3" style={{ fontFamily: "var(--font-poppins)" }}>
+          <h1 className="text-xl sm:text-2xl font-extrabold text-gray-900 flex items-center gap-2 sm:gap-3" style={{ fontFamily: "var(--font-display)" }}>
             <GraduationCap className="w-6 h-6 sm:w-8 sm:h-8 text-blue-600 flex-shrink-0" />
             AI Question Paper Generator
           </h1>
@@ -653,7 +653,7 @@ ${JSON.stringify(paper, null, 2)}
                       onClick={() => setDifficulty(level)}
                       className={`py-3 rounded-xl border text-sm font-semibold transition-all ${
                         difficulty === level
-                          ? "gradient-primary text-white border-transparent shadow-sm"
+                          ? "bg-ink text-white border-transparent shadow-sm"
                           : "border-gray-200 text-gray-600 bg-gray-50 hover:bg-white hover:text-gray-900"
                       }`}
                     >
@@ -836,7 +836,7 @@ ${JSON.stringify(paper, null, 2)}
 
             <button
               type="submit"
-              className="w-full py-4 rounded-xl text-white font-bold gradient-primary shadow-lg hover:opacity-90 active:scale-[0.99] transition-all flex items-center justify-center gap-2 text-base"
+              className="w-full py-4 rounded-xl text-white font-bold bg-ink shadow-lg hover:opacity-90 active:scale-[0.99] transition-all flex items-center justify-center gap-2 text-base"
             >
               <GraduationCap className="w-5 h-5" />
               Generate Question Paper
@@ -849,13 +849,13 @@ ${JSON.stringify(paper, null, 2)}
       {status === "generating" && (
         <div className="space-y-4 no-print">
           {/* Header */}
-          <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl p-6 text-white shadow-lg">
+          <div className="bg-ink rounded-2xl p-6 text-white shadow-lg">
             <div className="flex items-center gap-3 mb-2">
               <div className="w-9 h-9 bg-white/20 rounded-xl flex items-center justify-center">
                 <Loader2 className="w-5 h-5 animate-spin" />
               </div>
               <div>
-                <h2 className="text-lg font-bold" style={{ fontFamily: "var(--font-poppins)" }}>
+                <h2 className="text-lg font-bold" style={{ fontFamily: "var(--font-display)" }}>
                   AI Agent Pipeline Running
                 </h2>
                 <p className="text-blue-100 text-xs">3 specialized agents collaborating to build your exam paper</p>
@@ -981,7 +981,7 @@ ${JSON.stringify(paper, null, 2)}
               </button>
               <button
                 onClick={handlePrint}
-                className="flex items-center gap-1.5 gradient-primary px-4 py-2 rounded-xl text-sm font-bold text-white shadow-md hover:opacity-95 transition-colors"
+                className="flex items-center gap-1.5 bg-ink px-4 py-2 rounded-xl text-sm font-bold text-white shadow-md hover:opacity-95 transition-colors"
               >
                 <Printer className="w-4 h-4" /> Print / PDF
               </button>
@@ -1194,7 +1194,7 @@ ${JSON.stringify(paper, null, 2)}
                                       savePaperEdits(updatedPaper);
                                       setEditingIndex(null);
                                     }}
-                                    className="px-3 py-1.5 text-xs font-bold text-white gradient-primary rounded-lg shadow-sm"
+                                    className="px-3 py-1.5 text-xs font-bold text-white bg-ink rounded-lg shadow-sm"
                                   >
                                     Save Question
                                   </button>
@@ -1251,11 +1251,11 @@ ${JSON.stringify(paper, null, 2)}
             {/* AI Refinement Feedback Card */}
             <div className="bg-white rounded-3xl border border-gray-100 shadow-md p-6 mt-6 no-print space-y-4 animate-fade-in">
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg gradient-primary flex items-center justify-center text-white flex-shrink-0">
+                <div className="w-8 h-8 rounded-lg bg-ink flex items-center justify-center text-white flex-shrink-0">
                   <Sparkles className="w-4 h-4" />
                 </div>
                 <div>
-                  <h3 className="text-base font-bold text-gray-905" style={{ fontFamily: "var(--font-poppins)" }}>
+                  <h3 className="text-base font-bold text-gray-905" style={{ fontFamily: "var(--font-display)" }}>
                     AI Paper Refinement & Tweaks
                   </h3>
                   <p className="text-xs text-gray-500">
@@ -1275,7 +1275,7 @@ ${JSON.stringify(paper, null, 2)}
                 <button
                   onClick={handleAIRefine}
                   disabled={!aiFeedback.trim()}
-                  className="inline-flex items-center gap-2 gradient-primary text-white font-semibold text-sm px-5 py-3.5 rounded-xl hover:opacity-90 transition-opacity shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
+                  className="inline-flex items-center gap-2 bg-ink text-white font-semibold text-sm px-5 py-3.5 rounded-xl hover:opacity-90 transition-opacity shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
                 >
                   <Sparkles className="w-4 h-4" />
                   Apply Tweaks
@@ -1287,7 +1287,7 @@ ${JSON.stringify(paper, null, 2)}
             // Agent logs timeline view
             <div className="bg-white rounded-2xl border border-gray-100 p-8 shadow-sm space-y-8 no-print">
               <div>
-                <h2 className="text-xl font-bold text-gray-900 mb-1" style={{ fontFamily: "var(--font-poppins)" }}>
+                <h2 className="text-xl font-bold text-gray-900 mb-1" style={{ fontFamily: "var(--font-display)" }}>
                   Agent Collaborative Audit Trail
                 </h2>
                 <p className="text-gray-500 text-sm">
