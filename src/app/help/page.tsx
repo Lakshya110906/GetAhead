@@ -135,7 +135,7 @@ const categories = [
     articles: [
       {
         title: "How do I generate a question paper?",
-        content: `Go to "Generate Paper" in the dashboard sidebar. Fill in: Subject (e.g., Physics), Grade (e.g., Class 12), Difficulty (Easy / Medium / Hard), Total Marks (e.g., 70). Click "Generate". A complete, structured question paper is generated in 30–60 seconds. You can regenerate unlimited times.`,
+        content: `Go to "Generate Paper" in the dashboard sidebar. Fill in: Subject (e.g., Physics), Grade (e.g., Class 12), Difficulty (Easy / Medium / Hard), Total Marks (e.g., 70). Click "Generate". A complete, structured question paper is generated in 30–60 seconds. You can regenerate up to your daily quota (currently 10 generations/day during beta).`,
       },
       {
         title: "How do I use the generated question paper?",
@@ -179,7 +179,7 @@ const categories = [
     articles: [
       {
         title: "How accurate is the AI evaluation?",
-        content: `GetAhead AI uses Gemini 2.5 Flash with subject-specific academic rubrics. Accuracy is very high for: well-structured written answers, factual content (science, history, geography), mathematical solutions with shown workings, MCQ evaluation. Accuracy may be lower for: highly interpretive essay questions, very niche topics, messy handwriting, diagrams (described in text only). For high-stakes exams, we recommend a teacher review of results.`,
+        content: `GetAhead AI's grading accuracy is measured against a golden set of real, teacher-marked answer sheets — see the accuracy figure and methodology on our homepage. Accuracy is highest for well-structured written answers, factual content (science, history, geography), mathematical solutions with shown workings, and MCQ evaluation. Accuracy may be lower for highly interpretive essay questions, very niche topics, messy handwriting, and diagrams (described in text only). For high-stakes exams, we recommend a teacher review of results.`,
       },
       {
         title: "Does the AI support handwritten answers?",

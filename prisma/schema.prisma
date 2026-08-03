@@ -2,9 +2,15 @@ generator client {
   provider = "prisma-client-js"
 }
 
+// DATABASE_URL: at runtime this should be a Prisma Accelerate connection
+// string (prisma://...) so queries go over HTTPS through Accelerate's pool
+// instead of each serverless invocation holding its own TCP connection to
+// Aiven. DIRECT_DATABASE_URL is the real mysql:// connection string, used
+// only for schema migrations/`db push` — Accelerate doesn't proxy those.
 datasource db {
-  provider = "mysql"
-  url      = env("DATABASE_URL")
+  provider  = "mysql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_DATABASE_URL")
 }
 
 model User {
@@ -31,6 +37,7 @@ model User {
   assignedTickets SupportTicket[] @relation("AssignedTickets")
   ticketNotes     TicketNote[]
   ticketReplies   TicketReply[]
+  usageCounters   UsageCounter[]
 }
 
 model Account {
@@ -91,6 +98,9 @@ model RateLimit {
   @@index([resetAt])
 }
 
+// Evaluation doubles as the job row for the async evaluation pipeline.
+// status is the job-state machine: QUEUED -> PROCESSING -> SUCCEEDED
+// (or -> FAILED after maxAttempts exhausted, or -> CANCELLED by the user).
 model Evaluation {
   id            String  @id @default(cuid())
   userId        String
@@ -102,10 +112,38 @@ model Evaluation {
   totalMarks    Int?
   obtainedMarks Float?
   percentage    Float?
-  status        String  @default("IN_PROGRESS")
+
+  // --- Job lifecycle ---
+  status        String    @default("QUEUED") // QUEUED | PROCESSING | SUCCEEDED | FAILED | CANCELLED
+  attempts      Int       @default(0)
+  maxAttempts   Int       @default(3)
+  lastError     String?   @db.Text
+  queuedAt      DateTime  @default(now())
+  startedAt     DateTime?
+  finishedAt    DateTime?
+  nextAttemptAt DateTime?
+
+  // --- Audit trail: every SUCCEEDED row must be traceable to exactly
+  // what produced it. Without these, "why did this student get 3/5" is
+  // unanswerable six months later, and a prompt/rubric change can't be
+  // told apart from noise. ---
+  modelId          String?  // e.g. "gemini-2.0-flash"
+  promptVersion    String?  // sha256 (truncated) of the exact prompt templates used
+  rubricVersion    String?  // e.g. "rubric-2026-01-v1" — bumped whenever the rubric text changes
+  rawModelResponse String?  @db.LongText // the model's raw response, before parsing/validation
+
+  // Token usage for this evaluation's model calls (transcription + grading
+  // combined), captured from Gemini's usageMetadata. This is the basis for
+  // the daily spend estimate and kill-switch in lib/spendControl.ts.
+  promptTokens     Int?
+  completionTokens Int?
+  totalTokens      Int?
 
   originalFileName String?
-  fileUrl          String?
+  fileUrl          String?  // public blob URL, fetched by the worker
+  fileKey          String?  // blob pathname/key, for deletion
+  fileSize         Int?
+  pageCount        Int?
   fileType         String?
   ocrText          String? @db.LongText
 
@@ -127,6 +165,7 @@ model Evaluation {
   @@index([userId])
   @@index([status])
   @@index([createdAt])
+  @@index([status, nextAttemptAt])
 }
 
 model SavedReport {
@@ -165,7 +204,14 @@ model QuestionPaper {
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
+  // Token usage where captured (see lib/question-agents.ts) — same purpose
+  // as Evaluation.totalTokens, folded into the same daily spend estimate.
+  promptTokens     Int?
+  completionTokens Int?
+  totalTokens      Int?
+
   @@index([userId])
+  @@index([createdAt])
 }
 
 model AuditLog {
@@ -191,6 +237,23 @@ model SystemSetting {
   key       String   @id
   value     String   @db.Text
   updatedAt DateTime @updatedAt
+}
+
+// Per-user, per-day, per-feature counter enforcing the daily quota — DB-
+// backed on purpose (not in-memory) so it's correct across every
+// serverless invocation and survives restarts. "date" is a plain
+// "YYYY-MM-DD" (UTC) string, so a new day is a new row with no reset job
+// needed; see lib/quota.ts.
+model UsageCounter {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  kind   String // "EVALUATION" | "PAPER_GENERATION"
+  date   String // "YYYY-MM-DD" in UTC
+  count  Int    @default(0)
+
+  @@unique([userId, kind, date])
+  @@index([date])
 }
 
 model TutorConversation {

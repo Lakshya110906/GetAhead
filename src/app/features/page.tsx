@@ -44,7 +44,7 @@ const features = [
     textColor: "text-blue-700",
     borderColor: "border-blue-100",
     what: "Upload any answer sheet — handwritten or typed — and GetAhead AI uses Gemini 2.5 Flash to read, understand, and evaluate every answer with expert-level precision.",
-    why: "Manual grading is time-consuming, inconsistent, and often subjective. AI evaluation is fast, consistent, and calibrated against academic rubrics.",
+    why: "Manual grading is time-consuming, inconsistent, and often subjective. AI evaluation is fast and consistent — and we measure how close it lands to a real teacher's marks with a public accuracy figure, not just a claim.",
     benefits: [
       "Grade hundreds of sheets in the time it takes to grade one manually",
       "Consistent scoring — no fatigue, no bias",

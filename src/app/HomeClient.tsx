@@ -17,6 +17,8 @@ import {
   ChevronDown,
   Menu,
   X,
+  Target,
+  ClipboardCheck,
 } from "lucide-react";
 import { useTheme } from "@/components/ThemeProvider";
 import { ThemeSlider } from "@/components/ThemeSlider";
@@ -24,6 +26,7 @@ import { SiteFooter } from "@/components/SiteFooter";
 import { MarkedAnswerSheet } from "@/components/MarkedAnswerSheet";
 import { AudienceSwitcher } from "@/components/AudienceSwitcher";
 import { ScreenshotSlot } from "@/components/ScreenshotSlot";
+import type { AccuracySummary } from "@/lib/accuracyBaseline";
 
 const productMoments = [
   {
@@ -79,7 +82,7 @@ const steps = [
 const faqs = [
   {
     question: "How accurate is the AI evaluation?",
-    answer: "Our evaluation is powered by Gemini 2.5 Flash, calibrated with standardized academic rubrics. While highly accurate for spelling, math proofs, structure, and factual correctness, we recommend teachers do a final review for high-stakes examinations.",
+    answer: "We measure this directly: every change to our grading prompt or rubric is run against a golden set of real answer sheets marked by real teachers, and we publish the resulting accuracy figure and methodology below — not a marketing claim. We still recommend a final teacher review for high-stakes examinations.",
   },
   {
     question: "What file formats are supported?",
@@ -96,7 +99,7 @@ const faqs = [
 ];
 
 
-export default function HomeClient() {
+export default function HomeClient({ accuracy }: { accuracy: AccuracySummary | null }) {
   const { status } = useSession();
   const isAuthenticated = status === "authenticated";
   const ctaUrl = isAuthenticated ? "/dashboard" : "/signup";
@@ -402,6 +405,73 @@ export default function HomeClient() {
         </div>
       </section>
 
+      {/* Accuracy — a real, measured figure, not a testimonial */}
+      <section id="accuracy" className={`py-20 ${isDark ? "bg-gray-900" : "bg-white"}`}>
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <span className="text-teal-600 font-semibold text-sm uppercase tracking-wider">Accuracy</span>
+            <h2
+              className={`text-3xl md:text-4xl font-bold mt-2 mb-4 ${isDark ? "text-white" : "text-gray-900"}`}
+              style={{ fontFamily: "var(--font-display)" }}
+            >
+              How close is the AI to a real teacher?
+            </h2>
+            <p className={`max-w-2xl mx-auto text-lg ${isDark ? "text-gray-400" : "text-gray-600"}`}>
+              We measure it, we don&apos;t just claim it — against a golden set of real, teacher-marked answer sheets, re-run on every change to the grading prompt or rubric.
+            </p>
+          </div>
+
+          {accuracy ? (
+            <>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-10">
+                <div className={`text-center rounded-2xl p-6 border ${isDark ? "border-gray-800 bg-gray-950" : "border-gray-100 bg-gray-50"}`}>
+                  <Target className="w-6 h-6 text-teal-500 mx-auto mb-2" />
+                  <p className="text-3xl font-bold" style={{ fontFamily: "var(--font-display)" }}>
+                    {accuracy.mae}
+                  </p>
+                  <p className={`text-sm mt-1 ${isDark ? "text-gray-400" : "text-gray-600"}`}>
+                    mean absolute error (marks)
+                  </p>
+                </div>
+                <div className={`text-center rounded-2xl p-6 border ${isDark ? "border-gray-800 bg-gray-950" : "border-gray-100 bg-gray-50"}`}>
+                  <CheckCircle className="w-6 h-6 text-teal-500 mx-auto mb-2" />
+                  <p className="text-3xl font-bold" style={{ fontFamily: "var(--font-display)" }}>
+                    {accuracy.within1Pct}%
+                  </p>
+                  <p className={`text-sm mt-1 ${isDark ? "text-gray-400" : "text-gray-600"}`}>
+                    within 1 mark of the teacher
+                  </p>
+                </div>
+                <div className={`text-center rounded-2xl p-6 border ${isDark ? "border-gray-800 bg-gray-950" : "border-gray-100 bg-gray-50"}`}>
+                  <ClipboardCheck className="w-6 h-6 text-teal-500 mx-auto mb-2" />
+                  <p className="text-3xl font-bold" style={{ fontFamily: "var(--font-display)" }}>
+                    {accuracy.within2Pct}%
+                  </p>
+                  <p className={`text-sm mt-1 ${isDark ? "text-gray-400" : "text-gray-600"}`}>
+                    within 2 marks of the teacher
+                  </p>
+                </div>
+              </div>
+              <p className={`text-center text-sm max-w-2xl mx-auto ${isDark ? "text-gray-500" : "text-gray-500"}`}>
+                Methodology: {accuracy.scoredCases} real answer sheets, marked by real teachers, spanning multiple
+                subjects, grade levels, and handwriting quality — including deliberately hard cases (messy
+                handwriting, partial credit, blank answers). Last measured{" "}
+                {new Date(accuracy.generatedAt).toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" })}.
+              </p>
+            </>
+          ) : (
+            <div className={`text-center rounded-2xl p-8 border max-w-2xl mx-auto ${isDark ? "border-gray-800 bg-gray-950 text-gray-400" : "border-gray-100 bg-gray-50 text-gray-600"}`}>
+              <ClipboardCheck className="w-6 h-6 text-teal-500 mx-auto mb-3" />
+              <p className="text-sm">
+                We&apos;re building this golden set right now — a set of real answer sheets marked by real teachers
+                that we run our grading pipeline against on every prompt or rubric change. We&apos;ll publish the
+                accuracy figure here as soon as it exists, with the full methodology behind it.
+              </p>
+            </div>
+          )}
+        </div>
+      </section>
+
       {/* How it Works */}
       <section id="how-it-works" className="py-20 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -532,7 +602,7 @@ export default function HomeClient() {
               Ready to Transform Your Exam Performance?
             </h2>
             <p className="text-blue-100 text-lg mb-8">
-              Unlock your academic potential with GetAhead AI&apos;s precise answer sheet evaluations and question paper generators — free, with no billing or credit limits.
+              Unlock your academic potential with GetAhead AI&apos;s precise answer sheet evaluations and question paper generators — free during beta, with a generous daily quota.
             </p>
             <Link
               href={ctaUrl}

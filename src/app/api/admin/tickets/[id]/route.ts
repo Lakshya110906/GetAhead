@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyAdminToken } from "@/lib/adminAuth";
+import { requireAdmin } from "@/lib/requireAdmin";
 import { prisma } from "@/lib/prisma";
 import { sendTicketReplyNotificationEmail } from "@/lib/email";
 
@@ -7,8 +7,9 @@ type RouteParams = { params: Promise<{ id: string }> };
 
 export async function GET(req: NextRequest, { params }: RouteParams) {
   try {
-    if (!verifyAdminToken(req)) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const auth = await requireAdmin();
+    if (!auth.ok) {
+      return auth.response;
     }
 
     const { id } = await params;
@@ -51,8 +52,9 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
 
 export async function POST(req: NextRequest, { params }: RouteParams) {
   try {
-    if (!verifyAdminToken(req)) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const auth = await requireAdmin();
+    if (!auth.ok) {
+      return auth.response;
     }
 
     const adminUser = await prisma.user.findFirst({ where: { role: "ADMIN" } });
@@ -140,8 +142,9 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
 
 export async function DELETE(req: NextRequest, { params }: RouteParams) {
   try {
-    if (!verifyAdminToken(req)) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const auth = await requireAdmin();
+    if (!auth.ok) {
+      return auth.response;
     }
 
     const adminUser = await prisma.user.findFirst({ where: { role: "ADMIN" } });

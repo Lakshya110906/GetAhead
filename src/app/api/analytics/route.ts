@@ -19,7 +19,7 @@ export async function GET() {
     });
 
     // Calculate analytics
-    const completed = evaluations.filter((e) => e.status === "COMPLETED");
+    const completed = evaluations.filter((e) => e.status === "SUCCEEDED");
     const avgPercentage =
       completed.length > 0
         ? completed.reduce((sum: number, e) => sum + (e.percentage || 0), 0) / completed.length

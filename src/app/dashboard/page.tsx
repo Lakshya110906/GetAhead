@@ -272,11 +272,11 @@ export default function DashboardPage() {
                     </p>
                   </div>
                   <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${
-                    ev.status === "COMPLETED"
+                    ev.status === "SUCCEEDED"
                       ? "bg-green-100 text-green-700"
                       : "bg-amber-100 text-amber-700"
                   }`}>
-                    {ev.status === "COMPLETED" ? "Done" : "Processing"}
+                    {ev.status === "SUCCEEDED" ? "Done" : "Processing"}
                   </span>
                   <Link
                     href={`/evaluation/${ev.id}`}

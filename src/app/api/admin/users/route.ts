@@ -1,12 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyAdminToken } from "@/lib/adminAuth";
+import { requireAdmin } from "@/lib/requireAdmin";
 import { prisma } from "@/lib/prisma";
+import { revokeAllUserSessions } from "@/lib/sessionRevocation";
 import { Prisma } from "@prisma/client";
 import bcrypt from "bcryptjs";
 
 export async function GET(request: NextRequest) {
-  if (!verifyAdminToken(request)) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const auth = await requireAdmin();
+  if (!auth.ok) {
+    return auth.response;
   }
 
   const { searchParams } = new URL(request.url);
@@ -60,8 +62,9 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  if (!verifyAdminToken(request)) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const auth = await requireAdmin();
+  if (!auth.ok) {
+    return auth.response;
   }
 
   try {
@@ -73,6 +76,7 @@ export async function POST(request: NextRequest) {
         where: { id: userId },
         data: { role: "SUSPENDED" },
       });
+      await revokeAllUserSessions(userId);
       await prisma.auditLog.create({
         data: { action: "USER_SUSPEND", details: `Suspended user ${userId}`, ip },
       });
@@ -81,6 +85,7 @@ export async function POST(request: NextRequest) {
         where: { id: userId },
         data: { role: "STUDENT" }, // default active role
       });
+      await revokeAllUserSessions(userId); // force re-login so the new role takes effect immediately
       await prisma.auditLog.create({
         data: { action: "USER_ACTIVATE", details: `Activated user ${userId}`, ip },
       });
@@ -88,6 +93,7 @@ export async function POST(request: NextRequest) {
       await prisma.user.delete({
         where: { id: userId },
       });
+      await revokeAllUserSessions(userId);
       await prisma.auditLog.create({
         data: { action: "USER_DELETE", details: `Deleted user ${userId}`, ip },
       });
@@ -100,6 +106,7 @@ export async function POST(request: NextRequest) {
         where: { id: userId },
         data: { password: hashedPassword },
       });
+      await revokeAllUserSessions(userId);
       await prisma.auditLog.create({
         data: { action: "USER_PASSWORD_RESET", details: `Reset password for user ${userId}`, ip },
       });

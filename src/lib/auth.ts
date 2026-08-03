@@ -1,11 +1,24 @@
 import type { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
+import { randomUUID } from "crypto";
 import { prisma } from "@/lib/prisma";
+import { isSessionRevoked, revokeSessionToken } from "@/lib/sessionRevocation";
+
+// Short-lived on purpose: this is the token's own natural expiry, which
+// bounds how long a revoked-but-KV-unreachable session could still work.
+// Sign-out / password change / suspension invalidate immediately via the
+// KV revocation list (see sessionRevocation.ts) rather than waiting for
+// this to elapse — the expiry is just the fallback safety net.
+const SESSION_MAX_AGE_SECONDS = 15 * 60;
 
 export const authOptions: NextAuthOptions = {
   session: {
     strategy: "jwt",
+    maxAge: SESSION_MAX_AGE_SECONDS,
+  },
+  jwt: {
+    maxAge: SESSION_MAX_AGE_SECONDS,
   },
   pages: {
     signIn: "/login",
@@ -85,21 +98,26 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
+        // Fresh sign-in: mint a new session identity. jti lets sign-out
+        // revoke exactly this token; iat (our own, not relying on the
+        // library's internal one) is what per-user revocation compares
+        // against.
         token.id = user.id;
         token.role = (user as { role?: string }).role;
+        token.jti = randomUUID();
+        token.iat = Math.floor(Date.now() / 1000);
       }
       return token;
     },
     async session({ session, token }) {
       if (session.user && token.id) {
-        // Query database to ensure user is active and has not been suspended/deleted
-        const user = await prisma.user.findUnique({
-          where: { id: token.id as string },
-          select: { role: true, suspended: true },
-        });
+        const revoked = await isSessionRevoked(
+          token.jti as string | undefined,
+          token.id as string,
+          token.iat as number | undefined
+        );
 
-        if (!user || user.suspended || user.role === "SUSPENDED") {
-          // Force invalidate the NextAuth session
+        if (revoked) {
           return {
             ...session,
             user: undefined,
@@ -107,10 +125,20 @@ export const authOptions: NextAuthOptions = {
           };
         }
 
+        // Role/id come straight from the token — no MySQL query on the hot
+        // path. A role change or suspension takes effect immediately anyway
+        // because it revokes the token in KV (see revokeAllUserSessions),
+        // forcing a fresh sign-in that mints a token with the new role.
         (session.user as { id?: string }).id = token.id as string;
-        (session.user as { role?: string }).role = user.role;
+        (session.user as { role?: string }).role = token.role as string;
       }
       return session;
+    },
+  },
+  events: {
+    async signOut({ token }) {
+      const jti = (token as { jti?: string } | null)?.jti;
+      if (jti) await revokeSessionToken(jti);
     },
   },
 };

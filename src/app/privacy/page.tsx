@@ -172,9 +172,8 @@ export default function PrivacyPage() {
                 </thead>
                 <tbody className="divide-y divide-gray-50">
                   {[
-                    { name: "next-auth.session-token", purpose: "Authenticates your session. HttpOnly, Secure, SameSite=Lax.", duration: "30 days" },
+                    { name: "next-auth.session-token", purpose: "Authenticates your session, including admin access where applicable. HttpOnly, Secure, SameSite=Lax.", duration: "15 minutes, refreshed while active" },
                     { name: "next-auth.csrf-token", purpose: "Protects against CSRF attacks on authentication forms.", duration: "Session" },
-                    { name: "exameval_admin_token", purpose: "Authenticates admin panel access. HttpOnly, Secure, SameSite=Strict.", duration: "2 hours" },
                   ].map((row) => (
                     <tr key={row.name} className="bg-white">
                       <td className="px-4 py-3 font-mono text-xs text-gray-800">{row.name}</td>

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { revokeAllUserSessions } from "@/lib/sessionRevocation";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 
@@ -56,6 +57,10 @@ export async function POST(request: NextRequest) {
       where: { id: userId },
       data: { password: hashedNewPassword },
     });
+
+    // Changing the password invalidates every existing session for this
+    // user immediately, everywhere — not just this device.
+    await revokeAllUserSessions(userId);
 
     return NextResponse.json({
       success: true,

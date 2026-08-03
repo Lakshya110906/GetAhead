@@ -6,7 +6,7 @@ export async function GET() {
     const totalUsers = await prisma.user.count();
     
     const completedEvaluations = await prisma.evaluation.findMany({
-      where: { status: "COMPLETED" },
+      where: { status: "SUCCEEDED" },
       select: { createdAt: true, updatedAt: true, percentage: true }
     });
 

@@ -1,10 +1,11 @@
-import { NextRequest, NextResponse } from "next/server";
-import { verifyAdminToken } from "@/lib/adminAuth";
+import { NextResponse } from "next/server";
+import { requireAdmin } from "@/lib/requireAdmin";
 import { prisma } from "@/lib/prisma";
 
-export async function GET(request: NextRequest) {
-  if (!verifyAdminToken(request)) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+export async function GET() {
+  const auth = await requireAdmin();
+  if (!auth.ok) {
+    return auth.response;
   }
 
   try {
@@ -31,7 +32,7 @@ export async function GET(request: NextRequest) {
 
     // 2. Average Evaluation Duration
     const completedEvals = await prisma.evaluation.findMany({
-      where: { status: "COMPLETED" },
+      where: { status: "SUCCEEDED" },
       select: { createdAt: true, updatedAt: true, percentage: true, subject: true },
     });
 
