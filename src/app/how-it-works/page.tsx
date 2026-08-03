@@ -7,7 +7,6 @@ import {
   ArrowRight,
   ChevronRight,
   UserPlus,
-  Mail,
   LogIn,
   Upload,
   Scan,
@@ -30,33 +29,23 @@ const steps = [
     icon: UserPlus,
     title: "Create Your Account",
     description: "Sign up with your email address and choose your role — Student, Teacher, or Institution. Takes under 60 seconds. No credit card required, ever.",
-    detail: "Your account is created with a secure hashed password (bcrypt, 12 rounds). We never store your plain-text password.",
+    detail: "Your account is created with a secure hashed password (bcrypt, 12 rounds). We never store your plain-text password. You're signed in immediately — no separate verification step.",
     color: "from-blue-500 to-blue-700",
     bg: "bg-blue-50",
     textColor: "text-blue-700",
   },
   {
     number: "02",
-    icon: Mail,
-    title: "Verify Your Email",
-    description: "Check your inbox for a verification email from GetAhead AI. Click the link to activate your account and gain full access.",
-    detail: "Verification links expire after 24 hours. You can request a new link from the login page if needed.",
-    color: "from-indigo-500 to-indigo-700",
-    bg: "bg-indigo-50",
-    textColor: "text-indigo-700",
-  },
-  {
-    number: "03",
     icon: LogIn,
-    title: "Sign In to Dashboard",
-    description: "Log in with your verified email and password. You'll land on your personalised dashboard showing your evaluation history and performance stats.",
+    title: "Land on Your Dashboard",
+    description: "Signup drops you straight into your personalised dashboard, ready to start your first evaluation.",
     detail: "Sessions are stored securely in the database and expire automatically. You can stay signed in across devices.",
     color: "from-violet-500 to-violet-700",
     bg: "bg-violet-50",
     textColor: "text-violet-700",
   },
   {
-    number: "04",
+    number: "03",
     icon: Upload,
     title: "Upload Your Answer Sheet",
     description: "Navigate to 'New Evaluation'. Select your subject, grade, and exam type (MCQ, Descriptive, or Mixed). Upload your PDF or image file.",
@@ -66,7 +55,7 @@ const steps = [
     textColor: "text-teal-700",
   },
   {
-    number: "05",
+    number: "04",
     icon: Scan,
     title: "AI Extracts Your Answers",
     description: "Our OCR engine reads your answer sheet — both typed and handwritten. The extracted text is structured for evaluation.",
@@ -76,7 +65,7 @@ const steps = [
     textColor: "text-green-700",
   },
   {
-    number: "06",
+    number: "05",
     icon: Cpu,
     title: "Gemini AI Evaluates",
     description: "Gemini 2.5 Flash reads every answer against subject-specific rubrics. It scores each question, identifies errors, and understands partial credit.",
@@ -86,7 +75,7 @@ const steps = [
     textColor: "text-orange-700",
   },
   {
-    number: "07",
+    number: "06",
     icon: Star,
     title: "Marks Generated",
     description: "Each question receives a score. Total marks and percentage are calculated instantly. The breakdown is stored in your evaluation record.",
@@ -96,7 +85,7 @@ const steps = [
     textColor: "text-yellow-700",
   },
   {
-    number: "08",
+    number: "07",
     icon: MessageSquare,
     title: "Feedback Generated",
     description: "Alongside marks, the AI generates a personalised feedback report: strengths, weaknesses, conceptual errors, and specific study recommendations.",
@@ -106,7 +95,7 @@ const steps = [
     textColor: "text-pink-700",
   },
   {
-    number: "09",
+    number: "08",
     icon: TrendingUp,
     title: "Performance Analysis",
     description: "Your Analytics dashboard updates automatically. See monthly score trends, subject-wise averages, and compare your performance over time.",
@@ -116,7 +105,7 @@ const steps = [
     textColor: "text-cyan-700",
   },
   {
-    number: "10",
+    number: "09",
     icon: Bookmark,
     title: "Save Important Reports",
     description: "Found a particularly useful evaluation? Save it to your Saved Reports with a custom name for quick future reference.",
@@ -126,7 +115,7 @@ const steps = [
     textColor: "text-rose-700",
   },
   {
-    number: "11",
+    number: "10",
     icon: GraduationCap,
     title: "Generate Question Papers",
     description: "Need to practise? Head to Generate Paper. Choose subject, grade, difficulty, and marks — get a complete, structured question paper instantly.",
@@ -136,7 +125,7 @@ const steps = [
     textColor: "text-purple-700",
   },
   {
-    number: "12",
+    number: "11",
     icon: Download,
     title: "Download & Share Reports",
     description: "Export any evaluation report as a PDF. Share it with your teacher, use it in a parent-teacher meeting, or keep it for offline revision.",
@@ -165,7 +154,7 @@ export default function HowItWorksPage() {
           </Link>
           <div className="flex items-center gap-3">
             <Link href="/login" className="text-sm text-gray-600 hover:text-gray-900 font-medium transition-colors">Sign In</Link>
-            <Link href="/signup" className="text-sm bg-ink text-white font-semibold px-4 py-2 rounded-lg hover:opacity-90 transition-opacity">Get Started Free</Link>
+            <Link href="/signup" className="text-sm bg-fixed-ink text-white font-semibold px-4 py-2 rounded-lg hover:opacity-90 transition-opacity">Get Started Free</Link>
           </div>
         </div>
       </nav>
@@ -198,7 +187,7 @@ export default function HowItWorksPage() {
       <section className="py-20 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="relative">
           {/* Vertical line */}
-          <div className="absolute left-6 top-8 bottom-8 w-px bg-ink hidden lg:block" />
+          <div className="absolute left-6 top-8 bottom-8 w-px bg-fixed-ink hidden lg:block" />
 
           <div className="space-y-8">
             {steps.map((step, idx) => {
@@ -207,7 +196,7 @@ export default function HowItWorksPage() {
               return (
                 <div key={step.number} className="relative lg:pl-20">
                   {/* Step number circle */}
-                  <div className={"hidden lg:flex absolute left-0 top-4 w-12 h-12 rounded-full bg-ink items-center justify-center shadow-lg text-white font-bold text-sm z-10"}>
+                  <div className={"hidden lg:flex absolute left-0 top-4 w-12 h-12 rounded-full bg-fixed-ink items-center justify-center shadow-lg text-white font-bold text-sm z-10"}>
                     {step.number}
                   </div>
 
@@ -220,7 +209,7 @@ export default function HowItWorksPage() {
                   >
                     <div className={`bg-white border rounded-2xl p-6 hover:border-blue-200 hover:shadow-md transition-all ${isOpen ? "border-blue-200 shadow-md" : "border-gray-100 shadow-sm"}`}>
                       <div className="flex items-start gap-4">
-                        <div className={"w-10 h-10 lg:w-12 lg:h-12 rounded-xl bg-ink flex items-center justify-center flex-shrink-0 shadow-sm lg:hidden"}>
+                        <div className={"w-10 h-10 lg:w-12 lg:h-12 rounded-xl bg-fixed-ink flex items-center justify-center flex-shrink-0 shadow-sm lg:hidden"}>
                           <Icon className="w-5 h-5 text-white" />
                         </div>
                         <div className={`w-10 h-10 rounded-xl ${step.bg} hidden lg:flex items-center justify-center flex-shrink-0`}>
@@ -287,12 +276,12 @@ export default function HowItWorksPage() {
       </section>
 
       {/* CTA */}
-      <section className="py-24 bg-ink">
+      <section className="py-24 bg-fixed-ink">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl md:text-4xl font-bold text-white mb-4" style={{ fontFamily: "var(--font-display)" }}>
             Ready to try it yourself?
           </h2>
-          <p className="text-blue-100 text-lg mb-8">
+          <p className="text-white/70 text-lg mb-8">
             Create a free account in 60 seconds and upload your first answer sheet today.
           </p>
           <Link href="/signup" className="inline-flex items-center gap-2 bg-white text-blue-600 font-bold px-8 py-4 rounded-xl hover:bg-blue-50 transition-colors shadow-lg group">

@@ -30,7 +30,7 @@ export function SiteFooter() {
           {/* Brand */}
           <div className="col-span-2 md:col-span-2">
             <Link href="/" className="inline-flex items-center gap-2 mb-4 group">
-              <div className="w-8 h-8 rounded-lg bg-ink flex items-center justify-center shadow-lg group-hover:shadow-blue-500/30 transition-shadow">
+              <div className="w-8 h-8 rounded-lg bg-fixed-ink flex items-center justify-center shadow-lg group-hover:shadow-blue-500/30 transition-shadow">
                 <Brain className="w-4 h-4 text-white" />
               </div>
               <span className="text-white font-bold text-lg" style={{ fontFamily: "var(--font-display)" }}>

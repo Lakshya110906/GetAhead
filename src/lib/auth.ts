@@ -80,10 +80,10 @@ export const authOptions: NextAuthOptions = {
           throw new Error("Your account has been suspended");
         }
 
-        // Enforce email verification (exclude admin and check user emailVerified status)
-        if (email !== adminEmail && !user.emailVerified) {
-          throw new Error("Email not verified");
-        }
+        // Email verification is not required to sign in. The emailVerified
+        // column stays on the schema for possible future soft-verification
+        // use, but nothing gates on it today — new signups simply leave it
+        // null.
 
         return {
           id: user.id,

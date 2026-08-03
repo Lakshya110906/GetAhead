@@ -40,7 +40,7 @@ export function TutorMessageComponent({ message, isLast, onRegenerate, isStreami
       <div className={`w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm ${
         isUser 
           ? "bg-blue-600 text-white" 
-          : "bg-ink text-white"
+          : "bg-fixed-ink text-white"
       }`}>
         {isUser ? <User className="w-4 h-4" /> : <Brain className="w-4 h-4" />}
       </div>

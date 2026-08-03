@@ -182,7 +182,7 @@ export default function SettingsPage() {
               onClick={() => setActiveSection(s.id)}
               className={`w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
                 activeSection === s.id
-                  ? "bg-ink text-white"
+                  ? "bg-fixed-ink text-white"
                   : "text-gray-600 hover:bg-gray-50"
               }`}
             >
@@ -205,7 +205,7 @@ export default function SettingsPage() {
 
               {/* Avatar */}
               <div className="flex items-center gap-5 mb-8">
-                <div className="w-20 h-20 bg-ink rounded-2xl flex items-center justify-center text-white text-2xl font-bold">
+                <div className="w-20 h-20 bg-fixed-ink rounded-2xl flex items-center justify-center text-white text-2xl font-bold">
                   {session?.user?.name?.[0]?.toUpperCase() || "U"}
                 </div>
                 <div>
@@ -282,7 +282,7 @@ export default function SettingsPage() {
                   id="save-settings"
                   onClick={handleSave}
                   disabled={profileLoading}
-                  className="bg-ink text-white font-semibold px-6 py-2.5 rounded-xl hover:opacity-90 transition-opacity text-sm flex items-center gap-2 disabled:opacity-60"
+                  className="bg-fixed-ink text-white font-semibold px-6 py-2.5 rounded-xl hover:opacity-90 transition-opacity text-sm flex items-center gap-2 disabled:opacity-60"
                 >
                   {profileLoading ? (
                     <Loader2 className="w-4 h-4 animate-spin" />
@@ -351,7 +351,7 @@ export default function SettingsPage() {
                           <div className="h-2.5 w-24 rounded-full opacity-60 bg-rule" />
                         </div>
                         <div className="flex gap-1.5">
-                          <div className="w-6 h-6 rounded-full shadow bg-ink" />
+                          <div className="w-6 h-6 rounded-full shadow bg-fixed-ink" />
                           <div className="w-6 h-6 rounded-full shadow bg-examiner" />
                           <div className="w-6 h-6 rounded-full shadow bg-tick" />
                         </div>
@@ -438,7 +438,7 @@ export default function SettingsPage() {
               <div className="mt-8 flex items-center gap-3">
                 <button
                   onClick={handleNotificationsSave}
-                  className="bg-ink text-white font-semibold px-6 py-2.5 rounded-xl hover:opacity-90 transition-opacity text-sm"
+                  className="bg-fixed-ink text-white font-semibold px-6 py-2.5 rounded-xl hover:opacity-90 transition-opacity text-sm"
                 >
                   {notificationsSaved ? "✓ Preferences Saved!" : "Save Preferences"}
                 </button>
@@ -508,7 +508,7 @@ export default function SettingsPage() {
                   <button
                     type="submit"
                     disabled={passwordLoading}
-                    className="bg-ink text-white font-semibold px-6 py-2.5 rounded-xl hover:opacity-90 transition-opacity text-sm disabled:opacity-50"
+                    className="bg-fixed-ink text-white font-semibold px-6 py-2.5 rounded-xl hover:opacity-90 transition-opacity text-sm disabled:opacity-50"
                   >
                     {passwordLoading ? "Updating..." : "Update Password"}
                   </button>

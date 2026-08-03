@@ -67,7 +67,7 @@ export default function AnalyticsPage() {
           </p>
           <Link
             href="/upload"
-            className="inline-flex items-center gap-2 bg-ink text-white font-semibold px-6 py-3 rounded-xl hover:opacity-90 transition-opacity text-sm shadow-md"
+            className="inline-flex items-center gap-2 bg-fixed-ink text-white font-semibold px-6 py-3 rounded-xl hover:opacity-90 transition-opacity text-sm shadow-md"
           >
             <BarChart3 className="w-4 h-4" /> Start Evaluation
           </Link>
@@ -122,7 +122,10 @@ export default function AnalyticsPage() {
                 contentStyle={{ borderRadius: "12px", border: "1px solid var(--rule)", backgroundColor: "var(--paper)", color: "var(--ink)", fontSize: 12 }}
                 formatter={(value) => [`${value}%`, "Avg Score"]}
               />
-              <Line type="monotone" dataKey="score" stroke="var(--ink)" strokeWidth={3}
+              {/* linear, not monotone: with mostly-zero/sparse months (no
+                  evaluations yet), a smooth spline overshoots into a
+                  misleading bell-curve shape between real data points */}
+              <Line type="linear" dataKey="score" stroke="var(--ink)" strokeWidth={3}
                 dot={{ fill: "var(--ink)", strokeWidth: 2, r: 5 }}
                 activeDot={{ r: 8, fill: "var(--ink)" }}
               />

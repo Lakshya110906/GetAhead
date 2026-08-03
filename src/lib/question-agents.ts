@@ -3,6 +3,30 @@ import { performTavilySearch } from "./gemini";
 
 const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY || process.env.GEMINI_API_KEY;
 
+// Gemini's free-tier rate limit is the single most common reason an agent
+// call fails — a bare try/catch that gave up after one attempt turned a
+// transient 429 into a permanently degraded (or fully generic mock) paper.
+// Retrying with backoff on exactly the errors that are actually transient
+// fixes the common case instead of silently producing garbage.
+const RETRYABLE_ERROR_PATTERN = /429|rate.?limit|quota|RESOURCE_EXHAUSTED|503|overloaded|ECONNRESET|ETIMEDOUT|fetch failed/i;
+
+async function withRetry<T>(fn: () => Promise<T>, label: string, attempts = 3): Promise<T> {
+  let lastError: unknown;
+  for (let i = 0; i < attempts; i++) {
+    try {
+      return await fn();
+    } catch (err) {
+      lastError = err;
+      const message = err instanceof Error ? err.message : String(err);
+      if (i === attempts - 1 || !RETRYABLE_ERROR_PATTERN.test(message)) throw err;
+      const backoffMs = 1000 * Math.pow(2, i); // 1s, 2s
+      console.warn(`${label} failed (attempt ${i + 1}/${attempts}), retrying in ${backoffMs}ms: ${message}`);
+      await new Promise((resolve) => setTimeout(resolve, backoffMs));
+    }
+  }
+  throw lastError;
+}
+
 // ─── Agent Event Types ────────────────────────────────────────────────────────
 export type AgentName = "planner" | "generator" | "reviewer";
 export type AgentEventType =
@@ -422,34 +446,49 @@ export async function generateQuestionPaper(config: PaperConfig): Promise<{
     };
   }
 
+  const genAI = new GoogleGenerativeAI(apiKey);
+  let plannerPlan: unknown = {};
+  let generatorDraft: unknown = {};
+
   try {
-    const genAI = new GoogleGenerativeAI(apiKey);
-    
     console.log("📅 Running Planner Agent...");
-    const plannerPlan = await runPlannerAgent(genAI, config);
+    plannerPlan = await withRetry(() => runPlannerAgent(genAI, config), "Planner Agent");
     console.log("✅ Planner Agent complete.");
-    
+
     console.log("✍️ Running Generator Agent...");
-    const generatorDraft = await runGeneratorAgent(genAI, config, plannerPlan);
+    generatorDraft = await withRetry(() => runGeneratorAgent(genAI, config, plannerPlan), "Generator Agent");
     console.log("✅ Generator Agent complete.");
-    
+
     console.log("🔍 Running Reviewer Agent...");
-    const finalPaper = await runReviewerAgent(genAI, config, plannerPlan, generatorDraft);
+    const finalPaper = await withRetry(() => runReviewerAgent(genAI, config, plannerPlan, generatorDraft), "Reviewer Agent");
     console.log("✅ Reviewer Agent complete.");
-    
-    return {
-      paper: finalPaper,
-      plannerPlan,
-      generatorDraft
-    };
+
+    return { paper: finalPaper, plannerPlan, generatorDraft };
   } catch (error) {
     console.error("Multi-Agent Paper Generation failed:", error);
-    // Return high fidelity mock paper if failure occurs
-    return {
-      paper: getMockQuestionPaper(config),
-      plannerPlan: {},
-      generatorDraft: {}
-    };
+    // The generator's real, on-topic draft is almost always a better result
+    // than the fully generic mock — only fall all the way back to the mock
+    // if there's genuinely no usable draft content.
+    const draft = generatorDraft as Partial<GeneratedPaper> | null;
+    if (draft && Array.isArray(draft.sections) && draft.sections.length > 0) {
+      const paper: GeneratedPaper = {
+        title: draft.title || `${config.difficulty} ${config.subject} Examination Paper on ${config.topic || "Core Syllabus"}`,
+        subject: config.subject,
+        grade: config.grade,
+        difficulty: config.difficulty,
+        totalMarks: config.totalMarks,
+        sections: draft.sections,
+        reviewNotes: [
+          "⚠️ Automated quality review couldn't complete due to a temporary AI service issue. These questions were generated but not independently fact-checked — review them before use, or try regenerating.",
+        ],
+      };
+      return { paper, plannerPlan, generatorDraft };
+    }
+    const paper = getMockQuestionPaper(config);
+    paper.reviewNotes = [
+      "⚠️ We couldn't reach the AI service to generate your custom paper right now. This is a generic placeholder — it does not reflect your subject, topic, or custom instructions. Please try again in a moment.",
+    ];
+    return { paper, plannerPlan: {}, generatorDraft: {} };
   }
 }
 
@@ -540,7 +579,7 @@ export async function generateQuestionPaperStreamed(
   emit("agent_log", { agent: "planner", message: `Allocating ${config.totalMarks} marks across: ${config.questionTypes.join(", ")}` });
   let plannerPlan: unknown;
   try {
-    plannerPlan = await runPlannerAgent(genAI, config);
+    plannerPlan = await withRetry(() => runPlannerAgent(genAI, config), "Planner Agent");
     emit("agent_log", { agent: "planner", message: "Blueprint structured successfully." });
     emit("agent_done", { agent: "planner", message: "Planner complete." });
   } catch (e) {
@@ -560,7 +599,7 @@ export async function generateQuestionPaperStreamed(
     // Since we can't easily intercept, we emit a synthetic tool_call before and after.
     emit("agent_log", { agent: "generator", message: "Consulting knowledge base for accurate questions..." });
     emit("agent_tool_call", { agent: "generator", query: `${config.subject} ${config.topic} ${config.grade} curriculum` });
-    generatorDraft = await runGeneratorAgent(genAI, config, plannerPlan);
+    generatorDraft = await withRetry(() => runGeneratorAgent(genAI, config, plannerPlan), "Generator Agent");
     emit("agent_tool_result", { agent: "generator", message: "Research complete. Questions drafted." });
     emit("agent_done", { agent: "generator", message: "Generator complete." });
   } catch (e) {
@@ -576,12 +615,33 @@ export async function generateQuestionPaperStreamed(
   let finalPaper: GeneratedPaper;
   try {
     emit("agent_tool_call", { agent: "reviewer", query: `Fact-check ${config.subject} answers for ${config.grade}` });
-    finalPaper = await runReviewerAgent(genAI, config, plannerPlan, generatorDraft);
+    finalPaper = await withRetry(() => runReviewerAgent(genAI, config, plannerPlan, generatorDraft), "Reviewer Agent");
     emit("agent_tool_result", { agent: "reviewer", message: "Fact-check complete. Paper polished." });
     emit("agent_done", { agent: "reviewer", message: "Review complete. Paper ready." });
   } catch (e) {
     emit("agent_log", { agent: "reviewer", message: `Warning: ${String(e)}. Using generator draft.` });
-    finalPaper = getMockQuestionPaper(config);
+    // The generator's real, on-topic draft is almost always a better result
+    // than the fully generic mock paper — only fall all the way back to the
+    // mock if there's genuinely no usable draft content to fall back on.
+    const draft = generatorDraft as Partial<GeneratedPaper> | null;
+    if (draft && Array.isArray(draft.sections) && draft.sections.length > 0) {
+      finalPaper = {
+        title: draft.title || `${config.difficulty} ${config.subject} Examination Paper on ${config.topic || "Core Syllabus"}`,
+        subject: config.subject,
+        grade: config.grade,
+        difficulty: config.difficulty,
+        totalMarks: config.totalMarks,
+        sections: draft.sections,
+        reviewNotes: [
+          "⚠️ Automated quality review couldn't complete due to a temporary AI service issue. These questions were generated but not independently fact-checked — review them before use, or try regenerating.",
+        ],
+      };
+    } else {
+      finalPaper = getMockQuestionPaper(config);
+      finalPaper.reviewNotes = [
+        "⚠️ We couldn't reach the AI service to generate your custom paper right now. This is a generic placeholder — it does not reflect your subject, topic, or custom instructions. Please try again in a moment.",
+      ];
+    }
     emit("agent_done", { agent: "reviewer", message: "Reviewer done (fallback used)." });
   }
 

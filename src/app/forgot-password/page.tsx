@@ -50,7 +50,7 @@ export default function ForgotPasswordPage() {
       >
         {/* Header Logo */}
         <div className="flex items-center justify-center gap-2 mb-8 select-none">
-          <div className="w-10 h-10 rounded-2xl bg-ink flex items-center justify-center text-white shadow-md shadow-blue-500/10">
+          <div className="w-10 h-10 rounded-2xl bg-fixed-ink flex items-center justify-center text-white shadow-md shadow-blue-500/10">
             <Brain className="w-5.5 h-5.5" />
           </div>
           <span className="font-bold text-gray-900 dark:text-gray-100 text-lg" style={{ fontFamily: "var(--font-display)" }}>
@@ -111,7 +111,7 @@ export default function ForgotPasswordPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-ink text-white font-semibold py-3 rounded-2xl hover:opacity-95 transition-opacity flex items-center justify-center gap-2 disabled:opacity-60 text-sm"
+              className="w-full bg-fixed-ink text-white font-semibold py-3 rounded-2xl hover:opacity-95 transition-opacity flex items-center justify-center gap-2 disabled:opacity-60 text-sm"
             >
               {loading ? (
                 <Loader2 className="w-4 h-4 animate-spin" />

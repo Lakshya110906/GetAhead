@@ -18,7 +18,6 @@ export default function robots(): MetadataRoute.Robots {
         "/evaluation/",
         "/forgot-password",
         "/reset-password",
-        "/verify-email",
       ],
     },
     sitemap: "https://getahead.ai/sitemap.xml",

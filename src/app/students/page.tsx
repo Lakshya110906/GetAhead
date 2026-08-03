@@ -36,7 +36,7 @@ export default function StudentsPage() {
       <nav className="fixed top-0 left-0 right-0 z-50 bg-white/95 border-b border-gray-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16">
           <Link href="/" className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-ink flex items-center justify-center">
+            <div className="w-8 h-8 rounded-lg bg-fixed-ink flex items-center justify-center">
               <Brain className="w-4 h-4 text-white" />
             </div>
             <span className="font-bold text-gray-900" style={{ fontFamily: "var(--font-display)" }}>
@@ -45,7 +45,7 @@ export default function StudentsPage() {
           </Link>
           <div className="flex items-center gap-3">
             <Link href="/login" className="text-sm text-gray-600 hover:text-gray-900 font-medium transition-colors">Sign In</Link>
-            <Link href="/signup" className="text-sm bg-ink text-white font-semibold px-4 py-2 rounded-lg hover:opacity-90 transition-opacity">Get Started Free</Link>
+            <Link href="/signup" className="text-sm bg-fixed-ink text-white font-semibold px-4 py-2 rounded-lg hover:opacity-90 transition-opacity">Get Started Free</Link>
           </div>
         </div>
       </nav>
@@ -67,7 +67,7 @@ export default function StudentsPage() {
                 GetAhead AI gives you instant, personalised feedback on every answer sheet — so you know exactly what to fix before your real exam.
               </p>
               <div className="flex flex-col sm:flex-row gap-3">
-                <Link href="/signup" className="inline-flex items-center justify-center gap-2 bg-ink text-white font-semibold px-6 py-3 rounded-xl hover:opacity-90 transition-opacity shadow-lg">
+                <Link href="/signup" className="inline-flex items-center justify-center gap-2 bg-fixed-ink text-white font-semibold px-6 py-3 rounded-xl hover:opacity-90 transition-opacity shadow-lg">
                   Start for Free <ArrowRight className="w-4 h-4" />
                 </Link>
                 <Link href="/how-it-works" className="inline-flex items-center justify-center gap-2 bg-white text-gray-700 font-medium px-6 py-3 rounded-xl border border-gray-200 hover:bg-gray-50 transition-all">
@@ -85,7 +85,7 @@ export default function StudentsPage() {
                 const Icon = item.icon;
                 return (
                   <div key={item.label} className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
-                    <div className="w-10 h-10 rounded-xl bg-ink flex items-center justify-center mb-3">
+                    <div className="w-10 h-10 rounded-xl bg-fixed-ink flex items-center justify-center mb-3">
                       <Icon className="w-5 h-5 text-white" />
                     </div>
                     <p className="text-sm font-semibold text-gray-800">{item.label}</p>
@@ -155,7 +155,7 @@ export default function StudentsPage() {
             const Icon = item.icon;
             return (
               <div key={item.title} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 hover:shadow-md transition-shadow">
-                <div className={"w-12 h-12 rounded-xl bg-ink flex items-center justify-center mb-4"}>
+                <div className={"w-12 h-12 rounded-xl bg-fixed-ink flex items-center justify-center mb-4"}>
                   <Icon className="w-6 h-6 text-white" />
                 </div>
                 <h3 className="font-semibold text-gray-900 mb-2">{item.title}</h3>
@@ -190,18 +190,18 @@ export default function StudentsPage() {
       </section>
 
       {/* CTA */}
-      <section className="py-24 bg-ink">
+      <section className="py-24 bg-fixed-ink">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl md:text-4xl font-bold text-white mb-4" style={{ fontFamily: "var(--font-display)" }}>
             Your next evaluation is 30 seconds away
           </h2>
-          <p className="text-blue-100 text-lg mb-8">Create a free account and upload your first answer sheet today. No card required.</p>
+          <p className="text-white/70 text-lg mb-8">Create a free account and upload your first answer sheet today. No card required.</p>
           <Link href="/signup" className="inline-flex items-center gap-2 bg-white text-blue-600 font-bold px-8 py-4 rounded-xl hover:bg-blue-50 transition-colors shadow-lg group">
             Start Free <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
           </Link>
           <div className="flex flex-wrap items-center justify-center gap-6 mt-8">
             {["Free during beta", "No credit card", "Instant results", "Personalised feedback"].map((t) => (
-              <span key={t} className="flex items-center gap-2 text-blue-100 text-sm">
+              <span key={t} className="flex items-center gap-2 text-white/70 text-sm">
                 <CheckCircle className="w-4 h-4 text-teal-300" />{t}
               </span>
             ))}
