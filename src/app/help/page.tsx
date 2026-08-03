@@ -31,7 +31,7 @@ const categories = [
     articles: [
       {
         title: "How to create a GetAhead AI account",
-        content: `Creating an account is quick and free. Visit getahead.ai and click "Get Started Free" in the top navigation. Fill in your full name, email address, and a strong password (minimum 8 characters). Select your role — Student, Teacher, or Institution — and click "Create Account". You'll receive a verification email within seconds. Click the link in the email to activate your account and access the full platform.`,
+        content: `Creating an account is quick and free. Visit getahead.ai and click "Get Started Free" in the top navigation. Fill in your full name, email address, and a strong password (minimum 8 characters). Select your role — Student, Teacher, or Institution — and click "Create Account". You're signed in immediately and land straight on your dashboard — no separate verification step.`,
       },
       {
         title: "How to change your name or profile details",
@@ -56,16 +56,12 @@ const categories = [
     textColor: "text-indigo-700",
     articles: [
       {
-        title: "Why do I need to verify my email?",
-        content: `Email verification confirms that the email address belongs to you and allows us to reliably send password reset emails. Without verification, your account is restricted. Check your inbox (and spam folder) for an email from noreply@getahead.ai. Click the verification link within 24 hours. If it expires, go to the login page and click "Resend Verification Email".`,
-      },
-      {
         title: "I forgot my password — how do I reset it?",
         content: `On the login page, click "Forgot Password?" below the password field. Enter your registered email address and click "Send Reset Link". Check your inbox for a password reset email. Click the link — it's valid for 1 hour. Enter and confirm your new password. You can then log in with the new credentials. All existing sessions will be logged out for security.`,
       },
       {
-        title: "My verification/reset link isn't working",
-        content: `Links expire after 24 hours (verification) or 1 hour (password reset). If the link expired, go to the login page and request a new one. If the link still doesn't work, try: copying and pasting the full URL from the email into your browser, clearing browser cache, or using a different browser. If problems persist, contact support@getahead.ai.`,
+        title: "My password reset link isn't working",
+        content: `Reset links expire after 1 hour. If the link expired, go to the login page and request a new one. If the link still doesn't work, try: copying and pasting the full URL from the email into your browser, clearing browser cache, or using a different browser. If problems persist, contact support@getahead.ai.`,
       },
       {
         title: "I'm getting 'Invalid credentials' on login",
