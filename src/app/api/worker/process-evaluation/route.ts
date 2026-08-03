@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { processSpecificJob } from "@/lib/evaluationWorker";
+import { logger } from "@/lib/logger";
+import { captureException } from "@/lib/errorTracking";
 
 export const maxDuration = 60;
 
@@ -28,7 +30,8 @@ export async function POST(request: NextRequest) {
     await processSpecificJob(jobId);
     return NextResponse.json({ ok: true });
   } catch (error) {
-    console.error("Worker trigger error:", error);
+    logger.error("Worker trigger error", { jobId, stage: "worker-trigger", error: String(error) });
+    captureException(error, { jobId, stage: "worker-trigger" });
     // The job row itself already records the failure; this response is just
     // telling the caller (a fire-and-forget fetch) that the attempt ran.
     return NextResponse.json({ ok: false }, { status: 200 });

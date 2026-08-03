@@ -1,5 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { evaluateAnswerSheetFromFile } from "@/lib/gemini";
+import { logger } from "@/lib/logger";
+import { captureException } from "@/lib/errorTracking";
 
 // If a job has been sitting in PROCESSING longer than this, the worker that
 // claimed it is presumed dead (function crashed, was killed mid-run, etc.) —
@@ -49,6 +51,7 @@ async function claimNextJob(): Promise<string | null> {
   // Someone else claimed it between our read and our write — skip it.
   if (claim.count === 0) return null;
 
+  logger.info("Job claimed by sweep", { jobId: candidate.id, stage: "claim" });
   return candidate.id;
 }
 
@@ -64,6 +67,7 @@ async function runJob(id: string): Promise<void> {
       throw new Error("No answer sheet file is attached to this job.");
     }
 
+    logger.info("Downloading answer sheet", { jobId: id, stage: "download", userId: job.userId });
     const fileRes = await fetch(job.fileUrl);
     if (!fileRes.ok) {
       throw new Error(`Couldn't download the uploaded file (storage returned ${fileRes.status}).`);
@@ -71,6 +75,7 @@ async function runJob(id: string): Promise<void> {
     const fileBytes = Buffer.from(await fileRes.arrayBuffer());
     const mimeType = job.fileType || "application/pdf";
 
+    logger.info("Sending to Gemini for transcription + grading", { jobId: id, stage: "transcribe", subject: job.subject });
     const graded = await evaluateAnswerSheetFromFile(
       job.subject,
       job.grade || "12th",
@@ -79,6 +84,13 @@ async function runJob(id: string): Promise<void> {
       mimeType
     );
     const { result } = graded;
+    logger.info("Grading complete", {
+      jobId: id,
+      stage: "grade",
+      obtainedMarks: result.obtainedMarks,
+      totalMarks: result.totalMarks,
+      totalTokens: graded.totalTokens,
+    });
 
     await prisma.evaluation.update({
       where: { id },
@@ -109,9 +121,11 @@ async function runJob(id: string): Promise<void> {
         totalTokens: graded.totalTokens,
       },
     });
+    logger.info("Job persisted", { jobId: id, stage: "persist", status: "SUCCEEDED" });
   } catch (error) {
     const message = error instanceof Error ? error.message : "The evaluation failed for an unknown reason.";
-    console.error(`Evaluation job ${id} failed (attempt ${job.attempts}):`, error);
+    logger.error("Evaluation job failed", { jobId: id, stage: "persist", attempt: job.attempts, error: message });
+    captureException(error, { jobId: id, stage: "persist", attempt: job.attempts, subject: job.subject });
 
     if (job.attempts >= MAX_ATTEMPTS) {
       await prisma.evaluation.update({
@@ -151,5 +165,6 @@ export async function processSpecificJob(id: string): Promise<void> {
     data: { status: "PROCESSING", startedAt: now, attempts: { increment: 1 } },
   });
   if (claim.count === 0) return; // already claimed (e.g. by the sweep) or not queued anymore
+  logger.info("Job claimed by immediate trigger", { jobId: id, stage: "claim" });
   await runJob(id);
 }

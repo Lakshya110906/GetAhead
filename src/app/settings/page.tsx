@@ -1,8 +1,9 @@
 "use client";
 
-import { useSession } from "next-auth/react";
-import { User, Bell, Shield, Palette, ChevronRight, Loader2 } from "lucide-react";
+import { useSession, signOut } from "next-auth/react";
+import { User, Bell, Shield, Palette, ChevronRight, Loader2, AlertTriangle } from "lucide-react";
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { useTheme } from "@/components/ThemeProvider";
 
 const sections = [
@@ -15,8 +16,13 @@ const sections = [
 export default function SettingsPage() {
   const { data: session, update } = useSession();
   const { theme, setTheme } = useTheme();
+  const router = useRouter();
   const [activeSection, setActiveSection] = useState("profile");
   const [saved, setSaved] = useState(false);
+  const [deletePassword, setDeletePassword] = useState("");
+  const [deleteError, setDeleteError] = useState("");
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [deleteConfirming, setDeleteConfirming] = useState(false);
 
   // Profile fields state
   const [profileName, setProfileName] = useState("");
@@ -127,6 +133,29 @@ export default function SettingsPage() {
       setPasswordError("Couldn't reach the server to change your password. Check your connection and try again.");
     } finally {
       setPasswordLoading(false);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    setDeleteError("");
+    setDeleteLoading(true);
+    try {
+      const res = await fetch("/api/user/delete-account", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password: deletePassword }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setDeleteError(data.error || "Failed to delete account");
+        setDeleteLoading(false);
+        return;
+      }
+      await signOut({ redirect: false });
+      router.push("/");
+    } catch {
+      setDeleteError("Couldn't reach the server to delete your account. Check your connection and try again.");
+      setDeleteLoading(false);
     }
   };
 
@@ -485,6 +514,61 @@ export default function SettingsPage() {
                   </button>
                 </div>
               </form>
+
+              <div className="mt-10 pt-8 border-t border-gray-100 max-w-md">
+                <h3 className="text-sm font-bold text-red-700 mb-1 flex items-center gap-1.5">
+                  <AlertTriangle className="w-4 h-4" /> Danger Zone
+                </h3>
+                <p className="text-gray-500 text-xs mb-4">
+                  Permanently deletes your account and all associated data (evaluations, reports, question papers,
+                  sessions). This cannot be undone.
+                </p>
+
+                {deleteError && (
+                  <div className="mb-4 p-3.5 bg-red-50 border border-red-200 text-red-700 rounded-xl text-sm font-medium">
+                    {deleteError}
+                  </div>
+                )}
+
+                {!deleteConfirming ? (
+                  <button
+                    onClick={() => setDeleteConfirming(true)}
+                    className="border border-red-200 text-red-700 font-semibold px-6 py-2.5 rounded-xl hover:bg-red-50 transition-colors text-sm"
+                  >
+                    Delete Account
+                  </button>
+                ) : (
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                        Confirm your password
+                      </label>
+                      <input
+                        type="password"
+                        value={deletePassword}
+                        onChange={(e) => setDeletePassword(e.target.value)}
+                        className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/20 transition-all"
+                        placeholder="••••••••"
+                      />
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={handleDeleteAccount}
+                        disabled={deleteLoading}
+                        className="bg-red-600 text-white font-semibold px-6 py-2.5 rounded-xl hover:bg-red-700 transition-colors text-sm disabled:opacity-50"
+                      >
+                        {deleteLoading ? "Deleting..." : "Permanently Delete My Account"}
+                      </button>
+                      <button
+                        onClick={() => { setDeleteConfirming(false); setDeleteError(""); setDeletePassword(""); }}
+                        className="border border-gray-200 text-gray-600 font-semibold px-6 py-2.5 rounded-xl hover:bg-gray-50 transition-colors text-sm"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </div>

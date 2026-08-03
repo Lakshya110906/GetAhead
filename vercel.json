@@ -6,6 +6,14 @@
     {
       "path": "/api/cron/sweep-evaluations",
       "schedule": "*/5 * * * *"
+    },
+    {
+      "path": "/api/cron/queue-alert",
+      "schedule": "*/5 * * * *"
+    },
+    {
+      "path": "/api/cron/purge-old-logs",
+      "schedule": "0 3 * * *"
     }
   ]
 }

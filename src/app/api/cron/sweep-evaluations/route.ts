@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { processOneDueJob } from "@/lib/evaluationWorker";
+import { logger } from "@/lib/logger";
 
 export const maxDuration = 60;
 
@@ -36,5 +37,6 @@ export async function GET(request: NextRequest) {
     processed++;
   }
 
+  logger.info("Sweep cron ran", { stage: "sweep", processed });
   return NextResponse.json({ ok: true, processed });
 }

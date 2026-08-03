@@ -25,6 +25,7 @@ import {
   LifeBuoy,
   DollarSign,
   AlertTriangle,
+  Gauge,
 } from "lucide-react";
 import {
   ResponsiveContainer,
@@ -53,6 +54,7 @@ export default function AdminPage() {
   const [stats, setStats] = useState<any>(null);
   const [health, setHealth] = useState<any>(null);
   const [spend, setSpend] = useState<any>(null);
+  const [metrics, setMetrics] = useState<any>(null);
   const [users, setUsers] = useState<any[]>([]);
   const [usersTotal, setUsersTotal] = useState(0);
   const [usersPage, setUsersPage] = useState(1);
@@ -115,6 +117,7 @@ export default function AdminPage() {
         // Load secondary states
         fetchHealth();
         fetchSpend();
+        fetchMetrics();
         fetchUsers();
         fetchEvaluations();
         fetchPapers();
@@ -192,6 +195,13 @@ export default function AdminPage() {
     fetch("/api/admin/spend")
       .then((r) => r.json())
       .then(setSpend)
+      .catch(() => {});
+  };
+
+  const fetchMetrics = () => {
+    fetch("/api/admin/metrics")
+      .then((r) => r.json())
+      .then(setMetrics)
       .catch(() => {});
   };
 
@@ -399,6 +409,7 @@ export default function AdminPage() {
         <nav className="w-64 bg-white border-r border-gray-200 p-4 space-y-1.5 shrink-0 overflow-y-auto">
           {[
             { id: "overview", label: "Overview", icon: Activity },
+            { id: "metrics", label: "Metrics", icon: Gauge },
             { id: "users", label: "User Management", icon: Users },
             { id: "evaluations", label: "Evaluations", icon: Award },
             { id: "papers", label: "Question Papers", icon: FileText },
@@ -537,6 +548,96 @@ export default function AdminPage() {
                   </div>
                 </div>
               </div>
+            </div>
+          )}
+
+          {/* TAB: METRICS — the weekly-check page. Every number here is
+              actionable; nothing here is a vanity stat. */}
+          {activeTab === "metrics" && (
+            <div className="space-y-6 animate-fadeIn">
+              {!metrics ? (
+                <div className="flex items-center justify-center py-20">
+                  <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
+                </div>
+              ) : (
+                <>
+                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                    {[
+                      { title: "Enqueued (24h)", val: metrics.enqueued, icon: Activity, color: "text-blue-600", bg: "bg-blue-50" },
+                      { title: "Succeeded (24h)", val: metrics.succeeded, icon: CheckCircle, color: "text-teal-600", bg: "bg-teal-50" },
+                      { title: "Failed (24h)", val: metrics.failed, icon: AlertTriangle, color: "text-red-600", bg: "bg-red-50" },
+                      {
+                        title: "Queue depth (now)",
+                        val: metrics.queueDepth,
+                        icon: Gauge,
+                        color: metrics.queueDepth > 20 ? "text-red-600" : "text-orange-600",
+                        bg: metrics.queueDepth > 20 ? "bg-red-50" : "bg-orange-50",
+                      },
+                    ].map((card, i) => (
+                      <div key={i} className="bg-white rounded-2xl border border-gray-100 card-shadow-md p-5">
+                        <div className="flex items-center justify-between mb-3">
+                          <p className="text-sm text-gray-500 font-semibold">{card.title}</p>
+                          <div className={`w-9 h-9 ${card.bg} rounded-xl flex items-center justify-center`}>
+                            <card.icon className={`w-4.5 h-4.5 ${card.color}`} />
+                          </div>
+                        </div>
+                        <p className="text-3xl font-extrabold text-gray-900 font-mono" style={{ fontFamily: "var(--font-display)" }}>
+                          {card.val}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="grid lg:grid-cols-2 gap-6">
+                    <div className="bg-white rounded-2xl border border-gray-100 card-shadow-md p-6">
+                      <h2 className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-4">
+                        End-to-end evaluation latency (last {metrics.latencySampleSize} succeeded)
+                      </h2>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <p className="text-xs text-gray-500 font-semibold">p50</p>
+                          <p className="text-2xl font-bold text-gray-900">{(metrics.latencyP50Ms / 1000).toFixed(1)}s</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-500 font-semibold">p95</p>
+                          <p className="text-2xl font-bold text-gray-900">{(metrics.latencyP95Ms / 1000).toFixed(1)}s</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="bg-white rounded-2xl border border-gray-100 card-shadow-md p-6">
+                      <h2 className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-4">Model error rate by type (24h)</h2>
+                      {metrics.errorsByType.length === 0 ? (
+                        <p className="text-sm text-gray-500">No failed evaluations in the last 24 hours.</p>
+                      ) : (
+                        <div className="space-y-2">
+                          {metrics.errorsByType.map((e: { type: string; count: number }) => (
+                            <div key={e.type} className="flex items-center justify-between text-sm">
+                              <span className="font-mono text-gray-700">{e.type}</span>
+                              <span className="font-bold text-gray-900">{e.count}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div
+                    className={`rounded-2xl border p-5 flex items-center gap-4 ${
+                      metrics.spend.killSwitchActive
+                        ? "bg-red-50 border-red-200"
+                        : metrics.spend.estimatedUsd >= metrics.spend.thresholdUsd * 0.5
+                        ? "bg-amber-50 border-amber-200"
+                        : "bg-white border-gray-100 card-shadow-md"
+                    }`}
+                  >
+                    <DollarSign className="w-5 h-5 text-gray-500" />
+                    <p className="text-sm font-bold text-gray-900">
+                      Today&apos;s token spend: ${metrics.spend.estimatedUsd.toFixed(2)} of ${metrics.spend.thresholdUsd} ({metrics.spend.totalTokens.toLocaleString()} tokens)
+                    </p>
+                  </div>
+                </>
+              )}
             </div>
           )}
 
