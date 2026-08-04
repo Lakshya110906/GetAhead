@@ -10,7 +10,13 @@ const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY || process.env.GEMINI_AP
 
 // The exact model identifier + version stored on every evaluation row for
 // audit purposes. Bump this string whenever the model changes.
-export const MODEL_ID = "gemini-2.0-flash";
+//
+// gemini-2.0-flash has a hard 0 free-tier quota on this project (confirmed
+// directly against the API — every call 429s, regardless of the day/time).
+// gemini-2.5-flash has real quota and works. Switch back only once billing
+// is sorted out for 2.0, and only deliberately (this affects every existing
+// Evaluation/QuestionPaper row's modelId audit trail).
+export const MODEL_ID = "gemini-2.5-flash";
 
 const tavilysearchDeclaration: FunctionDeclaration = {
   name: "tavilysearch",

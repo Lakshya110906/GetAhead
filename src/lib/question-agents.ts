@@ -209,7 +209,7 @@ const tavilyTool: Tool = {
 
 // 1. Planner Agent
 async function runPlannerAgent(genAI: GoogleGenerativeAI, config: PaperConfig): Promise<unknown> {
-  const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+  const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
   const prompt = `You are an expert Educational Curriculum Planner. Your job is to structure a question paper.
   
   Subject: ${config.subject}
@@ -255,7 +255,7 @@ async function runPlannerAgent(genAI: GoogleGenerativeAI, config: PaperConfig): 
 // 2. Generator Agent
 async function runGeneratorAgent(genAI: GoogleGenerativeAI, config: PaperConfig, plan: unknown): Promise<unknown> {
   const model = genAI.getGenerativeModel({ 
-    model: "gemini-2.0-flash",
+    model: "gemini-2.5-flash",
     tools: [tavilyTool]
   });
 
@@ -336,7 +336,7 @@ async function runGeneratorAgent(genAI: GoogleGenerativeAI, config: PaperConfig,
 // 3. Reviewer Agent
 async function runReviewerAgent(genAI: GoogleGenerativeAI, config: PaperConfig, plan: unknown, draft: unknown): Promise<GeneratedPaper> {
   const model = genAI.getGenerativeModel({ 
-    model: "gemini-2.0-flash",
+    model: "gemini-2.5-flash",
     tools: [tavilyTool]
   });
 
