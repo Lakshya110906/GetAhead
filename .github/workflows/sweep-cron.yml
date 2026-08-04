@@ -1,0 +1,31 @@
+name: Frequent evaluation sweep (Vercel Hobby cron workaround)
+
+# Vercel's Hobby plan only allows daily-scheduled Vercel Crons, so
+# sweep-evaluations and queue-alert are configured in vercel.json to run
+# once a day. Without something running them more often, a stuck evaluation
+# (the immediate post-enqueue trigger crashed or timed out mid-run) sits in
+# PROCESSING for up to 24 hours before the daily cron reclaims it — during
+# active testing this was observed firsthand. GitHub Actions' schedule
+# trigger has no such daily-only restriction, so it fills that gap for free.
+#
+# If CRON_SECRET is set on Vercel, also add it as a GitHub Actions secret of
+# the same name so these calls stay authorized; the endpoints allow
+# unauthenticated calls when CRON_SECRET isn't configured at all (see
+# src/app/api/cron/*/route.ts), so this works either way.
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch: {}
+
+jobs:
+  sweep:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Sweep due/stuck evaluation jobs
+        run: |
+          curl -sf -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            "${{ vars.PRODUCTION_URL || 'https://get-ahead-five.vercel.app' }}/api/cron/sweep-evaluations"
+      - name: Check queue depth
+        run: |
+          curl -sf -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            "${{ vars.PRODUCTION_URL || 'https://get-ahead-five.vercel.app' }}/api/cron/queue-alert"
