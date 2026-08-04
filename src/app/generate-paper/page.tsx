@@ -45,6 +45,37 @@ interface AgentLogEntry {
   ts: number;
 }
 
+const SUBSCRIPT_DIGITS: Record<string, string> = { "0": "₀", "1": "₁", "2": "₂", "3": "₃", "4": "₄", "5": "₅", "6": "₆", "7": "₇", "8": "₈", "9": "₉" };
+const SUPERSCRIPT_DIGITS: Record<string, string> = { "0": "⁰", "1": "¹", "2": "²", "3": "³", "4": "⁴", "5": "⁵", "6": "⁶", "7": "⁷", "8": "⁸", "9": "⁹" };
+
+// The AI occasionally emits raw LaTeX-ish math markup ($H_2O$, \times, \rightarrow,
+// literal "\n") instead of plain text — there's no LaTeX renderer in this app, so
+// left as-is it shows dollar signs and backslash commands verbatim on the printed
+// paper. This converts the common subset to plain/unicode text instead.
+function cleanMathText(text: string): string {
+  if (!text) return text;
+  return text
+    .replace(/\\n/g, " ")
+    .replace(/\\rightarrow/g, "→")
+    .replace(/\\leftarrow/g, "←")
+    .replace(/\\times/g, "×")
+    .replace(/\\div/g, "÷")
+    .replace(/\\cdot/g, "·")
+    .replace(/\\pm/g, "±")
+    .replace(/\\Delta/g, "Δ")
+    .replace(/\\sqrt\{([^}]*)\}/g, "√($1)")
+    .replace(/\\frac\{([^}]*)\}\{([^}]*)\}/g, "$1/$2")
+    .replace(/[_^]\{(-?[0-9]+)\}/g, (_m, digits: string, offset: number, full: string) => {
+      const isSuper = full[offset - 1] === "^";
+      const map = isSuper ? SUPERSCRIPT_DIGITS : SUBSCRIPT_DIGITS;
+      return digits.replace(/-|[0-9]/g, (d) => (d === "-" ? "" : map[d] ?? d));
+    })
+    .replace(/[_^]([0-9])/g, (m, digit: string) => (m[0] === "^" ? SUPERSCRIPT_DIGITS[digit] : SUBSCRIPT_DIGITS[digit]) ?? m)
+    .replace(/\$/g, "")
+    .replace(/^[A-D]\)\s*/, "")
+    .trim();
+}
+
 // ─── AgentCard component ─────────────────────────────────────────────────────
 const ACCENT: Record<string, { badge: string; glow: string; ring: string; dot: string; border: string; bg: string }> = {
   blue:   { badge: "bg-blue-100 text-blue-700",    glow: "shadow-blue-500/20",   ring: "ring-blue-500", dot: "bg-blue-500",   border: "border-blue-100", bg: "bg-blue-50" },
@@ -513,14 +544,14 @@ ${JSON.stringify(paper, null, 2)}
     paper.sections.forEach((section) => {
       text += `--- ${section.title} ---\n${section.description}\n\n`;
       section.questions.forEach((q) => {
-        text += `Q${q.number}. ${q.question} (${q.marks} Marks)\n`;
+        text += `Q${q.number}. ${cleanMathText(q.question)} (${q.marks} Marks)\n`;
         if (q.options && q.options.length > 0) {
           q.options.forEach((opt, idx) => {
-            text += `   ${String.fromCharCode(65 + idx)}. ${opt}\n`;
+            text += `   ${String.fromCharCode(65 + idx)}. ${cleanMathText(opt)}\n`;
           });
         }
         if (viewMode === "answers") {
-          text += `[Answer: ${q.answer}]\n`;
+          text += `[Answer: ${cleanMathText(q.answer)}]\n`;
         }
         text += `\n`;
       });
@@ -1287,7 +1318,7 @@ ${JSON.stringify(paper, null, 2)}
                                 <div className="flex items-start justify-between gap-4">
                                   <p className="text-gray-900 font-medium flex-1">
                                     <span className="font-bold mr-1.5">Q{q.number}.</span>
-                                    {q.question}
+                                    {cleanMathText(q.question)}
                                   </p>
                                   <span className="text-xs font-bold text-gray-500 whitespace-nowrap">
                                     [{q.marks} Mark{q.marks > 1 ? "s" : ""}]
@@ -1302,7 +1333,7 @@ ${JSON.stringify(paper, null, 2)}
                                         <span className="font-semibold text-gray-500 mr-2">
                                           {String.fromCharCode(65 + oIdx)}.
                                         </span>
-                                        {opt}
+                                        {cleanMathText(opt)}
                                       </p>
                                     ))}
                                   </div>
@@ -1315,7 +1346,7 @@ ${JSON.stringify(paper, null, 2)}
                                       Correct Answer / Evaluator Rubric:
                                     </p>
                                     <p className="text-sm text-blue-900 font-medium">
-                                      {q.answer}
+                                      {cleanMathText(q.answer)}
                                     </p>
                                   </div>
                                 )}

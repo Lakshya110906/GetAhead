@@ -98,7 +98,7 @@ describe("gradeFromPercentage", () => {
 // ── 2. Auditability ─────────────────────────────────────────────────────
 describe("audit metadata", () => {
   it("exposes a stable model identifier", () => {
-    expect(MODEL_ID).toBe("gemini-2.0-flash");
+    expect(MODEL_ID).toBe("gemini-2.5-flash");
   });
 
   it("exposes an explicit rubric version", () => {

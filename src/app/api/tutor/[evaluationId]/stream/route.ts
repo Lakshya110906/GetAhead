@@ -222,7 +222,7 @@ Let's break down the concepts behind ${topicInfo.topic}. Would you like me to wa
         // Real Gemini stream setup
         const genAI = new GoogleGenerativeAI(apiKey);
         const model = genAI.getGenerativeModel({
-          model: "gemini-2.0-flash",
+          model: "gemini-2.5-flash",
           systemInstruction: systemPrompt,
         });
 
