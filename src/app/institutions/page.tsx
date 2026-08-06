@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import {
-  Brain,
   BarChart3,
   Users,
   Shield,
@@ -14,41 +13,33 @@ import {
   Layers,
   Database,
 } from "lucide-react";
+import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
 
 export const metadata: Metadata = {
-  title: "For Institutions — GetAhead AI",
+  title: "For institutions",
   description: "GetAhead AI helps schools and institutions centralise AI evaluation, monitor department performance, and provide consistent grading across all teachers.",
   alternates: { canonical: "/institutions" },
   openGraph: {
-    title: "For Institutions — GetAhead AI",
+    title: "For institutions — GetAhead AI",
     description: "Centralised AI evaluation, department analytics, and administrative controls for schools and educational institutions.",
     url: "/institutions",
     type: "website",
     images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "GetAhead" }],
   },
+  twitter: {
+    card: "summary_large_image",
+    title: "For institutions — GetAhead AI",
+    description: "Centralised AI evaluation, department analytics, and administrative controls for schools and educational institutions.",
+    images: ["/og-image.png"],
+  },
 };
 
 export default function InstitutionsPage() {
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-paper">
       {/* Navbar */}
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-white/95 border-b border-gray-100">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16">
-          <Link href="/" className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-paper flex items-center justify-center">
-              <Brain className="w-4 h-4 text-white" />
-            </div>
-            <span className="font-bold text-gray-900" style={{ fontFamily: "var(--font-display)" }}>
-              Get<span className="text-ink">Ahead</span>
-            </span>
-          </Link>
-          <div className="flex items-center gap-3">
-            <Link href="/login" className="text-sm text-gray-600 hover:text-gray-900 font-medium transition-colors">Sign In</Link>
-            <Link href="/signup" className="text-sm bg-fixed-ink text-white font-semibold px-4 py-2 rounded-lg hover:opacity-90 transition-opacity">Get Started Free</Link>
-          </div>
-        </div>
-      </nav>
+      <SiteHeader />
 
       {/* Hero */}
       <section className="pt-32 pb-20 bg-paper">
@@ -57,21 +48,21 @@ export default function InstitutionsPage() {
             <div>
               <div className="inline-flex items-center gap-2 bg-purple-100 text-purple-700 text-sm font-semibold px-4 py-1.5 rounded-full mb-6">
                 <Building2 className="w-4 h-4" />
-                For schools &amp; institutions
+                For schools and institutions
               </div>
               <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6 leading-tight" style={{ fontFamily: "var(--font-display)" }}>
                 Consistent grading.<br />
                 <span className="text-ink">Institution-wide.</span>
               </h1>
-              <p className="text-xl text-gray-600 leading-relaxed mb-8">
+              <p className="text-xl text-graphite leading-relaxed mb-8">
                 GetAhead AI brings AI-powered evaluation to your entire institution — with centralised access, consistent grading standards, and performance insights across every department.
               </p>
               <div className="flex flex-col sm:flex-row gap-3">
                 <Link href="/signup" className="inline-flex items-center justify-center gap-2 bg-fixed-ink text-white font-semibold px-6 py-3 rounded-xl hover:opacity-90 transition-opacity shadow-lg">
-                  Get Started Free <ArrowRight className="w-4 h-4" />
+                  Get started free <ArrowRight className="w-4 h-4" />
                 </Link>
-                <Link href="/contact" className="inline-flex items-center justify-center gap-2 bg-white text-gray-700 font-medium px-6 py-3 rounded-xl border border-gray-200 hover:bg-gray-50 transition-all">
-                  Contact Sales <ChevronRight className="w-4 h-4" />
+                <Link href="/contact" className="inline-flex items-center justify-center gap-2 bg-surface text-ink font-medium px-6 py-3 rounded-xl border border-gray-200 hover:bg-gray-50 transition-all">
+                  Contact sales <ChevronRight className="w-4 h-4" />
                 </Link>
               </div>
             </div>
@@ -84,13 +75,13 @@ export default function InstitutionsPage() {
               ].map((item) => {
                 const Icon = item.icon;
                 return (
-                  <div key={item.label} className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 flex items-start gap-4">
-                    <div className="w-10 h-10 bg-paper rounded-xl flex items-center justify-center flex-shrink-0">
+                  <div key={item.label} className="bg-surface rounded-xl border border-rule shadow-sm p-4 flex items-start gap-4">
+                    <div className="w-10 h-10 bg-fixed-ink rounded-xl flex items-center justify-center flex-shrink-0">
                       <Icon className="w-5 h-5 text-white" />
                     </div>
                     <div>
                       <p className="font-semibold text-gray-900 text-sm">{item.label}</p>
-                      <p className="text-xs text-gray-500 mt-0.5">{item.desc}</p>
+                      <p className="text-xs text-graphite mt-0.5">{item.desc}</p>
                     </div>
                   </div>
                 );
@@ -106,7 +97,7 @@ export default function InstitutionsPage() {
           <h2 className="text-3xl font-bold text-gray-900 mb-4" style={{ fontFamily: "var(--font-display)" }}>
             Built for institutional scale
           </h2>
-          <p className="text-gray-600 text-lg max-w-2xl mx-auto">
+          <p className="text-graphite text-lg max-w-2xl mx-auto">
             Whether you&apos;re a single-campus school or a multi-department coaching network, GetAhead AI adapts to your operational needs.
           </p>
         </div>
@@ -114,52 +105,52 @@ export default function InstitutionsPage() {
           {[
             {
               icon: Building2,
-              title: "Centralised Institution Dashboard",
+              title: "Centralised institution dashboard",
               description: "An administrative view gives your leadership team visibility into evaluation activity across all teachers — total evaluations, subjects covered, and overall performance trends.",
               status: "In development",
             },
             {
               icon: Users,
-              title: "Multiple Teacher Accounts",
+              title: "Multiple teacher accounts",
               description: "Each teacher creates their own account under the Institution role. They evaluate independently with their own data, while admin has oversight of aggregate activity.",
               status: "Available now",
             },
             {
               icon: BarChart3,
-              title: "Department Performance Monitoring",
+              title: "Department performance monitoring",
               description: "Track average evaluation scores by subject across your institution. Identify underperforming areas and address them proactively — backed by real data.",
               status: "Analytics available",
             },
             {
               icon: Shield,
-              title: "Secure Data Architecture",
+              title: "Secure data architecture",
               description: "All user data is isolated at the account level. Teachers cannot access each other's evaluations or student data. Data is encrypted at rest and in transit.",
               status: "Production-grade",
             },
             {
               icon: Settings,
-              title: "Administrative Controls",
+              title: "Administrative controls",
               description: "Admin accounts can view all users, reset passwords, suspend accounts, and review audit logs — all from a secure admin dashboard.",
               status: "Admin panel available",
             },
             {
               icon: Database,
-              title: "Data Export & Archival",
+              title: "Data export and archival",
               description: "Evaluation reports can be exported as PDFs and stored offline. Cloud data is retained for as long as the account is active with no storage limits.",
               status: "Available now",
             },
           ].map((item) => {
             const Icon = item.icon;
             return (
-              <div key={item.title} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 hover:shadow-md transition-shadow">
+              <div key={item.title} className="bg-surface rounded-2xl border border-rule shadow-sm p-6 hover:shadow-md transition-shadow">
                 <div className="flex items-start justify-between gap-4 mb-4">
-                  <div className="w-12 h-12 rounded-xl bg-paper flex items-center justify-center flex-shrink-0">
+                  <div className="w-12 h-12 rounded-xl bg-fixed-ink flex items-center justify-center flex-shrink-0">
                     <Icon className="w-6 h-6 text-white" />
                   </div>
                   <span className="text-xs font-semibold bg-purple-50 text-purple-700 px-2.5 py-1 rounded-full border border-purple-100 whitespace-nowrap">{item.status}</span>
                 </div>
                 <h3 className="font-semibold text-gray-900 mb-2">{item.title}</h3>
-                <p className="text-sm text-gray-600 leading-relaxed">{item.description}</p>
+                <p className="text-sm text-graphite leading-relaxed">{item.description}</p>
               </div>
             );
           })}
@@ -187,7 +178,7 @@ export default function InstitutionsPage() {
                 ].map((item) => (
                   <div key={item} className="flex items-start gap-3">
                     <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
-                    <p className="text-gray-700 text-sm">{item}</p>
+                    <p className="text-ink text-sm">{item}</p>
                   </div>
                 ))}
               </div>
@@ -195,14 +186,14 @@ export default function InstitutionsPage() {
             <div className="bg-paper rounded-2xl border border-purple-100 p-8">
               <Shield className="w-12 h-12 text-purple-500 mb-4" />
               <h3 className="text-xl font-bold text-gray-900 mb-3">Data belongs to you</h3>
-              <p className="text-gray-600 mb-4 leading-relaxed text-sm">
+              <p className="text-graphite mb-4 leading-relaxed text-sm">
                 Your students&apos; answer sheet content is not stored permanently by GetAhead AI beyond your account records. We do not sell or share your data with third parties.
               </p>
-              <p className="text-gray-600 mb-6 leading-relaxed text-sm">
+              <p className="text-graphite mb-6 leading-relaxed text-sm">
                 You can delete your account and all associated data at any time from Settings. Deletion is permanent and cannot be undone.
               </p>
               <Link href="/privacy" className="inline-flex items-center gap-2 text-purple-600 font-semibold text-sm hover:underline">
-                Read our full Privacy Policy <ChevronRight className="w-4 h-4" />
+                Read our full privacy policy <ChevronRight className="w-4 h-4" />
               </Link>
             </div>
           </div>
@@ -219,11 +210,11 @@ export default function InstitutionsPage() {
             Start with a free account. Institutional features and custom plans available on request.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Link href="/signup" className="inline-flex items-center gap-2 bg-white text-purple-600 font-bold px-8 py-4 rounded-xl hover:bg-purple-50 transition-colors shadow-lg group">
-              Start Free <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+            <Link href="/signup" className="inline-flex items-center gap-2 bg-surface text-purple-600 font-bold px-8 py-4 rounded-xl hover:bg-purple-50 transition-colors shadow-lg group">
+              Start free <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
             </Link>
             <Link href="/contact" className="inline-flex items-center gap-2 bg-white/10 text-white font-semibold px-8 py-4 rounded-xl hover:bg-white/20 transition-colors border border-white/20">
-              Talk to Us <ArrowRight className="w-4 h-4" />
+              Talk to us <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
         </div>

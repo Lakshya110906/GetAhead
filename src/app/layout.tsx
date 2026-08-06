@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Inter, Fraunces, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/Providers";
+import { SITE_URL } from "@/lib/siteConfig";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -29,9 +30,9 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://getahead.ai"),
+  metadataBase: new URL(SITE_URL),
   title: {
-    default: "GetAhead | AI-Powered Exam Answer Evaluation",
+    default: "GetAhead | AI-powered exam answer evaluation",
     template: "%s | GetAhead",
   },
   description:
@@ -48,7 +49,7 @@ export const metadata: Metadata = {
   authors: [{ name: "GetAhead" }],
   alternates: { canonical: "/" },
   openGraph: {
-    title: "GetAhead | AI-Powered Exam Answer Evaluation",
+    title: "GetAhead | AI-powered exam answer evaluation",
     description: "Instant AI-powered evaluation with detailed performance analytics.",
     url: "/",
     type: "website",
@@ -65,7 +66,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "GetAhead | AI-Powered Exam Answer Evaluation",
+    title: "GetAhead | AI-powered exam answer evaluation",
     description: "Instant AI-powered evaluation with detailed performance analytics.",
     images: ["/og-image.png"],
   },
@@ -78,6 +79,17 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${inter.variable} ${fraunces.variable} ${plexMono.variable}`}>
+      <head>
+        {/* Blocking, runs before first paint — applies the saved (or
+            system-preferred, on a first visit) theme synchronously so there's
+            no flash of the light theme before React hydrates and the
+            ThemeProvider effect would otherwise apply it a frame later. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var t=localStorage.getItem("site-theme");if(!t){t=window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"default";}if(t==="dark")document.documentElement.classList.add("theme-dark");}catch(e){}})();`,
+          }}
+        />
+      </head>
       <body className="antialiased">
         <Providers>{children}</Providers>
       </body>

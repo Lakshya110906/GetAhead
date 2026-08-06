@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Reset Password — GetAhead AI",
+  title: "Reset password",
   alternates: { canonical: "/reset-password" },
   robots: { index: false, follow: true },
 };

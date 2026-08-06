@@ -371,7 +371,7 @@ export default function AdminPage() {
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
           <Loader2 className="w-10 h-10 animate-spin text-blue-600 mx-auto mb-2" />
-          <p className="text-gray-500 text-sm">Loading dashboard...</p>
+          <p className="text-graphite text-sm">Loading dashboard...</p>
         </div>
       </div>
     );
@@ -379,24 +379,24 @@ export default function AdminPage() {
 
   // 3. Render Admin Layout & Dashboard
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-700 flex flex-col">
+    <div className="min-h-screen bg-gray-50 text-ink flex flex-col">
       {/* Header */}
-      <header className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between shadow-sm shrink-0">
+      <header className="bg-surface border-b border-gray-200 px-6 py-4 flex items-center justify-between shadow-sm shrink-0">
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 bg-blue-600 rounded-xl flex items-center justify-center text-white">
             <Shield className="w-5 h-5" />
           </div>
           <div>
             <h1 className="font-bold text-gray-900 text-base" style={{ fontFamily: "var(--font-display)" }}>
-              Admin Panel
+              Admin panel
             </h1>
-            <p className="text-gray-500 text-xxs leading-none mt-0.5">GetAhead AI Management System</p>
+            <p className="text-graphite text-xxs leading-none mt-0.5">GetAhead AI management system</p>
           </div>
         </div>
 
         <button
           onClick={handleLogout}
-          className="flex items-center gap-1.5 text-xs text-gray-600 hover:text-red-600 bg-gray-50 hover:bg-red-50/50 px-3.5 py-2 rounded-lg border border-gray-150 transition-colors"
+          className="flex items-center gap-1.5 text-xs text-graphite hover:text-red-600 bg-gray-50 hover:bg-red-50/50 px-3.5 py-2 rounded-lg border border-rule transition-colors"
         >
           <LogOut className="w-3.5 h-3.5" />
           Logout
@@ -406,7 +406,7 @@ export default function AdminPage() {
       {/* Workspace container */}
       <div className="flex-1 flex overflow-hidden">
         {/* Sidebar Nav */}
-        <nav className="w-64 bg-white border-r border-gray-200 p-4 space-y-1.5 shrink-0 overflow-y-auto">
+        <nav className="w-64 bg-surface border-r border-gray-200 p-4 space-y-1.5 shrink-0 overflow-y-auto">
           {[
             { id: "overview", label: "Overview", icon: Activity },
             { id: "metrics", label: "Metrics", icon: Gauge },
@@ -426,7 +426,7 @@ export default function AdminPage() {
                 key={item.id}
                 onClick={() => setActiveTab(item.id)}
                 className={`w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all ${
-                  active ? "bg-blue-600 text-white shadow-md shadow-blue-500/25" : "text-gray-600 hover:bg-gray-50"
+                  active ? "bg-blue-600 text-white shadow-md shadow-blue-500/25" : "text-graphite hover:bg-gray-50"
                 }`}
               >
                 <div className="flex items-center gap-3">
@@ -451,18 +451,18 @@ export default function AdminPage() {
               {/* Overview grid cards */}
               <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 {[
-                  { title: "Total Users", val: stats.overview.totalUsers, icon: Users, color: "text-blue-600", bg: "bg-blue-50" },
-                  { title: "Total Evaluations", val: stats.overview.totalEvaluations, icon: Award, color: "text-green-600", bg: "bg-green-50" },
-                  { title: "Question Papers", val: stats.overview.totalQuestionPapers, icon: FileText, color: "text-purple-600", bg: "bg-purple-50" },
-                  { title: "Active Sessions", val: stats.overview.activeSessionsCount, icon: Clock, color: "text-amber-600", bg: "bg-amber-50" },
-                  { title: "Logins Today", val: stats.overview.loginsToday, icon: TrendingUp, color: "text-indigo-600", bg: "bg-indigo-50" },
-                  { title: "AI Requests Today", val: stats.overview.aiRequestsToday, icon: Brain, color: "text-pink-600", bg: "bg-pink-50" },
-                  { title: "Success Rate", val: `${stats.overview.successRate}%`, icon: CheckCircle, color: "text-teal-600", bg: "bg-teal-50" },
-                  { title: "Avg. Eval Speed", val: `${stats.overview.avgEvalTime}s`, icon: Clock, color: "text-orange-600", bg: "bg-orange-50" },
+                  { title: "Total users", val: stats.overview.totalUsers, icon: Users, color: "text-blue-600", bg: "bg-blue-50" },
+                  { title: "Total evaluations", val: stats.overview.totalEvaluations, icon: Award, color: "text-green-600", bg: "bg-green-50" },
+                  { title: "Question papers", val: stats.overview.totalQuestionPapers, icon: FileText, color: "text-purple-600", bg: "bg-purple-50" },
+                  { title: "Active sessions", val: stats.overview.activeSessionsCount, icon: Clock, color: "text-amber-600", bg: "bg-amber-50" },
+                  { title: "Logins today", val: stats.overview.loginsToday, icon: TrendingUp, color: "text-indigo-600", bg: "bg-indigo-50" },
+                  { title: "AI requests today", val: stats.overview.aiRequestsToday, icon: Brain, color: "text-pink-600", bg: "bg-pink-50" },
+                  { title: "Success rate", val: `${stats.overview.successRate}%`, icon: CheckCircle, color: "text-teal-600", bg: "bg-teal-50" },
+                  { title: "Avg. eval speed", val: stats.overview.avgEvalTime !== null ? `${stats.overview.avgEvalTime}s` : "Not enough data", icon: Clock, color: "text-orange-600", bg: "bg-orange-50" },
                 ].map((card, i) => (
-                  <div key={i} className="bg-white rounded-2xl border border-gray-100 card-shadow-md p-5 hover:card-shadow-lg transition-shadow">
+                  <div key={i} className="bg-surface rounded-2xl border border-rule card-shadow-md p-5 hover:card-shadow-lg transition-shadow">
                     <div className="flex items-center justify-between mb-3">
-                      <p className="text-sm text-gray-500 font-semibold">{card.title}</p>
+                      <p className="text-sm text-graphite font-semibold">{card.title}</p>
                       <div className={`w-9 h-9 ${card.bg} rounded-xl flex items-center justify-center`}>
                         <card.icon className={`w-4.5 h-4.5 ${card.color}`} />
                       </div>
@@ -482,7 +482,7 @@ export default function AdminPage() {
                       ? "bg-red-50 border-red-200"
                       : spend.estimatedUsd >= spend.thresholdUsd * 0.5
                       ? "bg-amber-50 border-amber-200"
-                      : "bg-white border-gray-100 card-shadow-md"
+                      : "bg-surface border-rule card-shadow-md"
                   }`}
                 >
                   <div className="flex items-center gap-4">
@@ -501,7 +501,7 @@ export default function AdminPage() {
                       <p className="text-sm font-bold text-gray-900">
                         Today&apos;s estimated spend: ${spend.estimatedUsd.toFixed(2)} of ${spend.thresholdUsd}
                       </p>
-                      <p className="text-xs text-gray-500 mt-0.5">
+                      <p className="text-xs text-graphite mt-0.5">
                         {spend.totalTokens.toLocaleString()} tokens across evaluations today ({spend.date}). Estimate only — Google Cloud billing is authoritative.
                       </p>
                     </div>
@@ -517,8 +517,8 @@ export default function AdminPage() {
               {/* Charts Row */}
               <div className="grid lg:grid-cols-2 gap-6">
                 {/* Evaluations trend */}
-                <div className="bg-white rounded-2xl border border-gray-100 card-shadow-md p-6">
-                  <h2 className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-5">Evaluations (Last 7 Days)</h2>
+                <div className="bg-surface rounded-2xl border border-rule card-shadow-md p-6">
+                  <h2 className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-5">Evaluations (last 7 days)</h2>
                   <div className="h-60">
                     <ResponsiveContainer width="100%" height="100%">
                       <LineChart data={stats.charts.evalsPerDay}>
@@ -533,8 +533,8 @@ export default function AdminPage() {
                 </div>
 
                 {/* New users trend */}
-                <div className="bg-white rounded-2xl border border-gray-100 card-shadow-md p-6">
-                  <h2 className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-5">New Users (Last 7 Days)</h2>
+                <div className="bg-surface rounded-2xl border border-rule card-shadow-md p-6">
+                  <h2 className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-5">New users (last 7 days)</h2>
                   <div className="h-60">
                     <ResponsiveContainer width="100%" height="100%">
                       <BarChart data={stats.charts.usersOverTime}>
@@ -574,9 +574,9 @@ export default function AdminPage() {
                         bg: metrics.queueDepth > 20 ? "bg-red-50" : "bg-orange-50",
                       },
                     ].map((card, i) => (
-                      <div key={i} className="bg-white rounded-2xl border border-gray-100 card-shadow-md p-5">
+                      <div key={i} className="bg-surface rounded-2xl border border-rule card-shadow-md p-5">
                         <div className="flex items-center justify-between mb-3">
-                          <p className="text-sm text-gray-500 font-semibold">{card.title}</p>
+                          <p className="text-sm text-graphite font-semibold">{card.title}</p>
                           <div className={`w-9 h-9 ${card.bg} rounded-xl flex items-center justify-center`}>
                             <card.icon className={`w-4.5 h-4.5 ${card.color}`} />
                           </div>
@@ -589,31 +589,31 @@ export default function AdminPage() {
                   </div>
 
                   <div className="grid lg:grid-cols-2 gap-6">
-                    <div className="bg-white rounded-2xl border border-gray-100 card-shadow-md p-6">
+                    <div className="bg-surface rounded-2xl border border-rule card-shadow-md p-6">
                       <h2 className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-4">
                         End-to-end evaluation latency (last {metrics.latencySampleSize} succeeded)
                       </h2>
                       <div className="grid grid-cols-2 gap-4">
                         <div>
-                          <p className="text-xs text-gray-500 font-semibold">p50</p>
+                          <p className="text-xs text-graphite font-semibold">p50</p>
                           <p className="text-2xl font-bold text-gray-900">{(metrics.latencyP50Ms / 1000).toFixed(1)}s</p>
                         </div>
                         <div>
-                          <p className="text-xs text-gray-500 font-semibold">p95</p>
+                          <p className="text-xs text-graphite font-semibold">p95</p>
                           <p className="text-2xl font-bold text-gray-900">{(metrics.latencyP95Ms / 1000).toFixed(1)}s</p>
                         </div>
                       </div>
                     </div>
 
-                    <div className="bg-white rounded-2xl border border-gray-100 card-shadow-md p-6">
+                    <div className="bg-surface rounded-2xl border border-rule card-shadow-md p-6">
                       <h2 className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-4">Model error rate by type (24h)</h2>
                       {metrics.errorsByType.length === 0 ? (
-                        <p className="text-sm text-gray-500">No failed evaluations in the last 24 hours.</p>
+                        <p className="text-sm text-graphite">No failed evaluations in the last 24 hours.</p>
                       ) : (
                         <div className="space-y-2">
                           {metrics.errorsByType.map((e: { type: string; count: number }) => (
                             <div key={e.type} className="flex items-center justify-between text-sm">
-                              <span className="font-mono text-gray-700">{e.type}</span>
+                              <span className="font-mono text-ink">{e.type}</span>
                               <span className="font-bold text-gray-900">{e.count}</span>
                             </div>
                           ))}
@@ -628,10 +628,10 @@ export default function AdminPage() {
                         ? "bg-red-50 border-red-200"
                         : metrics.spend.estimatedUsd >= metrics.spend.thresholdUsd * 0.5
                         ? "bg-amber-50 border-amber-200"
-                        : "bg-white border-gray-100 card-shadow-md"
+                        : "bg-surface border-rule card-shadow-md"
                     }`}
                   >
-                    <DollarSign className="w-5 h-5 text-gray-500" />
+                    <DollarSign className="w-5 h-5 text-graphite" />
                     <p className="text-sm font-bold text-gray-900">
                       Today&apos;s token spend: ${metrics.spend.estimatedUsd.toFixed(2)} of ${metrics.spend.thresholdUsd} ({metrics.spend.totalTokens.toLocaleString()} tokens)
                     </p>
@@ -664,10 +664,10 @@ export default function AdminPage() {
               </div>
 
               {/* Table */}
-              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+              <div className="bg-surface rounded-2xl border border-rule shadow-sm overflow-hidden">
                 <table className="w-full text-left border-collapse">
                   <thead>
-                    <tr className="bg-gray-50 border-b border-gray-150 text-xs font-bold text-gray-500 uppercase">
+                    <tr className="bg-gray-50 border-b border-rule text-xs font-bold text-graphite uppercase">
                       <th className="px-6 py-4">Name</th>
                       <th className="px-6 py-4">Email</th>
                       <th className="px-6 py-4">Role</th>
@@ -677,11 +677,11 @@ export default function AdminPage() {
                       <th className="px-6 py-4 text-right">Actions</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-100 text-sm">
+                  <tbody className="divide-y divide-rule text-sm">
                     {users.map((u) => (
                       <tr key={u.id} className="hover:bg-gray-50/50 transition-colors">
                         <td className="px-6 py-4 font-semibold text-gray-900">{u.name}</td>
-                        <td className="px-6 py-4 text-gray-500">{u.email}</td>
+                        <td className="px-6 py-4 text-graphite">{u.email}</td>
                         <td className="px-6 py-4">
                           <span className={`text-xxs px-2.5 py-1 rounded-full font-bold uppercase ${
                             u.role === "SUSPENDED" ? "bg-red-100 text-red-700" : "bg-blue-100 text-blue-700"
@@ -689,11 +689,11 @@ export default function AdminPage() {
                             {u.role}
                           </span>
                         </td>
-                        <td className="px-6 py-4 text-gray-500">
+                        <td className="px-6 py-4 text-graphite">
                           {new Date(u.createdAt).toLocaleDateString("en-IN")}
                         </td>
-                        <td className="px-6 py-4 text-center font-bold text-gray-700">{u.totalEvaluations}</td>
-                        <td className="px-6 py-4 text-center font-bold text-gray-700">{u.questionPapersGenerated}</td>
+                        <td className="px-6 py-4 text-center font-bold text-ink">{u.totalEvaluations}</td>
+                        <td className="px-6 py-4 text-center font-bold text-ink">{u.questionPapersGenerated}</td>
                         <td className="px-6 py-4 text-right space-x-1.5 whitespace-nowrap">
                           <button
                             onClick={() => {
@@ -738,7 +738,7 @@ export default function AdminPage() {
               </div>
 
               {/* Pagination */}
-              <div className="flex justify-between items-center text-xs text-gray-500">
+              <div className="flex justify-between items-center text-xs text-graphite">
                 <p>Total {usersTotal} users</p>
                 <div className="flex gap-2">
                   <button
@@ -765,7 +765,7 @@ export default function AdminPage() {
               {/* Reset Password Modal */}
               {passwordResetUser && (
                 <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-6">
-                  <div className="bg-white rounded-3xl border border-gray-150 p-6 max-w-sm w-full card-shadow-md space-y-4">
+                  <div className="bg-surface rounded-3xl border border-rule p-6 max-w-sm w-full card-shadow-md space-y-4">
                     <h3 className="font-bold text-gray-900 text-lg">Reset Password</h3>
                     {resetSuccess ? (
                       <p className="text-green-600 text-sm font-semibold">✓ Password updated successfully!</p>
@@ -783,7 +783,7 @@ export default function AdminPage() {
                     <div className="flex justify-end gap-2 text-sm pt-2">
                       <button
                         onClick={() => setPasswordResetUser(null)}
-                        className="px-4 py-2 border border-gray-200 rounded-xl text-gray-600 hover:bg-gray-50"
+                        className="px-4 py-2 border border-gray-200 rounded-xl text-graphite hover:bg-gray-50"
                       >
                         Cancel
                       </button>
@@ -829,10 +829,10 @@ export default function AdminPage() {
               </div>
 
               {/* Table */}
-              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+              <div className="bg-surface rounded-2xl border border-rule shadow-sm overflow-hidden">
                 <table className="w-full text-left border-collapse">
                   <thead>
-                    <tr className="bg-gray-50 border-b border-gray-150 text-xs font-bold text-gray-500 uppercase">
+                    <tr className="bg-gray-50 border-b border-rule text-xs font-bold text-graphite uppercase">
                       <th className="px-6 py-4">Owner</th>
                       <th className="px-6 py-4">Subject</th>
                       <th className="px-6 py-4 text-center">Score</th>
@@ -842,17 +842,17 @@ export default function AdminPage() {
                       <th className="px-6 py-4 text-right">Actions</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-100 text-sm">
+                  <tbody className="divide-y divide-rule text-sm">
                     {evaluations.map((ev) => (
                       <tr key={ev.id} className="hover:bg-gray-50/50 transition-colors">
                         <td className="px-6 py-4 font-semibold text-gray-900">
                           {ev.owner} <span className="text-gray-400 text-xs block font-normal">{ev.ownerEmail}</span>
                         </td>
-                        <td className="px-6 py-4 text-gray-500">{ev.subject}</td>
-                        <td className="px-6 py-4 text-center font-semibold text-gray-700">{ev.score}</td>
-                        <td className="px-6 py-4 text-center font-bold text-gray-700">{ev.grade || "—"}</td>
-                        <td className="px-6 py-4 text-gray-500">{ev.duration}s</td>
-                        <td className="px-6 py-4 text-gray-500">
+                        <td className="px-6 py-4 text-graphite">{ev.subject}</td>
+                        <td className="px-6 py-4 text-center font-semibold text-ink">{ev.score}</td>
+                        <td className="px-6 py-4 text-center font-bold text-ink">{ev.grade || "—"}</td>
+                        <td className="px-6 py-4 text-graphite">{ev.duration}s</td>
+                        <td className="px-6 py-4 text-graphite">
                           {new Date(ev.createdAt).toLocaleDateString("en-IN")}
                         </td>
                         <td className="px-6 py-4 text-right space-x-1.5">
@@ -876,7 +876,7 @@ export default function AdminPage() {
               </div>
 
               {/* Pagination */}
-              <div className="flex justify-between items-center text-xs text-gray-500">
+              <div className="flex justify-between items-center text-xs text-graphite">
                 <p>Total {evalsTotal} evaluations</p>
                 <div className="flex gap-2">
                   <button
@@ -925,10 +925,10 @@ export default function AdminPage() {
               </div>
 
               {/* Table */}
-              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+              <div className="bg-surface rounded-2xl border border-rule shadow-sm overflow-hidden">
                 <table className="w-full text-left border-collapse">
                   <thead>
-                    <tr className="bg-gray-50 border-b border-gray-150 text-xs font-bold text-gray-500 uppercase">
+                    <tr className="bg-gray-50 border-b border-rule text-xs font-bold text-graphite uppercase">
                       <th className="px-6 py-4">Title</th>
                       <th className="px-6 py-4">Owner</th>
                       <th className="px-6 py-4">Subject</th>
@@ -938,21 +938,21 @@ export default function AdminPage() {
                       <th className="px-6 py-4 text-right">Actions</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-100 text-sm">
+                  <tbody className="divide-y divide-rule text-sm">
                     {papers.map((p) => (
                       <tr key={p.id} className="hover:bg-gray-50/50 transition-colors">
                         <td className="px-6 py-4 font-semibold text-gray-900">{p.title}</td>
                         <td className="px-6 py-4 font-semibold text-gray-900">
                           {p.owner} <span className="text-gray-400 text-xs block font-normal">{p.ownerEmail}</span>
                         </td>
-                        <td className="px-6 py-4 text-gray-500">{p.subject}</td>
-                        <td className="px-6 py-4 text-gray-500">{p.grade}</td>
+                        <td className="px-6 py-4 text-graphite">{p.subject}</td>
+                        <td className="px-6 py-4 text-graphite">{p.grade}</td>
                         <td className="px-6 py-4">
                           <span className="text-xxs px-2.5 py-1 rounded-full font-bold uppercase bg-amber-50 text-amber-700">
                             {p.difficulty}
                           </span>
                         </td>
-                        <td className="px-6 py-4 text-center font-bold text-gray-700">{p.totalMarks}</td>
+                        <td className="px-6 py-4 text-center font-bold text-ink">{p.totalMarks}</td>
                         <td className="px-6 py-4 text-right space-x-1.5">
                           <button
                             onClick={() => setPaperPreview(p)}
@@ -974,7 +974,7 @@ export default function AdminPage() {
               </div>
 
               {/* Pagination */}
-              <div className="flex justify-between items-center text-xs text-gray-500">
+              <div className="flex justify-between items-center text-xs text-graphite">
                 <p>Total {papersTotal} question papers</p>
                 <div className="flex gap-2">
                   <button
@@ -1001,7 +1001,7 @@ export default function AdminPage() {
               {/* Preview Modal */}
               {paperPreview && (
                 <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-6">
-                  <div className="bg-white rounded-3xl border border-gray-150 p-6 max-w-2xl w-full card-shadow-md space-y-4 max-h-[80vh] flex flex-col">
+                  <div className="bg-surface rounded-3xl border border-rule p-6 max-w-2xl w-full card-shadow-md space-y-4 max-h-[80vh] flex flex-col">
                     <h3 className="font-bold text-gray-900 text-lg shrink-0">{paperPreview.title}</h3>
                     <div className="flex-1 overflow-y-auto bg-gray-50 rounded-xl p-4 border border-gray-200 text-xs font-mono whitespace-pre-wrap">
                       {paperPreview.content}
@@ -1016,7 +1016,7 @@ export default function AdminPage() {
                           a.download = `${paperPreview.title.replace(/\s+/g, "_")}.txt`;
                           a.click();
                         }}
-                        className="px-4 py-2 border border-gray-200 rounded-xl text-gray-600 hover:bg-gray-50 flex items-center gap-1.5 font-medium"
+                        className="px-4 py-2 border border-gray-200 rounded-xl text-graphite hover:bg-gray-50 flex items-center gap-1.5 font-medium"
                       >
                         <Download className="w-4 h-4" /> Download
                       </button>
@@ -1041,18 +1041,18 @@ export default function AdminPage() {
               </h2>
 
               <div className="grid sm:grid-cols-2 gap-4">
-                <div className="bg-white rounded-2xl border border-gray-100 card-shadow-md p-5 flex items-center justify-between">
+                <div className="bg-surface rounded-2xl border border-rule card-shadow-md p-5 flex items-center justify-between">
                   <div>
-                    <p className="text-xs text-gray-500 font-semibold uppercase tracking-wider">Connected Engine</p>
+                    <p className="text-xs text-graphite font-semibold uppercase tracking-wider">Connected Engine</p>
                     <p className="text-lg font-bold text-gray-900 mt-1">{dbInfo.dbName}</p>
                   </div>
                   <div className="w-10 h-10 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center">
                     <Database className="w-5 h-5" />
                   </div>
                 </div>
-                <div className="bg-white rounded-2xl border border-gray-100 card-shadow-md p-5 flex items-center justify-between">
+                <div className="bg-surface rounded-2xl border border-rule card-shadow-md p-5 flex items-center justify-between">
                   <div>
-                    <p className="text-xs text-gray-500 font-semibold uppercase tracking-wider">System Migrations</p>
+                    <p className="text-xs text-graphite font-semibold uppercase tracking-wider">System Migrations</p>
                     <p className="text-lg font-bold text-gray-900 mt-1">{dbInfo.migrationCount} migrations</p>
                   </div>
                   <div className="w-10 h-10 bg-green-50 text-green-600 rounded-xl flex items-center justify-center">
@@ -1062,12 +1062,12 @@ export default function AdminPage() {
               </div>
 
               {/* Table counts grid */}
-              <div className="bg-white rounded-2xl border border-gray-100 card-shadow-md p-6">
+              <div className="bg-surface rounded-2xl border border-rule card-shadow-md p-6">
                 <h3 className="font-bold text-gray-900 mb-4 uppercase tracking-wider text-sm">Table Statistics</h3>
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
                   {dbInfo.tables.map((tbl: any) => (
-                    <div key={tbl.name} className="bg-gray-50 border border-gray-150 rounded-xl p-4 text-center">
-                      <p className="text-xs text-gray-500 font-medium">{tbl.name}</p>
+                    <div key={tbl.name} className="bg-gray-50 border border-rule rounded-xl p-4 text-center">
+                      <p className="text-xs text-graphite font-medium">{tbl.name}</p>
                       <p className="text-2xl font-bold text-gray-900 mt-1">{tbl.count}</p>
                     </div>
                   ))}
@@ -1116,34 +1116,34 @@ export default function AdminPage() {
               {health ? (
                 <div className="grid md:grid-cols-2 gap-6">
                   {/* Basic Metrics */}
-                  <div className="bg-white rounded-2xl border border-gray-100 card-shadow-md p-6 space-y-4">
+                  <div className="bg-surface rounded-2xl border border-rule card-shadow-md p-6 space-y-4">
                     <h3 className="font-bold text-gray-900 uppercase tracking-wider text-xs">Runtime Statistics</h3>
-                    <div className="divide-y divide-gray-100 text-sm">
+                    <div className="divide-y divide-rule text-sm">
                       <div className="py-2.5 flex justify-between">
-                        <span className="text-gray-500 font-medium">CPU Load Average</span>
+                        <span className="text-graphite font-medium">CPU Load Average</span>
                         <span className="font-semibold text-gray-900">{health.cpu}</span>
                       </div>
                       <div className="py-2.5 flex justify-between">
-                        <span className="text-gray-500 font-medium">Memory Allocation</span>
+                        <span className="text-graphite font-medium">Memory Allocation</span>
                         <span className="font-semibold text-gray-900">{health.memory}</span>
                       </div>
                       <div className="py-2.5 flex justify-between">
-                        <span className="text-gray-500 font-medium">API Response Time</span>
+                        <span className="text-graphite font-medium">API Response Time</span>
                         <span className="font-semibold text-gray-900">{health.responseTime}</span>
                       </div>
                       <div className="py-2.5 flex justify-between">
-                        <span className="text-gray-500 font-medium">Build Version</span>
+                        <span className="text-graphite font-medium">Build Version</span>
                         <span className="font-semibold text-gray-900">{health.buildVersion}</span>
                       </div>
                       <div className="py-2.5 flex justify-between">
-                        <span className="text-gray-500 font-medium">Environment Mode</span>
+                        <span className="text-graphite font-medium">Environment Mode</span>
                         <span className="font-semibold text-gray-900 uppercase">{health.environment}</span>
                       </div>
                     </div>
                   </div>
 
                   {/* Microservices Status */}
-                  <div className="bg-white rounded-2xl border border-gray-100 card-shadow-md p-6 space-y-4">
+                  <div className="bg-surface rounded-2xl border border-rule card-shadow-md p-6 space-y-4">
                     <h3 className="font-bold text-gray-900 uppercase tracking-wider text-xs">Integrations Health</h3>
                     <div className="space-y-3">
                       {[
@@ -1154,8 +1154,8 @@ export default function AdminPage() {
                       ].map((item, idx) => {
                         const isOk = item.status === "HEALTHY" || item.status === "CONNECTED";
                         return (
-                          <div key={idx} className="flex items-center justify-between p-3.5 bg-gray-50 rounded-xl border border-gray-150">
-                            <span className="text-sm font-semibold text-gray-800">{item.name}</span>
+                          <div key={idx} className="flex items-center justify-between p-3.5 bg-gray-50 rounded-xl border border-rule">
+                            <span className="text-sm font-semibold text-ink">{item.name}</span>
                             <div className="flex items-center gap-1.5">
                               <div className={`w-2.5 h-2.5 rounded-full ${isOk ? "bg-green-500" : "bg-red-500"}`} />
                               <span className={`text-xs font-bold uppercase ${isOk ? "text-green-700" : "text-red-700"}`}>
@@ -1169,9 +1169,9 @@ export default function AdminPage() {
                   </div>
                 </div>
               ) : (
-                <div className="text-center py-10 bg-white border border-gray-100 rounded-2xl">
+                <div className="text-center py-10 bg-surface border border-rule rounded-2xl">
                   <Loader2 className="w-8 h-8 animate-spin text-blue-500 mx-auto mb-2" />
-                  <p className="text-gray-500 text-sm">Gathering CPU & Server metrics...</p>
+                  <p className="text-graphite text-sm">Gathering CPU & Server metrics...</p>
                 </div>
               )}
             </div>
@@ -1188,7 +1188,7 @@ export default function AdminPage() {
                       fetchLogs(1, "audit");
                     }}
                     className={`px-4 py-2 rounded-xl text-sm font-semibold border transition-all ${
-                      logType === "audit" ? "bg-blue-600 text-white border-blue-600" : "bg-white text-gray-600 border-gray-250 hover:bg-gray-50"
+                      logType === "audit" ? "bg-blue-600 text-white border-blue-600" : "bg-surface text-graphite border-gray-200 hover:bg-gray-50"
                     }`}
                   >
                     Audit Logs
@@ -1199,7 +1199,7 @@ export default function AdminPage() {
                       fetchLogs(1, "error");
                     }}
                     className={`px-4 py-2 rounded-xl text-sm font-semibold border transition-all ${
-                      logType === "error" ? "bg-red-600 text-white border-red-600" : "bg-white text-gray-600 border-gray-250 hover:bg-gray-50"
+                      logType === "error" ? "bg-red-600 text-white border-red-600" : "bg-surface text-graphite border-gray-200 hover:bg-gray-50"
                     }`}
                   >
                     System Errors
@@ -1222,10 +1222,10 @@ export default function AdminPage() {
               </div>
 
               {/* Table */}
-              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+              <div className="bg-surface rounded-2xl border border-rule shadow-sm overflow-hidden">
                 <table className="w-full text-left border-collapse">
                   <thead>
-                    <tr className="bg-gray-50 border-b border-gray-150 text-xs font-bold text-gray-500 uppercase">
+                    <tr className="bg-gray-50 border-b border-rule text-xs font-bold text-graphite uppercase">
                       <th className="px-6 py-4">Timestamp</th>
                       {logType === "audit" ? (
                         <>
@@ -1242,27 +1242,27 @@ export default function AdminPage() {
                       )}
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-100 text-xs font-mono">
+                  <tbody className="divide-y divide-rule text-xs font-mono">
                     {logs.map((lg) => (
                       <tr key={lg.id} className="hover:bg-gray-50/50 transition-colors">
-                        <td className="px-6 py-4 text-gray-500 whitespace-nowrap">
+                        <td className="px-6 py-4 text-graphite whitespace-nowrap">
                           {new Date(lg.createdAt).toLocaleString("en-IN")}
                         </td>
                         {logType === "audit" ? (
                           <>
                             <td className="px-6 py-4 font-bold text-gray-900">{lg.action}</td>
-                            <td className="px-6 py-4 text-gray-600">{lg.details}</td>
-                            <td className="px-6 py-4 text-gray-500">{lg.ip || "N/A"}</td>
+                            <td className="px-6 py-4 text-graphite">{lg.details}</td>
+                            <td className="px-6 py-4 text-graphite">{lg.ip || "N/A"}</td>
                           </>
                         ) : (
                           <>
                             <td className="px-6 py-4">
-                              <span className="text-xxs px-2 py-0.5 rounded font-bold uppercase bg-red-150 text-red-700">
+                              <span className="text-xxs px-2 py-0.5 rounded font-bold uppercase bg-red-100 text-red-700">
                                 {lg.type}
                               </span>
                             </td>
                             <td className="px-6 py-4 text-red-600 break-all">{lg.message}</td>
-                            <td className="px-6 py-4 text-gray-500">{lg.path || "N/A"}</td>
+                            <td className="px-6 py-4 text-graphite">{lg.path || "N/A"}</td>
                           </>
                         )}
                       </tr>
@@ -1291,7 +1291,7 @@ export default function AdminPage() {
               </div>
 
               {/* Pagination */}
-              <div className="flex justify-between items-center text-xs text-gray-500">
+              <div className="flex justify-between items-center text-xs text-graphite">
                 <p>Total {logsTotal} records</p>
                 <div className="flex gap-2">
                   <button
@@ -1325,7 +1325,7 @@ export default function AdminPage() {
                   <h2 className="text-xl font-bold text-gray-900" style={{ fontFamily: "var(--font-display)" }}>
                     Support Tickets Center
                   </h2>
-                  <p className="text-gray-500 text-sm">
+                  <p className="text-graphite text-sm">
                     Manage system support requests, bug reports, and customer conversations.
                   </p>
                 </div>
@@ -1334,7 +1334,7 @@ export default function AdminPage() {
                     fetchTicketStats();
                     fetchTickets(1);
                   }}
-                  className="inline-flex items-center gap-1.5 border border-gray-200 bg-white text-gray-700 text-xs font-semibold px-3 py-2 rounded-xl hover:bg-gray-50 transition-colors"
+                  className="inline-flex items-center gap-1.5 border border-gray-200 bg-surface text-ink text-xs font-semibold px-3 py-2 rounded-xl hover:bg-gray-50 transition-colors"
                 >
                   <RefreshCw className="w-3.5 h-3.5" /> Refresh Tickets
                 </button>
@@ -1349,9 +1349,9 @@ export default function AdminPage() {
                     { title: "Critical / High Priority", val: (ticketStats.priorityCounts?.CRITICAL || 0) + (ticketStats.priorityCounts?.HIGH || 0), icon: Shield, color: "text-red-600", bg: "bg-red-50" },
                     { title: "Avg Response Time", val: `${ticketStats.avgResponseHours}h`, icon: Clock, color: "text-purple-600", bg: "bg-purple-50" },
                   ].map((card, i) => (
-                    <div key={i} className="bg-white rounded-2xl border border-gray-100 card-shadow-md p-5">
+                    <div key={i} className="bg-surface rounded-2xl border border-rule card-shadow-md p-5">
                       <div className="flex items-center justify-between mb-3">
-                        <p className="text-sm text-gray-500 font-semibold">{card.title}</p>
+                        <p className="text-sm text-graphite font-semibold">{card.title}</p>
                         <div className={`w-9 h-9 ${card.bg} rounded-xl flex items-center justify-center`}>
                           <card.icon className={`w-4.5 h-4.5 ${card.color}`} />
                         </div>
@@ -1368,7 +1368,7 @@ export default function AdminPage() {
               {ticketStats && (
                 <div className="grid lg:grid-cols-3 gap-6">
                   {/* Category Distribution Chart */}
-                  <div className="bg-white rounded-2xl border border-gray-100 card-shadow-md p-6 lg:col-span-2">
+                  <div className="bg-surface rounded-2xl border border-rule card-shadow-md p-6 lg:col-span-2">
                     <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-5">Tickets Category Split</h3>
                     <div className="h-56">
                       <ResponsiveContainer width="100%" height="100%">
@@ -1389,7 +1389,7 @@ export default function AdminPage() {
                   </div>
 
                   {/* Priority Breakdown card */}
-                  <div className="bg-white rounded-2xl border border-gray-100 card-shadow-md p-6 space-y-4">
+                  <div className="bg-surface rounded-2xl border border-rule card-shadow-md p-6 space-y-4">
                     <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider">Priority Distribution</h3>
                     <div className="space-y-3.5 select-none pt-2">
                       {[
@@ -1402,10 +1402,10 @@ export default function AdminPage() {
                         return (
                           <div key={item.label} className="space-y-1">
                             <div className="flex justify-between text-xs font-semibold">
-                              <span className="text-gray-700">{item.label}</span>
-                              <span className="text-gray-500">{item.count} ({pct.toFixed(0)}%)</span>
+                              <span className="text-ink">{item.label}</span>
+                              <span className="text-graphite">{item.count} ({pct.toFixed(0)}%)</span>
                             </div>
-                            <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                            <div className="h-2 bg-surface-2 rounded-full overflow-hidden">
                               <div className={`h-full ${item.color}`} style={{ width: `${pct}%` }} />
                             </div>
                           </div>
@@ -1417,9 +1417,9 @@ export default function AdminPage() {
               )}
 
               {/* Main Ticket Grid Table */}
-              <div className="bg-white rounded-2xl border border-gray-100 card-shadow-md overflow-hidden">
+              <div className="bg-surface rounded-2xl border border-rule card-shadow-md overflow-hidden">
                 {/* Search / filter header */}
-                <div className="p-4 border-b border-gray-100 flex flex-col md:flex-row gap-4 items-center justify-between">
+                <div className="p-4 border-b border-rule flex flex-col md:flex-row gap-4 items-center justify-between">
                   <div className="relative w-full md:max-w-xs">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                     <input
@@ -1435,7 +1435,7 @@ export default function AdminPage() {
                     <select
                       value={ticketStatusFilter}
                       onChange={(e) => setTicketStatusFilter(e.target.value)}
-                      className="bg-white border border-gray-200 rounded-lg text-xs px-2.5 py-1.5 text-gray-700 focus:outline-none"
+                      className="bg-surface border border-gray-200 rounded-lg text-xs px-2.5 py-1.5 text-ink focus:outline-none"
                     >
                       <option value="">All Statuses</option>
                       <option value="NEW">New</option>
@@ -1449,7 +1449,7 @@ export default function AdminPage() {
                     <select
                       value={ticketPriorityFilter}
                       onChange={(e) => setTicketPriorityFilter(e.target.value)}
-                      className="bg-white border border-gray-200 rounded-lg text-xs px-2.5 py-1.5 text-gray-700 focus:outline-none"
+                      className="bg-surface border border-gray-200 rounded-lg text-xs px-2.5 py-1.5 text-ink focus:outline-none"
                     >
                       <option value="">All Priorities</option>
                       <option value="LOW">Low</option>
@@ -1461,7 +1461,7 @@ export default function AdminPage() {
                     <select
                       value={ticketCategoryFilter}
                       onChange={(e) => setTicketCategoryFilter(e.target.value)}
-                      className="bg-white border border-gray-200 rounded-lg text-xs px-2.5 py-1.5 text-gray-700 focus:outline-none"
+                      className="bg-surface border border-gray-200 rounded-lg text-xs px-2.5 py-1.5 text-ink focus:outline-none"
                     >
                       <option value="">All Categories</option>
                       <option value="general">General</option>
@@ -1493,19 +1493,19 @@ export default function AdminPage() {
                   <div className="overflow-x-auto">
                     <table className="w-full text-left text-sm">
                       <thead>
-                        <tr className="border-b border-gray-100 bg-gray-50/50">
-                          <th className="px-6 py-3 font-semibold text-xs text-gray-500">Ticket Number</th>
-                          <th className="px-6 py-3 font-semibold text-xs text-gray-500">User</th>
-                          <th className="px-6 py-3 font-semibold text-xs text-gray-500">Category</th>
-                          <th className="px-6 py-3 font-semibold text-xs text-gray-500">Subject</th>
-                          <th className="px-6 py-3 font-semibold text-xs text-gray-500 text-center">Priority</th>
-                          <th className="px-6 py-3 font-semibold text-xs text-gray-500 text-center">Status</th>
-                          <th className="px-6 py-3 font-semibold text-xs text-gray-500 text-right">Created</th>
-                          <th className="px-6 py-3 font-semibold text-xs text-gray-500 text-right">Assignee</th>
+                        <tr className="border-b border-rule bg-gray-50/50">
+                          <th className="px-6 py-3 font-semibold text-xs text-graphite">Ticket Number</th>
+                          <th className="px-6 py-3 font-semibold text-xs text-graphite">User</th>
+                          <th className="px-6 py-3 font-semibold text-xs text-graphite">Category</th>
+                          <th className="px-6 py-3 font-semibold text-xs text-graphite">Subject</th>
+                          <th className="px-6 py-3 font-semibold text-xs text-graphite text-center">Priority</th>
+                          <th className="px-6 py-3 font-semibold text-xs text-graphite text-center">Status</th>
+                          <th className="px-6 py-3 font-semibold text-xs text-graphite text-right">Created</th>
+                          <th className="px-6 py-3 font-semibold text-xs text-graphite text-right">Assignee</th>
                           <th className="px-6 py-3"></th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-gray-50">
+                      <tbody className="divide-y divide-rule">
                         {tickets.map((t) => (
                           <tr key={t.id} className="hover:bg-gray-50/60 transition-colors">
                             <td className="px-6 py-4 whitespace-nowrap font-mono text-xs font-bold text-blue-600">
@@ -1514,13 +1514,13 @@ export default function AdminPage() {
                             <td className="px-6 py-4 whitespace-nowrap">
                               <div>
                                 <p className="font-semibold text-gray-900">{t.name}</p>
-                                <p className="text-[10px] text-gray-450 font-mono">{t.email}</p>
+                                <p className="text-[10px] text-gray-400 font-mono">{t.email}</p>
                               </div>
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap capitalize text-xs text-gray-600">
+                            <td className="px-6 py-4 whitespace-nowrap capitalize text-xs text-graphite">
                               {t.category}
                             </td>
-                            <td className="px-6 py-4 max-w-xs truncate font-semibold text-gray-800">
+                            <td className="px-6 py-4 max-w-xs truncate font-semibold text-ink">
                               {t.subject}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-center text-xs">
@@ -1529,7 +1529,7 @@ export default function AdminPage() {
                                   ? "text-red-700 bg-red-50"
                                   : t.priority === "HIGH"
                                   ? "text-orange-700 bg-orange-50"
-                                  : "text-gray-700 bg-gray-50"
+                                  : "text-ink bg-gray-50"
                               }`}>
                                 {t.priority.toLowerCase()}
                               </span>
@@ -1549,10 +1549,10 @@ export default function AdminPage() {
                                 {t.status.replace("_", " ").toLowerCase()}
                               </span>
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-right text-xs text-gray-500">
+                            <td className="px-6 py-4 whitespace-nowrap text-right text-xs text-graphite">
                               {new Date(t.createdAt).toLocaleDateString("en-IN")}
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-right text-xs text-gray-700 font-semibold">
+                            <td className="px-6 py-4 whitespace-nowrap text-right text-xs text-ink font-semibold">
                               {t.assignedTo?.name || "Unassigned"}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-right">
@@ -1572,8 +1572,8 @@ export default function AdminPage() {
 
                 {/* Pagination Controls */}
                 {ticketsTotal > 15 && (
-                  <div className="p-4 border-t border-gray-100 flex items-center justify-between select-none">
-                    <p className="text-xs text-gray-500 font-medium">
+                  <div className="p-4 border-t border-rule flex items-center justify-between select-none">
+                    <p className="text-xs text-graphite font-medium">
                       Showing {(ticketsPage - 1) * 15 + 1} to {Math.min(ticketsPage * 15, ticketsTotal)} of {ticketsTotal} entries
                     </p>
                     <div className="flex gap-2">
@@ -1605,9 +1605,9 @@ export default function AdminPage() {
                 Global App Settings
               </h2>
 
-              <form onSubmit={saveSettings} className="bg-white rounded-2xl border border-gray-100 card-shadow-md p-6 max-w-lg space-y-4">
+              <form onSubmit={saveSettings} className="bg-surface rounded-2xl border border-rule card-shadow-md p-6 max-w-lg space-y-4">
                 <div>
-                  <label className="block text-sm font-semibold text-gray-800 mb-1.5">Site Name</label>
+                  <label className="block text-sm font-semibold text-ink mb-1.5">Site Name</label>
                   <input
                     type="text"
                     value={sysSettings.siteName}
@@ -1616,7 +1616,7 @@ export default function AdminPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-gray-800 mb-1.5">Logo URL</label>
+                  <label className="block text-sm font-semibold text-ink mb-1.5">Logo URL</label>
                   <input
                     type="text"
                     value={sysSettings.logoUrl}
@@ -1626,18 +1626,18 @@ export default function AdminPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-gray-800 mb-1.5">Maintenance Mode</label>
+                  <label className="block text-sm font-semibold text-ink mb-1.5">Maintenance Mode</label>
                   <select
                     value={sysSettings.maintenanceMode}
                     onChange={(e) => setSysSettings({ ...sysSettings, maintenanceMode: e.target.value })}
-                    className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-blue-500 bg-white"
+                    className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-blue-500 bg-surface"
                   >
                     <option value="false">Off (Standard Site Access)</option>
                     <option value="true">On (Admin Panel Only)</option>
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-gray-800 mb-1.5">Default Theme Option</label>
+                  <label className="block text-sm font-semibold text-ink mb-1.5">Default Theme Option</label>
                   <input
                     type="text"
                     value={sysSettings.defaultTheme}
@@ -1646,7 +1646,7 @@ export default function AdminPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-gray-800 mb-1.5">Max Upload Size (MB)</label>
+                  <label className="block text-sm font-semibold text-ink mb-1.5">Max Upload Size (MB)</label>
                   <input
                     type="number"
                     value={sysSettings.maxUploadSize}
@@ -1655,7 +1655,7 @@ export default function AdminPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-gray-800 mb-1.5">Allowed File Formats</label>
+                  <label className="block text-sm font-semibold text-ink mb-1.5">Allowed File Formats</label>
                   <input
                     type="text"
                     value={sysSettings.allowedFileTypes}

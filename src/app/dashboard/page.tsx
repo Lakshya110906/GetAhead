@@ -74,14 +74,14 @@ export default function DashboardPage() {
 
   const statsCards = [
     {
-      title: "Total Evaluations",
+      title: "Total evaluations",
       value: data.totalEvaluations.toString(),
       change: "All time uploads",
       icon: Award,
       positive: true,
     },
     {
-      title: "Average Score",
+      title: "Average score",
       value: data.totalEvaluations === 0 ? "—" : `${data.avgPercentage}%`,
       change: data.totalEvaluations === 0 ? "No evaluations graded" : (data.avgPercentage >= 75 ? "↑ Great progress!" : "Keep improving!"),
       icon: TrendingUp,
@@ -95,7 +95,7 @@ export default function DashboardPage() {
       positive: true,
     },
     {
-      title: "Saved Reports",
+      title: "Saved reports",
       value: data.savedReportsCount.toString(),
       change: "Bookmarked summaries",
       icon: Bookmark,
@@ -109,9 +109,9 @@ export default function DashboardPage() {
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900" style={{ fontFamily: "var(--font-display)" }}>
-            Welcome back, {firstName}! 👋
+            Welcome back, {firstName}!
           </h1>
-          <p className="text-gray-500 text-sm mt-0.5">
+          <p className="text-graphite text-sm mt-0.5">
             Here&apos;s your academic performance overview
           </p>
         </div>
@@ -120,7 +120,7 @@ export default function DashboardPage() {
           className="inline-flex items-center gap-2 bg-fixed-ink text-white font-semibold px-5 py-2.5 rounded-xl hover:opacity-90 transition-opacity text-sm"
         >
           <PlusCircle className="w-4 h-4" />
-          New Evaluation
+          New evaluation
         </Link>
       </div>
 
@@ -129,10 +129,10 @@ export default function DashboardPage() {
         {statsCards.map((stat) => (
           <div
             key={stat.title}
-            className="bg-white rounded-2xl border border-gray-100 card-shadow-md p-5 hover:card-shadow-lg transition-shadow"
+            className="bg-surface rounded-2xl border border-rule card-shadow-md p-5 hover:card-shadow-lg transition-shadow"
           >
             <div className="flex items-center justify-between mb-3">
-              <p className="text-sm text-gray-500 font-medium">{stat.title}</p>
+              <p className="text-sm text-graphite font-medium">{stat.title}</p>
               <div className="w-9 h-9 bg-blue-50 rounded-xl flex items-center justify-center">
                 <stat.icon className="w-4 h-4 text-blue-600" />
               </div>
@@ -150,15 +150,15 @@ export default function DashboardPage() {
       {/* Charts Row */}
       <div className="grid lg:grid-cols-2 gap-6">
         {/* Performance Trend */}
-        <div className="bg-white rounded-2xl border border-gray-100 card-shadow-md p-6">
+        <div className="bg-surface rounded-2xl border border-rule card-shadow-md p-6">
           <h2 className="text-lg font-bold text-gray-900 mb-5" style={{ fontFamily: "var(--font-display)" }}>
-            Performance Trend
+            Performance trend
           </h2>
           <div className="h-52">
             {data.completedEvaluations === 0 ? (
               <div className="h-full flex flex-col items-center justify-center text-center bg-gray-50/50 rounded-2xl border border-dashed border-gray-200 p-4">
                 <TrendingUp className="w-8 h-8 text-gray-300 mb-2" />
-                <p className="text-gray-500 text-sm font-medium">No evaluation data yet</p>
+                <p className="text-graphite text-sm font-medium">No evaluation data yet</p>
                 <p className="text-gray-400 text-xs mt-0.5">Complete an evaluation to see trends</p>
               </div>
             ) : (
@@ -185,15 +185,15 @@ export default function DashboardPage() {
         </div>
 
         {/* Subject Performance */}
-        <div className="bg-white rounded-2xl border border-gray-100 card-shadow-md p-6">
+        <div className="bg-surface rounded-2xl border border-rule card-shadow-md p-6">
           <h2 className="text-lg font-bold text-gray-900 mb-5" style={{ fontFamily: "var(--font-display)" }}>
-            Subject Performance
+            Subject performance
           </h2>
           <div className="h-52">
             {data.completedEvaluations === 0 ? (
               <div className="h-full flex flex-col items-center justify-center text-center bg-gray-50/50 rounded-2xl border border-dashed border-gray-200 p-4">
                 <BarChart className="w-8 h-8 text-gray-300 mb-2" />
-                <p className="text-gray-500 text-sm font-medium">No evaluation data yet</p>
+                <p className="text-graphite text-sm font-medium">No evaluation data yet</p>
                 <p className="text-gray-400 text-xs mt-0.5">Grades will be grouped by subject here</p>
               </div>
             ) : (
@@ -214,32 +214,32 @@ export default function DashboardPage() {
       </div>
 
       {/* Recent Evaluations */}
-      <div className="bg-white rounded-2xl border border-gray-100 card-shadow-md p-6">
+      <div className="bg-surface rounded-2xl border border-rule card-shadow-md p-6">
         <div className="flex items-center justify-between mb-5">
           <h2 className="text-lg font-bold text-gray-900" style={{ fontFamily: "var(--font-display)" }}>
-            Recent Evaluations
+            Recent evaluations
           </h2>
           <Link href="/analytics" className="text-sm text-blue-600 font-medium hover:underline flex items-center gap-1">
-            View All <ChevronRight className="w-3.5 h-3.5" />
+            View all <ChevronRight className="w-3.5 h-3.5" />
           </Link>
         </div>
 
         {loading ? (
           <div className="flex flex-col items-center justify-center gap-2 py-8">
             <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
-            <p className="text-sm text-gray-500">Loading your evaluations...</p>
+            <p className="text-sm text-graphite">Loading your evaluations...</p>
           </div>
         ) : data.recentEvaluations.length === 0 ? (
           <div className="text-center py-10">
             <FileText className="w-12 h-12 text-gray-200 mx-auto mb-3" />
-            <p className="text-gray-500 font-medium">No evaluations yet</p>
+            <p className="text-graphite font-medium">No evaluations yet</p>
             <p className="text-gray-400 text-sm mt-1">Start your first evaluation to see results here</p>
             <Link
               href="/upload"
               className="inline-flex items-center gap-2 bg-fixed-ink text-white text-sm font-semibold px-5 py-2.5 rounded-xl mt-4 hover:opacity-90"
             >
               <PlusCircle className="w-4 h-4" />
-              Start Evaluation
+              Start evaluation
             </Link>
           </div>
         ) : (
@@ -255,7 +255,7 @@ export default function DashboardPage() {
                   </div>
                   <div>
                     <p className="font-semibold text-gray-900 text-sm">{ev.subject}</p>
-                    <p className="text-gray-500 text-xs">{ev.grade} • {new Date(ev.createdAt).toLocaleDateString("en-IN")}</p>
+                    <p className="text-graphite text-xs">{ev.grade} • {new Date(ev.createdAt).toLocaleDateString("en-IN")}</p>
                   </div>
                 </div>
 

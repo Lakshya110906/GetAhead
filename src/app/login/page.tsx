@@ -103,7 +103,7 @@ function LoginForm() {
       </div>
 
       {/* Right Panel */}
-      <div className="flex-1 flex items-center justify-center px-6 py-12 bg-white">
+      <div className="flex-1 flex items-center justify-center px-6 py-12 bg-surface">
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
@@ -122,9 +122,9 @@ function LoginForm() {
             className="text-3xl font-bold text-gray-900 mb-2"
             style={{ fontFamily: "var(--font-display)" }}
           >
-            Sign In
+            Sign in
           </h1>
-          <p className="text-gray-500 mb-8">
+          <p className="text-graphite mb-8">
             New here?{" "}
             <Link href="/signup" className="text-blue-600 font-medium hover:underline">
               Create an account
@@ -145,8 +145,8 @@ function LoginForm() {
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                Email Address
+              <label className="block text-sm font-medium text-ink mb-1.5">
+                Email address
               </label>
               <div className="relative">
                 <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -163,7 +163,7 @@ function LoginForm() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">
+              <label className="block text-sm font-medium text-ink mb-1.5">
                 Password
               </label>
               <div className="relative">
@@ -180,7 +180,7 @@ function LoginForm() {
                 <button
                   type="button"
                   onClick={() => setShowPass(!showPass)}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-graphite"
                 >
                   {showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
@@ -188,11 +188,11 @@ function LoginForm() {
             </div>
 
             <div className="flex items-center justify-between">
-              <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer">
+              <label className="flex items-center gap-2 text-sm text-graphite cursor-pointer">
                 <input type="checkbox" className="rounded border-gray-300" />
                 Remember me
               </label>
-              <Link href="/forgot-password" className="text-sm text-blue-605 hover:underline font-medium">
+              <Link href="/forgot-password" className="text-sm text-blue-600 hover:underline font-medium">
                 Forgot password?
               </Link>
             </div>
@@ -207,18 +207,11 @@ function LoginForm() {
                 <Loader2 className="w-4 h-4 animate-spin" />
               ) : (
                 <>
-                  Sign In <ArrowRight className="w-4 h-4" />
+                  Sign in <ArrowRight className="w-4 h-4" />
                 </>
               )}
             </button>
           </form>
-
-          <div className="mt-8 p-4 bg-blue-50 rounded-xl border border-blue-100">
-            <p className="text-xs text-blue-700 font-medium mb-1">Demo Account</p>
-            <p className="text-xs text-blue-600">
-              Sign up to create your account and get 10 free evaluations instantly.
-            </p>
-          </div>
         </motion.div>
       </div>
     </div>
@@ -231,7 +224,7 @@ export default function LoginPage() {
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
           <Loader2 className="w-8 h-8 animate-spin text-blue-600 mx-auto mb-2" />
-          <p className="text-gray-500 text-sm">Loading Sign In...</p>
+          <p className="text-graphite text-sm">Loading sign in…</p>
         </div>
       </div>
     }>

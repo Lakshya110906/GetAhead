@@ -44,7 +44,7 @@ const AUDIENCES = [
   },
   {
     id: "coaching",
-    tab: "Coaching centres",
+    tab: "Coaching centers",
     claim: "Mock test results back the same day you run the test, for the whole batch.",
     points: [
       "Upload an entire sitting at once instead of sheet by sheet",
@@ -52,7 +52,7 @@ const AUDIENCES = [
       "The same marking standard no matter which faculty member is on duty",
     ],
     href: "/coaching-centers",
-    linkLabel: "See more for coaching centres",
+    linkLabel: "See more for coaching centers",
   },
 ];
 
@@ -144,7 +144,7 @@ export function AudienceSwitcher() {
             <div>
               <ul className="space-y-4 mb-6">
                 {audience.points.map((p) => (
-                  <li key={p} className="flex gap-3 text-gray-600 leading-relaxed">
+                  <li key={p} className="flex gap-3 text-graphite leading-relaxed">
                     <span className="mt-2.5 w-3 h-px bg-rule flex-shrink-0" />
                     <span>{p}</span>
                   </li>

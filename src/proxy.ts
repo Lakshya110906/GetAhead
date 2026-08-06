@@ -3,9 +3,14 @@ import { getToken } from "next-auth/jwt";
 import { rateLimit } from "@/lib/rateLimit";
 
 // Edge rate limiting, keyed by IP and (when signed in) by user — the
-// privacy policy already claims "Rate limiting on all authentication
-// endpoints"; this is what makes that true. getToken() decodes the
-// NextAuth JWT cookie directly (no DB call), so this stays edge-safe.
+// privacy policy claims "Rate limiting on all authentication endpoints",
+// and this is the code that's supposed to make that true. It only actually
+// does, though, when KV_REST_API_URL/KV_REST_API_TOKEN are configured —
+// rateLimit() fails OPEN (allows every request) without them, and as of
+// this audit neither is set in any Vercel environment. Until a real KV
+// store is provisioned, this file exists but the claim doesn't hold.
+// (Renamed from middleware.ts: this Next.js version deprecated that file
+// convention in favor of proxy.ts — see node_modules/next/dist/docs.)
 
 const AUTH_LIMIT = { limit: 10, windowSeconds: 60 };
 const EVALUATION_ENQUEUE_LIMIT = { limit: 20, windowSeconds: 60 };
@@ -23,7 +28,7 @@ function tooManyRequests(resetAt: number) {
   );
 }
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   const isAuthEndpoint =

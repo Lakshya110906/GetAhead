@@ -80,9 +80,9 @@ export default function SupportTicketsPage() {
       case "RESOLVED":
         return "bg-green-50 text-green-700 border-green-100 dark:bg-green-950/20 dark:text-green-400 dark:border-green-900/30";
       case "CLOSED":
-        return "bg-gray-50 text-gray-700 border-gray-100 dark:bg-gray-900 dark:text-gray-400 dark:border-gray-800";
+        return "bg-paper text-ink border-rule dark:text-graphite";
       default:
-        return "bg-gray-50 text-gray-600";
+        return "bg-paper text-graphite";
     }
   };
 
@@ -95,12 +95,12 @@ export default function SupportTicketsPage() {
       case "MEDIUM":
         return "text-amber-600 bg-amber-50 dark:bg-amber-950/20 dark:text-amber-400";
       default:
-        return "text-gray-600 bg-gray-50 dark:bg-gray-900 dark:text-gray-400";
+        return "text-graphite bg-paper dark:text-graphite";
     }
   };
 
   return (
-    <div className="flex min-h-screen bg-gray-50 dark:bg-black">
+    <div className="flex min-h-screen bg-paper dark:bg-black">
       <DashboardSidebar />
       <div className="flex-1 flex flex-col min-w-0">
         <DashboardHeader />
@@ -111,10 +111,10 @@ export default function SupportTicketsPage() {
             {/* Header */}
             <div className="flex flex-wrap items-center justify-between gap-4">
               <div>
-                <h1 className="text-2xl font-bold text-gray-900 dark:text-white" style={{ fontFamily: "var(--font-display)" }}>
+                <h1 className="text-2xl font-bold text-ink dark:text-white" style={{ fontFamily: "var(--font-display)" }}>
                   My Support Tickets
                 </h1>
-                <p className="text-gray-500 text-sm">
+                <p className="text-graphite text-sm">
                   Track and continue previous conversation threads with our support staff
                 </p>
               </div>
@@ -127,20 +127,20 @@ export default function SupportTicketsPage() {
             </div>
 
             {/* Filter and Search controls */}
-            <div className="bg-white dark:bg-gray-900 p-4 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm flex flex-col md:flex-row gap-4 justify-between items-center">
+            <div className="bg-surface p-4 rounded-2xl border border-rule shadow-sm flex flex-col md:flex-row gap-4 justify-between items-center">
               <div className="relative w-full md:max-w-xs">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-graphite" />
                 <input
                   type="text"
                   placeholder="Search tickets..."
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-200 dark:border-gray-800 rounded-xl bg-gray-50/50 dark:bg-gray-950 text-sm text-gray-800 dark:text-gray-200 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10"
+                  className="w-full pl-10 pr-4 py-2 border border-rule rounded-xl bg-gray-50/50 text-sm text-ink focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10"
                 />
               </div>
 
               <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
-                <div className="flex items-center gap-2 text-xs font-semibold text-gray-500 dark:text-gray-400">
+                <div className="flex items-center gap-2 text-xs font-semibold text-graphite dark:text-graphite">
                   <Filter className="w-3.5 h-3.5" />
                   <span>Filter by:</span>
                 </div>
@@ -148,7 +148,7 @@ export default function SupportTicketsPage() {
                 <select
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value)}
-                  className="bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-lg text-xs px-3 py-1.5 text-gray-700 dark:text-gray-300 focus:outline-none focus:border-blue-500"
+                  className="bg-surface border border-rule rounded-lg text-xs px-3 py-1.5 text-ink focus:outline-none focus:border-blue-500"
                 >
                   <option value="all">All Statuses</option>
                   <option value="new">New</option>
@@ -162,7 +162,7 @@ export default function SupportTicketsPage() {
                 <select
                   value={priorityFilter}
                   onChange={(e) => setPriorityFilter(e.target.value)}
-                  className="bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-lg text-xs px-3 py-1.5 text-gray-700 dark:text-gray-300 focus:outline-none focus:border-blue-500"
+                  className="bg-surface border border-rule rounded-lg text-xs px-3 py-1.5 text-ink focus:outline-none focus:border-blue-500"
                 >
                   <option value="all">All Priorities</option>
                   <option value="low">Low</option>
@@ -175,19 +175,19 @@ export default function SupportTicketsPage() {
 
             {/* List */}
             {loading ? (
-              <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-12 text-center shadow-sm">
+              <div className="bg-surface border border-rule rounded-2xl p-12 text-center shadow-sm">
                 <Loader2 className="w-8 h-8 text-blue-500 animate-spin mx-auto mb-4" />
-                <p className="text-gray-500 text-sm">Loading tickets...</p>
+                <p className="text-graphite text-sm">Loading tickets...</p>
               </div>
             ) : filteredTickets.length === 0 ? (
-              <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-12 text-center shadow-sm select-none">
+              <div className="bg-surface border border-rule rounded-2xl p-12 text-center shadow-sm select-none">
                 <div className="w-14 h-14 rounded-2xl bg-blue-50 dark:bg-blue-950/20 flex items-center justify-center text-blue-500 mx-auto mb-4 border border-blue-100/50 dark:border-blue-900/30">
                   <MessageSquare className="w-6 h-6" />
                 </div>
-                <h3 className="font-bold text-gray-900 dark:text-white text-base mb-1" style={{ fontFamily: "var(--font-display)" }}>
+                <h3 className="font-bold text-ink dark:text-white text-base mb-1" style={{ fontFamily: "var(--font-display)" }}>
                   No tickets found
                 </h3>
-                <p className="text-gray-500 text-sm max-w-xs mx-auto mb-5">
+                <p className="text-graphite text-sm max-w-xs mx-auto mb-5">
                   {tickets.length === 0
                     ? "You haven't submitted any support requests yet. Create a ticket to get started."
                     : "Try adjusting your filters or search terms."}
@@ -202,21 +202,21 @@ export default function SupportTicketsPage() {
                 )}
               </div>
             ) : (
-              <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl overflow-hidden shadow-sm">
+              <div className="bg-surface border border-rule rounded-2xl overflow-hidden shadow-sm">
                 <div className="overflow-x-auto">
                   <table className="w-full text-left">
                     <thead>
-                      <tr className="border-b border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-950 select-none">
-                        <th className="text-xs font-semibold text-gray-500 dark:text-gray-400 px-6 py-4">Ticket</th>
-                        <th className="text-xs font-semibold text-gray-500 dark:text-gray-400 px-6 py-4">Subject</th>
-                        <th className="text-xs font-semibold text-gray-500 dark:text-gray-400 px-6 py-4">Category</th>
-                        <th className="text-xs font-semibold text-gray-500 dark:text-gray-400 px-6 py-4 text-center">Priority</th>
-                        <th className="text-xs font-semibold text-gray-500 dark:text-gray-400 px-6 py-4 text-center">Status</th>
-                        <th className="text-xs font-semibold text-gray-500 dark:text-gray-400 px-6 py-4 text-right">Created</th>
+                      <tr className="border-b border-rule bg-gray-50/50 select-none">
+                        <th className="text-xs font-semibold text-graphite dark:text-graphite px-6 py-4">Ticket</th>
+                        <th className="text-xs font-semibold text-graphite dark:text-graphite px-6 py-4">Subject</th>
+                        <th className="text-xs font-semibold text-graphite dark:text-graphite px-6 py-4">Category</th>
+                        <th className="text-xs font-semibold text-graphite dark:text-graphite px-6 py-4 text-center">Priority</th>
+                        <th className="text-xs font-semibold text-graphite dark:text-graphite px-6 py-4 text-center">Status</th>
+                        <th className="text-xs font-semibold text-graphite dark:text-graphite px-6 py-4 text-right">Created</th>
                         <th className="px-6 py-4"></th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-50 dark:divide-gray-800/60">
+                    <tbody className="divide-y divide-rule">
                       {filteredTickets.map((ticket) => (
                         <tr key={ticket.id} className="hover:bg-gray-50/50 dark:hover:bg-gray-800/20 transition-colors">
                           <td className="px-6 py-4 whitespace-nowrap">
@@ -225,12 +225,12 @@ export default function SupportTicketsPage() {
                             </Link>
                           </td>
                           <td className="px-6 py-4 min-w-[200px] max-w-xs truncate">
-                            <Link href={`/support/tickets/${ticket.id}`} className="text-sm font-semibold text-gray-900 dark:text-gray-100 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                            <Link href={`/support/tickets/${ticket.id}`} className="text-sm font-semibold text-ink hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
                               {ticket.subject}
                             </Link>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
-                            <span className="text-xs text-gray-600 dark:text-gray-400 capitalize">
+                            <span className="text-xs text-graphite dark:text-graphite capitalize">
                               {ticket.category}
                             </span>
                           </td>
@@ -244,7 +244,7 @@ export default function SupportTicketsPage() {
                               {ticket.status.replace("_", " ").toLowerCase()}
                             </span>
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-right text-xs text-gray-500 dark:text-gray-400">
+                          <td className="px-6 py-4 whitespace-nowrap text-right text-xs text-graphite dark:text-graphite">
                             {new Date(ticket.createdAt).toLocaleDateString("en-IN", {
                               day: "numeric",
                               month: "short",

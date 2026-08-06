@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Sign In — GetAhead AI",
+  title: "Sign in",
   description: "Sign in to your GetAhead AI account to view evaluations, analytics, and saved reports.",
   alternates: { canonical: "/login" },
 };

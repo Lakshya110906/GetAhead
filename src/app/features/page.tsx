@@ -18,10 +18,11 @@ import {
   Map,
   ChevronRight,
 } from "lucide-react";
+import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
 
 export const metadata: Metadata = {
-  title: "Features — GetAhead AI",
+  title: "Features",
   description: "Explore every feature of GetAhead AI: AI answer sheet evaluation, question paper generation, performance analytics, saved reports, and more.",
   alternates: { canonical: "/features" },
   openGraph: {
@@ -31,19 +32,25 @@ export const metadata: Metadata = {
     type: "website",
     images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "GetAhead" }],
   },
+  twitter: {
+    card: "summary_large_image",
+    title: "Features — GetAhead AI",
+    description: "From AI-powered grading to subject-wise analytics — everything you need to evaluate, improve, and excel.",
+    images: ["/og-image.png"],
+  },
 };
 
 const features = [
   {
     icon: Brain,
     id: "ai-evaluation",
-    title: "AI Answer Sheet Evaluation",
-    tagline: "Grade in seconds, not hours.",
+    title: "AI answer sheet evaluation",
+    tagline: "Grade in minutes, not hours.",
     color: "from-blue-500 to-blue-700",
     bg: "bg-blue-50",
     textColor: "text-blue-700",
     borderColor: "border-blue-100",
-    what: "Upload any answer sheet — handwritten or typed — and GetAhead AI uses Gemini 2.5 Flash to read, understand, and evaluate every answer with expert-level precision.",
+    what: "Upload any answer sheet — handwritten or typed — and the AI reads, understands, and evaluates every answer against your rubric, question by question.",
     why: "Manual grading is time-consuming, inconsistent, and often subjective. AI evaluation is fast and consistent — and we measure how close it lands to a real teacher's marks with a public accuracy figure, not just a claim.",
     benefits: [
       "Grade hundreds of sheets in the time it takes to grade one manually",
@@ -51,33 +58,33 @@ const features = [
       "Detailed marks breakdown per question",
       "Supports MCQ, descriptive, and mixed paper formats",
     ],
-    howItWorks: "After upload, our OCR engine extracts text from your sheet. The extracted content is then passed to Gemini 2.5 Flash with subject-specific evaluation rubrics. The AI scores each answer, identifies errors, and produces a structured marks breakdown — all in under 30 seconds.",
-    workflow: "Upload PDF → OCR extraction → Gemini evaluation → Marks + feedback in dashboard",
+    howItWorks: "After upload, our OCR engine extracts text from your sheet. The extracted content is then evaluated against subject-specific rubrics. The AI scores each answer, identifies errors, and produces a structured marks breakdown.",
+    workflow: "Upload PDF → OCR extraction → AI evaluation → Marks + feedback in dashboard",
   },
   {
     icon: GraduationCap,
     id: "question-paper-generator",
-    title: "AI Question Paper Generator",
-    tagline: "Create exam-ready papers in 60 seconds.",
+    title: "AI question paper generator",
+    tagline: "Create exam-ready papers in minutes.",
     color: "from-purple-500 to-purple-700",
     bg: "bg-purple-50",
     textColor: "text-purple-700",
     borderColor: "border-purple-100",
-    what: "Select subject, grade, difficulty level, and total marks. GetAhead AI generates a complete, structured question paper with a variety of question types — instantly.",
-    why: "Teachers spend hours crafting papers. With AI, you get a balanced, well-structured paper that covers the syllabus at your chosen difficulty — in under a minute.",
+    what: "Select subject, grade, difficulty level, and total marks. GetAhead AI generates a complete, structured question paper with a variety of question types.",
+    why: "Teachers spend hours crafting papers. With AI, you get a balanced, well-structured paper that covers the syllabus at your chosen difficulty.",
     benefits: [
       "Customise by subject, grade, and difficulty (Easy / Medium / Hard)",
       "Covers objective, short-answer, and long-answer formats",
       "Balanced mark distribution automatically applied",
       "Download as formatted text ready to paste or print",
     ],
-    howItWorks: "Enter your requirements — subject (e.g., Physics Class 12), grade, difficulty, and total marks. Gemini 2.5 Flash generates a full question paper following standard exam formats. You can regenerate instantly if you want a different version.",
-    workflow: "Select subject & grade → Set difficulty & marks → Generate → Download / Copy",
+    howItWorks: "Enter your requirements — subject (e.g., Physics Class 12), grade, difficulty, and total marks. The AI generates a full question paper following standard exam formats. You can regenerate if you want a different version.",
+    workflow: "Select subject and grade → Set difficulty and marks → Generate → Download / Copy",
   },
   {
     icon: MessageSquare,
     id: "ai-feedback",
-    title: "AI-Powered Feedback",
+    title: "AI-powered feedback",
     tagline: "Not just marks — actionable improvement guidance.",
     color: "from-teal-500 to-teal-700",
     bg: "bg-teal-50",
@@ -97,7 +104,7 @@ const features = [
   {
     icon: BarChart3,
     id: "performance-analytics",
-    title: "Performance Analytics",
+    title: "Performance analytics",
     tagline: "See your progress over time, not just today.",
     color: "from-orange-500 to-orange-700",
     bg: "bg-orange-50",
@@ -117,7 +124,7 @@ const features = [
   {
     icon: FileText,
     id: "subject-reports",
-    title: "Subject-wise Reports",
+    title: "Subject-wise reports",
     tagline: "Drill down into every subject, every question.",
     color: "from-green-500 to-green-700",
     bg: "bg-green-50",
@@ -137,7 +144,7 @@ const features = [
   {
     icon: Bookmark,
     id: "saved-reports",
-    title: "Saved Reports",
+    title: "Saved reports",
     tagline: "Bookmark your best evaluations for quick reference.",
     color: "from-pink-500 to-pink-700",
     bg: "bg-pink-50",
@@ -157,7 +164,7 @@ const features = [
   {
     icon: Download,
     id: "pdf-export",
-    title: "PDF Export",
+    title: "PDF export",
     tagline: "Take your report offline, share with teachers.",
     color: "from-sky-500 to-sky-700",
     bg: "bg-sky-50",
@@ -177,7 +184,7 @@ const features = [
   {
     icon: Clipboard,
     id: "clipboard-support",
-    title: "Clipboard Support",
+    title: "Clipboard support",
     tagline: "Copy questions and content in one click.",
     color: "from-indigo-500 to-indigo-700",
     bg: "bg-indigo-50",
@@ -197,7 +204,7 @@ const features = [
   {
     icon: Cloud,
     id: "secure-storage",
-    title: "Secure Cloud Storage",
+    title: "Secure cloud storage",
     tagline: "All your evaluations, safe and accessible.",
     color: "from-cyan-500 to-cyan-700",
     bg: "bg-cyan-50",
@@ -237,7 +244,7 @@ const features = [
   {
     icon: Map,
     id: "roadmap",
-    title: "Future Roadmap",
+    title: "Future roadmap",
     tagline: "What's coming next for GetAhead AI.",
     color: "from-violet-500 to-violet-700",
     bg: "bg-violet-50",
@@ -262,45 +269,30 @@ const features = [
 
 export default function FeaturesPage() {
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-paper">
       {/* Navbar */}
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-white/95 border-b border-gray-100">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16">
-          <Link href="/" className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-paper flex items-center justify-center">
-              <Brain className="w-4 h-4 text-white" />
-            </div>
-            <span className="font-bold text-gray-900" style={{ fontFamily: "var(--font-display)" }}>
-              Get<span className="text-ink">Ahead</span>
-            </span>
-          </Link>
-          <div className="flex items-center gap-3">
-            <Link href="/login" className="text-sm text-gray-600 hover:text-gray-900 font-medium transition-colors">Sign In</Link>
-            <Link href="/signup" className="text-sm bg-fixed-ink text-white font-semibold px-4 py-2 rounded-lg hover:opacity-90 transition-opacity">Get Started Free</Link>
-          </div>
-        </div>
-      </nav>
+      <SiteHeader />
 
       {/* Hero */}
       <section className="pt-32 pb-20 bg-paper">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <div className="inline-flex items-center gap-2 bg-blue-100 text-blue-700 text-sm font-semibold px-4 py-1.5 rounded-full mb-6">
             <Sparkles className="w-4 h-4" />
-            Powered by Gemini 2.5 Flash
+            Free during beta
           </div>
           <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6 leading-tight" style={{ fontFamily: "var(--font-display)" }}>
             Everything you need to<br />
             <span className="text-ink">evaluate and excel</span>
           </h1>
-          <p className="text-xl text-gray-600 leading-relaxed mb-10 max-w-2xl mx-auto">
+          <p className="text-xl text-graphite leading-relaxed mb-10 max-w-2xl mx-auto">
             GetAhead AI combines AI evaluation, smart analytics, and question generation into a single platform built for students, teachers, and institutions.
           </p>
           <div className="flex flex-wrap items-center justify-center gap-4">
             <Link href="/signup" className="inline-flex items-center gap-2 bg-fixed-ink text-white font-semibold px-6 py-3 rounded-xl hover:opacity-90 transition-opacity shadow-lg shadow-blue-500/20">
-              Start Free — No Card Required <ArrowRight className="w-4 h-4" />
+              Start free — no card required <ArrowRight className="w-4 h-4" />
             </Link>
-            <Link href="/how-it-works" className="inline-flex items-center gap-2 text-gray-700 font-medium px-6 py-3 rounded-xl border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-all">
-              See How It Works <ChevronRight className="w-4 h-4" />
+            <Link href="/how-it-works" className="inline-flex items-center gap-2 text-ink font-medium px-6 py-3 rounded-xl border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-all">
+              See how it works <ChevronRight className="w-4 h-4" />
             </Link>
           </div>
         </div>
@@ -309,7 +301,7 @@ export default function FeaturesPage() {
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 mt-16">
           <div className="flex flex-wrap items-center justify-center gap-2">
             {features.map((f) => (
-              <a key={f.id} href={`#${f.id}`} className="text-sm text-gray-600 hover:text-blue-600 bg-white border border-gray-200 hover:border-blue-200 px-3 py-1.5 rounded-lg transition-all">
+              <a key={f.id} href={`#${f.id}`} className="text-sm text-graphite hover:text-blue-600 bg-surface border border-gray-200 hover:border-blue-200 px-3 py-1.5 rounded-lg transition-all">
                 {f.title}
               </a>
             ))}
@@ -334,22 +326,22 @@ export default function FeaturesPage() {
                     <h2 className="text-3xl font-bold text-gray-900 mb-2" style={{ fontFamily: "var(--font-display)" }}>
                       {feature.title}
                     </h2>
-                    <p className="text-lg text-gray-500 mb-6 font-medium">{feature.tagline}</p>
+                    <p className="text-lg text-graphite mb-6 font-medium">{feature.tagline}</p>
 
                     <div className="space-y-6">
                       <div>
                         <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide mb-2">What it does</h3>
-                        <p className="text-gray-600 leading-relaxed">{feature.what}</p>
+                        <p className="text-graphite leading-relaxed">{feature.what}</p>
                       </div>
                       <div>
                         <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide mb-2">Why it matters</h3>
-                        <p className="text-gray-600 leading-relaxed">{feature.why}</p>
+                        <p className="text-graphite leading-relaxed">{feature.why}</p>
                       </div>
                       <div>
                         <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide mb-3">Benefits</h3>
                         <ul className="space-y-2">
                           {feature.benefits.map((b, i) => (
-                            <li key={i} className="flex items-start gap-2.5 text-sm text-gray-600">
+                            <li key={i} className="flex items-start gap-2.5 text-sm text-graphite">
                               <CheckCircle className={`w-4 h-4 mt-0.5 flex-shrink-0 ${feature.textColor}`} />
                               {b}
                             </li>
@@ -366,11 +358,11 @@ export default function FeaturesPage() {
                         <Icon className="w-10 h-10 text-white" />
                       </div>
                     </div>
-                    <div className="p-6 bg-white">
-                      <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">How it works</h4>
-                      <p className="text-sm text-gray-700 leading-relaxed mb-4">{feature.howItWorks}</p>
+                    <div className="p-6 bg-surface">
+                      <h4 className="text-xs font-semibold text-graphite uppercase tracking-wide mb-2">How it works</h4>
+                      <p className="text-sm text-ink leading-relaxed mb-4">{feature.howItWorks}</p>
                       <div className={`${feature.bg} border ${feature.borderColor} rounded-lg p-3`}>
-                        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Workflow</p>
+                        <p className="text-xs font-semibold text-graphite uppercase tracking-wide mb-1.5">Workflow</p>
                         <p className={`text-xs font-medium ${feature.textColor} leading-relaxed`}>{feature.workflow}</p>
                       </div>
                     </div>
@@ -390,10 +382,10 @@ export default function FeaturesPage() {
             Ready to use every feature?
           </h2>
           <p className="text-white/70 text-lg mb-8">
-            Create a free account and start evaluating answer sheets in under 2 minutes.
+            Create a free account and start evaluating answer sheets today.
           </p>
-          <Link href="/signup" className="inline-flex items-center gap-2 bg-white text-blue-600 font-bold px-8 py-4 rounded-xl hover:bg-blue-50 transition-colors shadow-lg group">
-            Get Started Free
+          <Link href="/signup" className="inline-flex items-center gap-2 bg-surface text-blue-600 font-bold px-8 py-4 rounded-xl hover:bg-blue-50 transition-colors shadow-lg group">
+            Get started free
             <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
           </Link>
         </div>

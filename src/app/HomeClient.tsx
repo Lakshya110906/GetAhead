@@ -15,13 +15,10 @@ import {
   TrendingUp,
   ChevronRight,
   ChevronDown,
-  Menu,
-  X,
   Target,
   ClipboardCheck,
 } from "lucide-react";
-import { useTheme } from "@/components/ThemeProvider";
-import { ThemeSlider } from "@/components/ThemeSlider";
+import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
 import { MarkedAnswerSheet } from "@/components/MarkedAnswerSheet";
 import { AudienceSwitcher } from "@/components/AudienceSwitcher";
@@ -64,20 +61,20 @@ const productMoments = [
 const steps = [
   {
     step: "Q1",
-    title: "Upload Answer Sheet",
-    desc: "Drag & drop your PDF or image. Supports handwritten and typed answers.",
+    title: "Upload answer sheet",
+    desc: "Drag and drop your PDF or image. Supports handwritten and typed answers.",
     icon: Zap,
   },
   {
     step: "Q2",
-    title: "AI Evaluates",
-    desc: "Gemini 2.5 Flash reads, understands, and grades with expert-level precision.",
+    title: "AI evaluates",
+    desc: "The AI reads each answer against the mark scheme and grades question by question, with its reasoning shown alongside every mark.",
     icon: Brain,
   },
   {
     step: "Q3",
-    title: "Get Detailed Report",
-    desc: "Receive marks breakdown, strengths/weaknesses, and study recommendations.",
+    title: "Get detailed report",
+    desc: "Receive a marks breakdown, strengths and weaknesses, and study recommendations.",
     icon: BarChart3,
   },
 ];
@@ -85,7 +82,7 @@ const steps = [
 const faqs = [
   {
     question: "How accurate is the AI evaluation?",
-    answer: "We measure this directly: every change to our grading prompt or rubric is run against a golden set of real answer sheets marked by real teachers, and we publish the resulting accuracy figure and methodology below — not a marketing claim. We still recommend a final teacher review for high-stakes examinations.",
+    answer: "We're building a golden set of real answer sheets marked by real teachers so we can measure this directly and re-check it on every prompt or rubric change, rather than just claim it — see the current status in the accuracy section below. Until that figure is published, treat the AI's marks as a strong first pass and have a teacher review anything high-stakes.",
   },
   {
     question: "What file formats are supported?",
@@ -119,11 +116,7 @@ export default function HomeClient({ accuracy }: { accuracy: AccuracySummary | n
     averagePercentage: null,
   });
 
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(null);
-  const { theme, setTheme } = useTheme();
-  const isDark = theme === "dark";
-
   useEffect(() => {
     fetch("/api/public/stats")
       .then((res) => res.json())
@@ -137,171 +130,38 @@ export default function HomeClient({ accuracy }: { accuracy: AccuracySummary | n
 
   const statsList = [
     dbStats.totalEvaluations >= 100
-      ? { value: dbStats.totalEvaluations.toString(), label: "Evaluations Done", icon: CheckCircle }
+      ? { value: dbStats.totalEvaluations.toString(), label: "Evaluations done", icon: CheckCircle }
       : null,
     dbStats.totalUsers >= 100
-      ? { value: dbStats.totalUsers.toString(), label: "Registered Users", icon: Users }
+      ? { value: dbStats.totalUsers.toString(), label: "Registered users", icon: Users }
       : null,
-    dbStats.averagePercentage !== null
-      ? { value: `${dbStats.averagePercentage}%`, label: "Avg. Evaluation Score", icon: TrendingUp }
+    dbStats.totalEvaluations >= 100 && dbStats.averagePercentage !== null
+      ? { value: `${dbStats.averagePercentage}%`, label: "Avg. evaluation score", icon: TrendingUp }
       : null,
     dbStats.averageTimeSeconds !== null
-      ? { value: `${dbStats.averageTimeSeconds}s`, label: "Avg. Evaluation Time", icon: Zap }
+      ? { value: `${dbStats.averageTimeSeconds}s`, label: "Avg. evaluation time", icon: Zap }
       : null,
   ].filter((stat): stat is { value: string; label: string; icon: typeof CheckCircle } => stat !== null);
 
-  const toggleDarkMode = () => { setTheme(isDark ? "default" : "dark"); };
-  void toggleDarkMode; // reserved for future navbar toggle
-
   return (
-    <div className={`min-h-screen ${isDark ? "bg-gray-950" : "bg-white"} transition-colors duration-300`}>
+    <div className="min-h-screen bg-paper transition-colors duration-300">
       {/* Navbar */}
-      <nav className={`fixed top-0 left-0 right-0 z-50 border-b transition-colors duration-300 ${isDark ? "bg-gray-950/95 border-gray-800" : "bg-white/95 border-gray-100"}` }>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <Link href="/" className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-fixed-ink flex items-center justify-center">
-                <Brain className="w-4 h-4 text-white" />
-              </div>
-              <span
-                className={`text-xl font-bold ${isDark ? "text-white" : "text-gray-900"}`}
-                style={{ fontFamily: "var(--font-display)" }}
-              >
-                Get<span className="text-ink">Ahead</span>
-              </span>
-            </Link>
-
-            <div className="hidden lg:flex items-center gap-8">
-              <Link
-                href="/features"
-                className={`text-sm font-medium transition-colors ${isDark ? "text-gray-300 hover:text-blue-400" : "text-gray-600 hover:text-blue-600"}`}
-              >
-                Features
-              </Link>
-              <Link
-                href="/how-it-works"
-                className={`text-sm font-medium transition-colors ${isDark ? "text-gray-300 hover:text-blue-400" : "text-gray-600 hover:text-blue-600"}`}
-              >
-                How It Works
-              </Link>
-
-              <Link
-                href="/faq"
-                className={`text-sm font-medium transition-colors ${isDark ? "text-gray-300 hover:text-blue-400" : "text-gray-600 hover:text-blue-600"}`}
-              >
-                FAQ
-              </Link>
-            </div>
-
-            <div className="hidden lg:flex items-center gap-3 flex-shrink-0">
-              {/* Dark/Light Toggle Slider */}
-              <ThemeSlider />
-              {isAuthenticated ? (
-                <Link
-                  href="/dashboard"
-                  className="text-sm font-semibold text-white bg-fixed-ink rounded-lg px-5 py-2 hover:opacity-90 transition-opacity shadow-sm whitespace-nowrap"
-                >
-                  Go to Dashboard
-                </Link>
-              ) : (
-                <>
-                  <Link
-                    href="/login"
-                    className={`text-sm font-medium transition-colors px-4 py-2 whitespace-nowrap ${isDark ? "text-gray-300 hover:text-blue-400" : "text-gray-700 hover:text-blue-600"}`}
-                  >
-                    Sign In
-                  </Link>
-                  <Link
-                    href="/signup"
-                    className="text-sm font-semibold text-white bg-fixed-ink rounded-lg px-5 py-2 hover:opacity-90 transition-opacity shadow-sm whitespace-nowrap"
-                  >
-                    Start Free
-                  </Link>
-                </>
-              )}
-            </div>
-
-            <div className="lg:hidden flex items-center gap-2">
-              <ThemeSlider />
-              <button
-                className={`p-2 ${isDark ? "text-gray-300" : "text-gray-700"}`}
-                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                aria-expanded={mobileMenuOpen}
-                aria-controls="mobile-menu"
-                aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
-              >
-                {mobileMenuOpen ? (
-                  <X className="w-5 h-5" aria-hidden="true" />
-                ) : (
-                  <Menu className="w-5 h-5" aria-hidden="true" />
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Mobile menu */}
-        {mobileMenuOpen && (
-          <div id="mobile-menu" className={`lg:hidden border-t px-4 py-4 space-y-3 ${isDark ? "border-gray-800 bg-gray-950" : "border-gray-100 bg-white"}`}>
-            <Link
-              href="/features"
-              className={`block text-sm font-medium ${isDark ? "text-gray-300" : "text-gray-600"}`}
-            >
-              Features
-            </Link>
-            <Link
-              href="/how-it-works"
-              className={`block text-sm font-medium ${isDark ? "text-gray-300" : "text-gray-600"}`}
-            >
-              How It Works
-            </Link>
-            <Link
-              href="/faq"
-              className={`block text-sm font-medium ${isDark ? "text-gray-300" : "text-gray-600"}`}
-            >
-              FAQ
-            </Link>
-            {isAuthenticated ? (
-              <Link
-                href="/dashboard"
-                className="block text-white bg-fixed-ink rounded-lg px-4 py-2 text-sm font-semibold text-center"
-              >
-                Go to Dashboard
-              </Link>
-            ) : (
-              <>
-                <Link
-                  href="/login"
-                  className={`block text-sm font-medium ${isDark ? "text-gray-300" : "text-gray-700"}`}
-                >
-                  Sign In
-                </Link>
-                <Link
-                  href="/signup"
-                  className="block text-white bg-fixed-ink rounded-lg px-4 py-2 text-sm font-semibold text-center"
-                >
-                  Start Free
-                </Link>
-              </>
-            )}
-          </div>
-        )}
-      </nav>
+      <SiteHeader />
 
       <main>
       {/* Hero */}
-      <section className={`pt-24 pb-20 overflow-hidden transition-colors duration-300 ${isDark ? "bg-gray-950" : "bg-paper"}`}>
+      <section className={`pt-24 pb-20 overflow-hidden transition-colors duration-300 bg-paper`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div>
               <h1
-                className={`text-4xl md:text-5xl lg:text-6xl font-bold leading-tight mb-6 ${isDark ? "text-white" : "text-gray-900"}`}
+                className={`text-4xl md:text-5xl lg:text-6xl font-bold leading-tight mb-6 text-ink`}
                 style={{ fontFamily: "var(--font-display)" }}
               >
                 Upload an answer sheet and see exactly where every mark was won or lost.
               </h1>
 
-              <p className={`text-lg mb-8 max-w-lg leading-relaxed ${isDark ? "text-gray-300" : "text-gray-600"}`}>
+              <p className={`text-lg mb-8 max-w-lg leading-relaxed text-graphite`}>
                 Handwritten or typed, one sheet or many — get a full marks breakdown, question-by-question feedback, and what to study next, in seconds.
               </p>
 
@@ -318,8 +178,8 @@ export default function HomeClient({ accuracy }: { accuracy: AccuracySummary | n
               {dbStats.totalUsers >= 100 && (
                 <div className="flex items-center gap-6">
                   <div>
-                    <p className={`text-sm ${isDark ? "text-gray-400" : "text-gray-600"}`}>
-                      Join <strong className={isDark ? "text-white" : "text-gray-900"}>{dbStats.totalUsers}</strong> registered users on GetAhead
+                    <p className={`text-sm text-graphite`}>
+                      Join <strong className={"text-ink"}>{dbStats.totalUsers}</strong> registered users on GetAhead
                     </p>
                   </div>
                 </div>
@@ -364,12 +224,12 @@ export default function HomeClient({ accuracy }: { accuracy: AccuracySummary | n
           <div className="text-center mb-16">
             <span className="text-blue-600 font-semibold text-sm uppercase tracking-wider">What it looks like</span>
             <h2
-              className={`text-3xl md:text-4xl font-bold mt-2 mb-4 ${isDark ? "text-white" : "text-gray-900"}`}
+              className={`text-3xl md:text-4xl font-bold mt-2 mb-4 text-ink`}
               style={{ fontFamily: "var(--font-display)" }}
             >
               Three things GetAhead actually does
             </h2>
-            <p className={`max-w-2xl mx-auto text-lg ${isDark ? "text-gray-400" : "text-gray-600"}`}>
+            <p className={`max-w-2xl mx-auto text-lg text-graphite`}>
               Not a mockup — this is the running product.
             </p>
           </div>
@@ -397,7 +257,7 @@ export default function HomeClient({ accuracy }: { accuracy: AccuracySummary | n
                   >
                     {moment.title}
                   </h3>
-                  <p className="text-gray-600 leading-relaxed">{moment.description}</p>
+                  <p className="text-graphite leading-relaxed">{moment.description}</p>
                 </div>
                 <div className={moment.reverse ? "md:order-1" : ""}>
                   <ScreenshotSlot src={moment.screenshotSrc} alt={moment.title} caption={moment.screenshotCaption} />
@@ -409,7 +269,7 @@ export default function HomeClient({ accuracy }: { accuracy: AccuracySummary | n
       </section>
 
       {/* Accuracy — a real, measured figure, not a testimonial */}
-      <section id="accuracy" className="py-20 bg-white">
+      <section id="accuracy" className="py-20 bg-surface">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <span className="text-teal-600 font-semibold text-sm uppercase tracking-wider">Accuracy</span>
@@ -419,7 +279,7 @@ export default function HomeClient({ accuracy }: { accuracy: AccuracySummary | n
             >
               How close is the AI to a real teacher?
             </h2>
-            <p className="max-w-2xl mx-auto text-lg text-gray-600">
+            <p className="max-w-2xl mx-auto text-lg text-graphite">
               We measure it, we don&apos;t just claim it — against a golden set of real, teacher-marked answer sheets, re-run on every change to the grading prompt or rubric.
             </p>
           </div>
@@ -427,35 +287,35 @@ export default function HomeClient({ accuracy }: { accuracy: AccuracySummary | n
           {accuracy ? (
             <>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-10">
-                <div className="text-center rounded-2xl p-6 border border-gray-100 bg-gray-50">
+                <div className="text-center rounded-2xl p-6 border border-rule bg-gray-50">
                   <Target className="w-6 h-6 text-teal-500 mx-auto mb-2" />
                   <p className="text-3xl font-bold" style={{ fontFamily: "var(--font-display)" }}>
                     {accuracy.mae}
                   </p>
-                  <p className="text-sm mt-1 text-gray-600">
+                  <p className="text-sm mt-1 text-graphite">
                     mean absolute error (marks)
                   </p>
                 </div>
-                <div className="text-center rounded-2xl p-6 border border-gray-100 bg-gray-50">
+                <div className="text-center rounded-2xl p-6 border border-rule bg-gray-50">
                   <CheckCircle className="w-6 h-6 text-teal-500 mx-auto mb-2" />
                   <p className="text-3xl font-bold" style={{ fontFamily: "var(--font-display)" }}>
                     {accuracy.within1Pct}%
                   </p>
-                  <p className="text-sm mt-1 text-gray-600">
+                  <p className="text-sm mt-1 text-graphite">
                     within 1 mark of the teacher
                   </p>
                 </div>
-                <div className="text-center rounded-2xl p-6 border border-gray-100 bg-gray-50">
+                <div className="text-center rounded-2xl p-6 border border-rule bg-gray-50">
                   <ClipboardCheck className="w-6 h-6 text-teal-500 mx-auto mb-2" />
                   <p className="text-3xl font-bold" style={{ fontFamily: "var(--font-display)" }}>
                     {accuracy.within2Pct}%
                   </p>
-                  <p className="text-sm mt-1 text-gray-600">
+                  <p className="text-sm mt-1 text-graphite">
                     within 2 marks of the teacher
                   </p>
                 </div>
               </div>
-              <p className="text-center text-sm max-w-2xl mx-auto text-gray-500">
+              <p className="text-center text-sm max-w-2xl mx-auto text-graphite">
                 Methodology: {accuracy.scoredCases} real answer sheets, marked by real teachers, spanning multiple
                 subjects, grade levels, and handwriting quality — including deliberately hard cases (messy
                 handwriting, partial credit, blank answers). Last measured{" "}
@@ -463,7 +323,7 @@ export default function HomeClient({ accuracy }: { accuracy: AccuracySummary | n
               </p>
             </>
           ) : (
-            <div className="text-center rounded-2xl p-8 border max-w-2xl mx-auto border-gray-100 bg-gray-50 text-gray-600">
+            <div className="text-center rounded-2xl p-8 border max-w-2xl mx-auto border-rule bg-gray-50 text-graphite">
               <ClipboardCheck className="w-6 h-6 text-teal-500 mx-auto mb-3" />
               <p className="text-sm">
                 We&apos;re building this golden set right now — a set of real answer sheets marked by real teachers
@@ -484,7 +344,7 @@ export default function HomeClient({ accuracy }: { accuracy: AccuracySummary | n
               className="text-3xl md:text-4xl font-bold text-gray-900 mt-2 mb-4"
               style={{ fontFamily: "var(--font-display)" }}
             >
-              Get Results in 3 Simple Steps
+              Get results in 3 simple steps
             </h2>
           </div>
 
@@ -516,7 +376,7 @@ export default function HomeClient({ accuracy }: { accuracy: AccuracySummary | n
                 >
                   {step.title}
                 </h3>
-                <p className="text-gray-600 leading-relaxed">{step.desc}</p>
+                <p className="text-graphite leading-relaxed">{step.desc}</p>
               </motion.div>
             ))}
           </div>
@@ -532,7 +392,7 @@ export default function HomeClient({ accuracy }: { accuracy: AccuracySummary | n
               className="text-3xl md:text-4xl font-bold text-gray-900 mt-2"
               style={{ fontFamily: "var(--font-display)" }}
             >
-              Frequently Asked Questions
+              Frequently asked questions
             </h2>
           </div>
 
@@ -544,7 +404,7 @@ export default function HomeClient({ accuracy }: { accuracy: AccuracySummary | n
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.3, delay: i * 0.05 }}
-                className="bg-white rounded-xl border border-gray-100 overflow-hidden shadow-sm"
+                className="bg-surface rounded-xl border border-rule overflow-hidden shadow-sm"
               >
                 <button
                   id={`faq-question-${i}`}
@@ -569,7 +429,7 @@ export default function HomeClient({ accuracy }: { accuracy: AccuracySummary | n
                     openFaqIndex === i ? "max-h-40 border-t border-gray-50" : "max-h-0"
                   }`}
                 >
-                  <p className="p-5 text-gray-600 text-sm leading-relaxed bg-gray-50/50">
+                  <p className="p-5 text-graphite text-sm leading-relaxed bg-gray-50/50">
                     {faq.answer}
                     {faq.question === "Is my exam paper data kept private?" && (
                       <>
@@ -602,16 +462,16 @@ export default function HomeClient({ accuracy }: { accuracy: AccuracySummary | n
               className="text-3xl md:text-4xl font-bold text-white mb-4"
               style={{ fontFamily: "var(--font-display)" }}
             >
-              Ready to Transform Your Exam Performance?
+              Upload your next answer sheet and find out where the marks went
             </h2>
             <p className="text-white/70 text-lg mb-8">
-              Unlock your academic potential with GetAhead AI&apos;s precise answer sheet evaluations and question paper generators — free during beta, with a generous daily quota.
+              Evaluate an answer sheet or generate a practice paper — free during beta, with a generous daily quota.
             </p>
             <Link
               href={ctaUrl}
-              className="inline-flex items-center gap-2 bg-white text-blue-600 font-bold px-8 py-4 rounded-xl hover:bg-blue-50 transition-colors shadow-lg group"
+              className="inline-flex items-center gap-2 bg-surface text-blue-600 font-bold px-8 py-4 rounded-xl hover:bg-blue-50 transition-colors shadow-lg group"
             >
-              Start Free Today
+              Start free
               <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
             </Link>
           </motion.div>

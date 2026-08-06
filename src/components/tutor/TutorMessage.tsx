@@ -51,12 +51,12 @@ export function TutorMessageComponent({ message, isLast, onRegenerate, isStreami
         <div className={`rounded-2xl px-4 py-3 text-sm shadow-sm ${
           isUser 
             ? "bg-blue-600 text-white rounded-tr-none" 
-            : "bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 text-gray-800 dark:text-gray-200 rounded-tl-none"
+            : "bg-surface border border-rule text-ink rounded-tl-none"
         }`}>
           {isUser ? (
             <p className="whitespace-pre-wrap leading-relaxed break-words">{message.content}</p>
           ) : (
-            <div className="prose dark:prose-invert prose-sm max-w-none prose-p:leading-relaxed prose-pre:bg-gray-50 prose-pre:dark:bg-gray-950 prose-pre:border prose-pre:border-gray-100 prose-pre:dark:border-gray-800 prose-pre:p-3 prose-pre:rounded-xl break-words">
+            <div className="prose dark:prose-invert prose-sm max-w-none prose-p:leading-relaxed prose-pre:bg-paper prose-pre: prose-pre:border prose-pre:border-rule prose-pre: prose-pre:p-3 prose-pre:rounded-xl break-words">
               <ReactMarkdown remarkPlugins={[remarkGfm]}>
                 {message.content}
               </ReactMarkdown>
@@ -65,7 +65,7 @@ export function TutorMessageComponent({ message, isLast, onRegenerate, isStreami
         </div>
 
         {/* Footer info (Timestamp & Actions) */}
-        <div className={`flex items-center gap-3 mt-1.5 text-[10px] text-gray-400 dark:text-gray-500 ${
+        <div className={`flex items-center gap-3 mt-1.5 text-[10px] text-graphite dark:text-graphite ${
           isUser ? "justify-end" : "justify-start"
         }`}>
           <span>{formatTime(message.createdAt)}</span>

@@ -52,7 +52,7 @@ export function DashboardSidebar() {
       {/* Logo */}
       <Link
         href="/"
-        className={`flex items-center gap-3 px-4 py-5 border-b border-gray-100 ${collapsed ? "justify-center" : ""} hover:opacity-90 transition-opacity`}
+        className={`flex items-center gap-3 px-4 py-5 border-b border-rule ${collapsed ? "justify-center" : ""} hover:opacity-90 transition-opacity`}
       >
         <div className="w-8 h-8 rounded-xl bg-fixed-ink flex items-center justify-center flex-shrink-0">
           <Brain className="w-4 h-4 text-white" />
@@ -77,10 +77,10 @@ export function DashboardSidebar() {
               className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all group ${
                 isActive
                   ? "bg-fixed-ink text-white shadow-sm"
-                  : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                  : "text-graphite hover:bg-gray-50 hover:text-ink"
               } ${collapsed ? "justify-center" : ""}`}
             >
-              <item.icon className={`w-4 h-4 flex-shrink-0 ${isActive ? "text-white" : "text-gray-400 group-hover:text-gray-600"}`} />
+              <item.icon className={`w-4 h-4 flex-shrink-0 ${isActive ? "text-white" : "text-gray-400 group-hover:text-graphite"}`} />
               {!collapsed && <span>{item.label}</span>}
             </Link>
           );
@@ -88,7 +88,7 @@ export function DashboardSidebar() {
       </nav>
 
       {/* User + Logout */}
-      <div className="border-t border-gray-100 p-3 pb-16">
+      <div className="border-t border-rule p-3 pb-16">
         {!collapsed && session?.user && (
           <div className="flex items-center gap-3 px-3 py-2 mb-2">
             <div className="w-8 h-8 rounded-full bg-fixed-ink flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
@@ -96,7 +96,7 @@ export function DashboardSidebar() {
             </div>
             <div className="min-w-0">
               <p className="text-sm font-semibold text-gray-900 truncate">{session.user.name}</p>
-              <p className="text-xs text-gray-500 truncate">{session.user.email}</p>
+              <p className="text-xs text-graphite truncate">{session.user.email}</p>
             </div>
           </div>
         )}
@@ -106,11 +106,11 @@ export function DashboardSidebar() {
 
         <button
           onClick={() => signOut({ callbackUrl: "/" })}
-          className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-gray-500 hover:bg-red-50 hover:text-red-600 transition-colors mt-1 ${collapsed ? "justify-center" : ""}`}
-          title={collapsed ? "Sign Out" : undefined}
+          className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-graphite hover:bg-red-50 hover:text-red-600 transition-colors mt-1 ${collapsed ? "justify-center" : ""}`}
+          title={collapsed ? "Sign out" : undefined}
         >
           <LogOut className="w-4 h-4 flex-shrink-0" />
-          {!collapsed && <span>Sign Out</span>}
+          {!collapsed && <span>Sign out</span>}
         </button>
       </div>
     </>
@@ -120,7 +120,7 @@ export function DashboardSidebar() {
     <>
       {/* Desktop Sidebar */}
       <aside
-        className={`hidden lg:flex flex-col fixed left-0 top-0 bottom-0 bg-white border-r border-gray-100 card-shadow transition-all duration-300 z-30 ${
+        className={`hidden lg:flex flex-col fixed left-0 top-0 bottom-0 bg-surface border-r border-rule card-shadow transition-all duration-300 z-30 ${
           collapsed ? "w-16" : "w-60"
         }`}
       >
@@ -129,12 +129,12 @@ export function DashboardSidebar() {
         {/* Collapse Toggle */}
         <button
           onClick={() => setCollapsed(!collapsed)}
-          className="absolute -right-3 top-20 w-6 h-6 bg-white border border-gray-200 rounded-full flex items-center justify-center shadow-sm hover:shadow-md transition-shadow"
+          className="absolute -right-3 top-20 w-6 h-6 bg-surface border border-gray-200 rounded-full flex items-center justify-center shadow-sm hover:shadow-md transition-shadow"
         >
           {collapsed ? (
-            <ChevronRight className="w-3 h-3 text-gray-500" />
+            <ChevronRight className="w-3 h-3 text-graphite" />
           ) : (
-            <ChevronLeft className="w-3 h-3 text-gray-500" />
+            <ChevronLeft className="w-3 h-3 text-graphite" />
           )}
         </button>
       </aside>
@@ -142,7 +142,7 @@ export function DashboardSidebar() {
       {/* Mobile Sidebar */}
       <div className="lg:hidden">
         <button
-          className="fixed top-4 left-4 z-50 w-9 h-9 bg-white rounded-xl border border-gray-200 flex items-center justify-center shadow-sm"
+          className="fixed top-4 left-4 z-50 w-9 h-9 bg-surface rounded-xl border border-gray-200 flex items-center justify-center shadow-sm"
           onClick={() => setMobileOpen(!mobileOpen)}
         >
           {mobileOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
@@ -154,7 +154,7 @@ export function DashboardSidebar() {
               className="fixed inset-0 bg-black/40 z-40"
               onClick={() => setMobileOpen(false)}
             />
-            <aside className="fixed left-0 top-0 bottom-0 w-64 bg-white z-50 flex flex-col border-r border-gray-100 shadow-2xl">
+            <aside className="fixed left-0 top-0 bottom-0 w-64 bg-surface z-50 flex flex-col border-r border-rule shadow-2xl">
               {renderSidebarContent()}
             </aside>
           </>

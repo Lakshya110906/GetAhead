@@ -129,22 +129,22 @@ export default function UserTicketDetailPage() {
       case "RESOLVED":
         return "bg-green-50 text-green-700 border-green-100 dark:bg-green-950/20 dark:text-green-400 dark:border-green-900/30";
       case "CLOSED":
-        return "bg-gray-50 text-gray-700 border-gray-100 dark:bg-gray-900 dark:text-gray-400 dark:border-gray-800";
+        return "bg-paper text-ink border-rule dark:text-graphite";
       default:
-        return "bg-gray-50 text-gray-600";
+        return "bg-paper text-graphite";
     }
   };
 
   if (loading) {
     return (
-      <div className="flex min-h-screen bg-gray-50 dark:bg-black">
+      <div className="flex min-h-screen bg-paper dark:bg-black">
         <DashboardSidebar />
         <div className="flex-1 flex flex-col min-w-0">
           <DashboardHeader />
           <main className="flex-1 flex items-center justify-center p-6">
             <div className="text-center">
               <Loader2 className="w-10 h-10 text-blue-500 animate-spin mx-auto mb-4" />
-              <p className="text-gray-500 text-sm font-medium">Loading ticket conversation...</p>
+              <p className="text-graphite text-sm font-medium">Loading ticket conversation...</p>
             </div>
           </main>
         </div>
@@ -154,17 +154,17 @@ export default function UserTicketDetailPage() {
 
   if (error || !ticket) {
     return (
-      <div className="flex min-h-screen bg-gray-50 dark:bg-black">
+      <div className="flex min-h-screen bg-paper dark:bg-black">
         <DashboardSidebar />
         <div className="flex-1 flex flex-col min-w-0">
           <DashboardHeader />
           <main className="flex-1 flex items-center justify-center p-6">
-            <div className="max-w-md text-center bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-8 shadow-sm">
+            <div className="max-w-md text-center bg-surface border border-rule rounded-2xl p-8 shadow-sm">
               <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4 animate-bounce" />
-              <h2 className="font-bold text-gray-900 dark:text-white text-lg mb-2" style={{ fontFamily: "var(--font-display)" }}>
+              <h2 className="font-bold text-ink dark:text-white text-lg mb-2" style={{ fontFamily: "var(--font-display)" }}>
                 Unable to Load Ticket
               </h2>
-              <p className="text-gray-500 text-sm mb-6">{error || "The ticket was not found."}</p>
+              <p className="text-graphite text-sm mb-6">{error || "The ticket was not found."}</p>
               <button
                 onClick={() => router.push("/support/tickets")}
                 className="inline-flex items-center gap-2 bg-fixed-ink text-white font-semibold px-5 py-2.5 rounded-xl hover:opacity-90 transition-opacity text-sm shadow-md cursor-pointer"
@@ -179,7 +179,7 @@ export default function UserTicketDetailPage() {
   }
 
   return (
-    <div className="flex min-h-screen bg-gray-50 dark:bg-black">
+    <div className="flex min-h-screen bg-paper dark:bg-black">
       <DashboardSidebar />
       <div className="flex-1 flex flex-col min-w-0">
         <DashboardHeader />
@@ -188,14 +188,14 @@ export default function UserTicketDetailPage() {
           <div className="max-w-5xl mx-auto w-full flex-1 flex flex-col lg:flex-row gap-6 overflow-hidden">
             
             {/* Left Column: Chat Conversation */}
-            <div className="flex-1 flex flex-col bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden min-h-[450px]">
+            <div className="flex-1 flex flex-col bg-surface rounded-2xl border border-rule shadow-sm overflow-hidden min-h-[450px]">
               
               {/* Ticket Chat Header */}
-              <div className="border-b border-gray-100 dark:border-gray-800 p-4 bg-gray-50/50 dark:bg-gray-950 flex items-center justify-between gap-4">
+              <div className="border-b border-rule p-4 bg-gray-50/50 flex items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
                   <button
                     onClick={() => router.push("/support/tickets")}
-                    className="w-8 h-8 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl flex items-center justify-center hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-500 transition-colors"
+                    className="w-8 h-8 bg-surface border border-rule rounded-xl flex items-center justify-center hover:bg-paper dark:hover:bg-gray-800 text-graphite transition-colors"
                   >
                     <ArrowLeft className="w-4 h-4" />
                   </button>
@@ -208,7 +208,7 @@ export default function UserTicketDetailPage() {
                         {ticket.status.replace("_", " ").toLowerCase()}
                       </span>
                     </div>
-                    <h2 className="font-bold text-gray-900 dark:text-white text-sm truncate mt-1 max-w-xs md:max-w-md">
+                    <h2 className="font-bold text-ink dark:text-white text-sm truncate mt-1 max-w-xs md:max-w-md">
                       {ticket.subject}
                     </h2>
                   </div>
@@ -218,7 +218,7 @@ export default function UserTicketDetailPage() {
               {/* Chat Timeline list */}
               <div 
                 ref={scrollRef}
-                className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-thin bg-gray-50/20 dark:bg-gray-950/20"
+                className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-thin bg-gray-50/20"
               >
                 {/* Original ticket message */}
                 <div className="flex gap-3 items-start mb-6">
@@ -226,11 +226,11 @@ export default function UserTicketDetailPage() {
                     <User className="w-4 h-4" />
                   </div>
                   <div className="flex flex-col max-w-[85%]">
-                    <div className="bg-white dark:bg-gray-950 border border-gray-200/60 dark:border-gray-850 rounded-2xl px-4 py-3 text-sm text-gray-800 dark:text-gray-200 rounded-tl-none shadow-sm">
-                      <p className="font-bold text-xs text-gray-500 dark:text-gray-400 mb-1">{ticket.name} (Original Query)</p>
+                    <div className="bg-surface border border-rule/60 rounded-2xl px-4 py-3 text-sm text-ink rounded-tl-none shadow-sm">
+                      <p className="font-bold text-xs text-graphite dark:text-graphite mb-1">{ticket.name} (Original Query)</p>
                       <p className="whitespace-pre-wrap leading-relaxed break-words">{ticket.message}</p>
                     </div>
-                    <span className="text-[10px] text-gray-400 mt-1 pl-1">
+                    <span className="text-[10px] text-graphite mt-1 pl-1">
                       {new Date(ticket.createdAt).toLocaleString("en-IN")}
                     </span>
                   </div>
@@ -255,7 +255,7 @@ export default function UserTicketDetailPage() {
                       <div className="flex flex-col max-w-[80%]">
                         <div className={`rounded-2xl px-4 py-3 text-sm shadow-sm ${
                           isAdmin 
-                            ? "bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 text-gray-800 dark:text-gray-200 rounded-tl-none" 
+                            ? "bg-surface border border-rule text-ink rounded-tl-none" 
                             : "bg-blue-600 text-white rounded-tr-none"
                         }`}>
                           <p className="font-bold text-[10px] uppercase tracking-wide mb-1.5 opacity-60">
@@ -263,7 +263,7 @@ export default function UserTicketDetailPage() {
                           </p>
                           <p className="whitespace-pre-wrap leading-relaxed break-words">{reply.content}</p>
                         </div>
-                        <span className={`text-[10px] text-gray-400 mt-1 px-1 ${!isAdmin ? "text-right" : ""}`}>
+                        <span className={`text-[10px] text-graphite mt-1 px-1 ${!isAdmin ? "text-right" : ""}`}>
                           {new Date(reply.createdAt).toLocaleString("en-IN")}
                         </span>
                       </div>
@@ -274,14 +274,14 @@ export default function UserTicketDetailPage() {
 
               {/* Chat Input area */}
               {ticket.status.toUpperCase() !== "CLOSED" ? (
-                <form onSubmit={handleSendReply} className="border-t border-gray-100 dark:border-gray-800 p-3 bg-white dark:bg-gray-900 flex items-center gap-2">
+                <form onSubmit={handleSendReply} className="border-t border-rule p-3 bg-surface flex items-center gap-2">
                   <input
                     type="text"
                     value={replyInput}
                     onChange={(e) => setReplyInput(e.target.value)}
                     placeholder="Type your reply..."
                     disabled={submitting}
-                    className="flex-1 px-4 py-2.5 border border-gray-200 dark:border-gray-800 rounded-xl text-sm focus:outline-none focus:border-blue-500 bg-gray-50/50 dark:bg-gray-950 text-gray-800 dark:text-gray-200"
+                    className="flex-1 px-4 py-2.5 border border-rule rounded-xl text-sm focus:outline-none focus:border-blue-500 bg-gray-50/50 text-ink"
                   />
                   <button
                     type="submit"
@@ -289,7 +289,7 @@ export default function UserTicketDetailPage() {
                     className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${
                       replyInput.trim() && !submitting
                         ? "bg-blue-600 text-white hover:bg-blue-700 shadow-sm cursor-pointer hover:scale-105"
-                        : "bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-600 cursor-not-allowed"
+                        : "bg-surface-2 text-graphite dark:text-graphite cursor-not-allowed"
                     }`}
                   >
                     {submitting ? (
@@ -300,8 +300,8 @@ export default function UserTicketDetailPage() {
                   </button>
                 </form>
               ) : (
-                <div className="border-t border-gray-100 dark:border-gray-800 p-4 bg-gray-50 dark:bg-gray-950 text-center select-none">
-                  <p className="text-xs text-gray-500 font-semibold flex items-center justify-center gap-1.5">
+                <div className="border-t border-rule p-4 bg-paper text-center select-none">
+                  <p className="text-xs text-graphite font-semibold flex items-center justify-center gap-1.5">
                     <CheckCircle className="w-4 h-4 text-green-500" />
                     This ticket has been resolved and closed.
                   </p>
@@ -313,40 +313,40 @@ export default function UserTicketDetailPage() {
             <div className="w-full lg:w-72 space-y-4">
               
               {/* Ticket Details summary card */}
-              <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-5 shadow-sm space-y-4 select-none">
-                <h3 className="font-bold text-gray-900 dark:text-white text-sm" style={{ fontFamily: "var(--font-display)" }}>
+              <div className="bg-surface border border-rule rounded-2xl p-5 shadow-sm space-y-4 select-none">
+                <h3 className="font-bold text-ink dark:text-white text-sm" style={{ fontFamily: "var(--font-display)" }}>
                   Ticket Details
                 </h3>
 
-                <div className="space-y-3 divide-y divide-gray-50 dark:divide-gray-800/60">
+                <div className="space-y-3 divide-y divide-rule">
                   <div className="pt-3 first:pt-0">
-                    <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide">Category</p>
-                    <p className="text-sm font-semibold text-gray-800 dark:text-gray-200 mt-0.5 capitalize">{ticket.category}</p>
+                    <p className="text-[10px] font-semibold text-graphite uppercase tracking-wide">Category</p>
+                    <p className="text-sm font-semibold text-ink mt-0.5 capitalize">{ticket.category}</p>
                   </div>
 
                   <div className="pt-3">
-                    <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide">Priority</p>
+                    <p className="text-[10px] font-semibold text-graphite uppercase tracking-wide">Priority</p>
                     <p className={`text-xs font-bold px-2 py-0.5 rounded-full inline-block mt-1 ${
                       ticket.priority === "CRITICAL"
                         ? "text-red-700 bg-red-50 border border-red-100"
                         : ticket.priority === "HIGH"
                         ? "text-orange-700 bg-orange-50 border border-orange-100"
-                        : "text-gray-700 bg-gray-50 border border-gray-100"
+                        : "text-ink bg-paper border border-rule"
                     }`}>
                       {ticket.priority.toUpperCase()}
                     </p>
                   </div>
 
                   <div className="pt-3">
-                    <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide">Created</p>
-                    <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 mt-0.5">
+                    <p className="text-[10px] font-semibold text-graphite uppercase tracking-wide">Created</p>
+                    <p className="text-xs font-semibold text-graphite dark:text-graphite mt-0.5">
                       {new Date(ticket.createdAt).toLocaleString("en-IN")}
                     </p>
                   </div>
 
                   <div className="pt-3">
-                    <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide">Last Updated</p>
-                    <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 mt-0.5">
+                    <p className="text-[10px] font-semibold text-graphite uppercase tracking-wide">Last Updated</p>
+                    <p className="text-xs font-semibold text-graphite dark:text-graphite mt-0.5">
                       {new Date(ticket.updatedAt).toLocaleString("en-IN")}
                     </p>
                   </div>

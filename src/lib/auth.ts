@@ -55,6 +55,17 @@ export const authOptions: NextAuthOptions = {
                 role: "ADMIN",
               },
             });
+          } else if (user.role !== "ADMIN") {
+            // The reserved admin email can end up attached to a pre-existing,
+            // non-admin account (e.g. someone signed up normally with this
+            // address before it was ever used to log in as admin). Matching
+            // the real ADMIN_PASSWORD here is exactly the credential that's
+            // supposed to grant admin access, so correct the role rather than
+            // silently signing the operator into a STUDENT session.
+            user = await prisma.user.update({
+              where: { id: user.id },
+              data: { role: "ADMIN" },
+            });
           }
           return {
             id: user.id,

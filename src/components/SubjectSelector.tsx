@@ -6,7 +6,7 @@ import { Search, Plus, Check, ChevronDown, X } from "lucide-react";
 // Categorized subjects mapping
 export const subjectGroups = [
   {
-    category: "🏫 School — Core",
+    category: "School — core",
     subjects: [
       "Mathematics",
       "Physics",
@@ -31,7 +31,7 @@ export const subjectGroups = [
     ],
   },
   {
-    category: "🔬 Science & Engineering",
+    category: "Science and engineering",
     subjects: [
       "Applied Mathematics",
       "Statistics & Probability",
@@ -76,7 +76,7 @@ export const subjectGroups = [
     ],
   },
   {
-    category: "💻 Computer Science",
+    category: "Computer science",
     subjects: [
       "Data Structures & Algorithms (DSA)",
       "Database Management Systems (DBMS)",
@@ -111,7 +111,7 @@ export const subjectGroups = [
     ],
   },
   {
-    category: "📊 Commerce & Management",
+    category: "Commerce and management",
     subjects: [
       "Financial Accounting",
       "Cost Accounting & Management Accounting",
@@ -139,7 +139,7 @@ export const subjectGroups = [
     ],
   },
   {
-    category: "⚖️ Law & Humanities",
+    category: "Law and humanities",
     subjects: [
       "Constitutional Law",
       "Criminal Law",
@@ -162,7 +162,7 @@ export const subjectGroups = [
     ],
   },
   {
-    category: "🩺 Medical & Health Sciences",
+    category: "Medical and health sciences",
     subjects: [
       "Human Anatomy",
       "Physiology",
@@ -185,7 +185,7 @@ export const subjectGroups = [
     ],
   },
   {
-    category: "📝 Competitive Exams",
+    category: "Competitive exams",
     subjects: [
       "UPSC — General Studies Paper I",
       "UPSC — General Studies Paper II (CSAT)",
@@ -330,7 +330,7 @@ export function SubjectSelector({
         id={id}
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full flex items-center justify-between px-4 py-3 border border-gray-200 rounded-xl bg-gray-50 hover:bg-white focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-left text-sm"
+        className="w-full flex items-center justify-between px-4 py-3 border border-gray-200 rounded-xl bg-gray-50 hover:bg-surface focus:bg-surface focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-left text-sm"
       >
         <span className={value ? "text-gray-900 font-medium" : "text-gray-400"}>
           {value || placeholder}
@@ -339,9 +339,9 @@ export function SubjectSelector({
       </button>
 
       {isOpen && (
-        <div className="absolute z-50 w-full mt-2 bg-white border border-gray-200 rounded-2xl shadow-xl max-h-80 overflow-hidden flex flex-col animate-fade-in">
+        <div className="absolute z-50 w-full mt-2 bg-surface border border-gray-200 rounded-2xl shadow-xl max-h-80 overflow-hidden flex flex-col animate-fade-in">
           {/* Search bar */}
-          <div className="p-2 border-b border-gray-100 flex items-center gap-2">
+          <div className="p-2 border-b border-rule flex items-center gap-2">
             <Search className="w-4 h-4 text-gray-400 ml-2" />
             <input
               type="text"
@@ -355,7 +355,7 @@ export function SubjectSelector({
               <button
                 type="button"
                 onClick={() => setSearchQuery("")}
-                className="p-1 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-gray-600"
+                className="p-1 hover:bg-surface-2 rounded-lg text-gray-400 hover:text-graphite"
               >
                 <X className="w-3.5 h-3.5" />
               </button>
@@ -372,7 +372,7 @@ export function SubjectSelector({
                 className="w-full flex items-center gap-2 px-3 py-2 text-sm text-blue-600 hover:bg-blue-50 rounded-xl transition-all font-semibold"
               >
                 <Plus className="w-4 h-4" />
-                Use Custom Subject: &quot;{searchQuery.trim()}&quot;
+                Use custom subject: &quot;{searchQuery.trim()}&quot;
               </button>
             )}
 
@@ -380,7 +380,7 @@ export function SubjectSelector({
             {filteredCustom.length > 0 && (
               <div className="space-y-1">
                 <p className="text-xxs font-bold text-gray-400 uppercase tracking-wide px-3">
-                  ✨ Custom Subjects
+                  Custom subjects
                 </p>
                 {filteredCustom.map((sub) => (
                   <div
@@ -389,7 +389,7 @@ export function SubjectSelector({
                       onChange(sub);
                       setIsOpen(false);
                     }}
-                    className="flex items-center justify-between px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-xl cursor-pointer transition-all group"
+                    className="flex items-center justify-between px-3 py-2 text-sm text-ink hover:bg-gray-50 rounded-xl cursor-pointer transition-all group"
                   >
                     <span className="font-medium">{sub}</span>
                     <div className="flex items-center gap-1">
@@ -422,7 +422,7 @@ export function SubjectSelector({
                         onChange(sub);
                         setIsOpen(false);
                       }}
-                      className="w-full flex items-center justify-between px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-xl cursor-pointer transition-all text-left"
+                      className="w-full flex items-center justify-between px-3 py-2 text-sm text-ink hover:bg-gray-50 rounded-xl cursor-pointer transition-all text-left"
                     >
                       <span>{sub}</span>
                       {value === sub && <Check className="w-4 h-4 text-blue-600" />}

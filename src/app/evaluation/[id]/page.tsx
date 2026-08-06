@@ -51,6 +51,15 @@ interface EvaluationData {
     percentage: number;
     feedback: string;
   }> | null;
+  questionWise: Array<{
+    questionNumber: number;
+    question: string;
+    studentAnswer: string;
+    marksAwarded: number;
+    totalMarks: number;
+    isCorrect: boolean;
+    feedback: string;
+  }> | null;
   createdAt: string;
 }
 
@@ -96,6 +105,7 @@ export default function EvaluationPage() {
             weaknesses: d.weaknesses || [],
             recommendations: d.recommendations || [],
             marksBreakdown: d.marksBreakdown || [],
+            questionWise: d.aiResponse?.questionWise || null,
           });
         }
       })
@@ -149,7 +159,7 @@ export default function EvaluationPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           evaluationId: id,
-          name: `${data.subject} - Evaluation Report`,
+          name: `${data.subject} - Evaluation report`,
         }),
       });
       const d = await res.json();
@@ -167,7 +177,7 @@ export default function EvaluationPage() {
     if (!data) return;
     const shareUrl = window.location.href;
     const shareData = {
-      title: `${data.subject} Evaluation Report`,
+      title: `${data.subject} evaluation report`,
       text: `View my AI-powered evaluation report for ${data.subject}.`,
       url: shareUrl,
     };
@@ -199,7 +209,7 @@ export default function EvaluationPage() {
       <div className="flex items-center justify-center py-20">
         <div className="text-center">
           <Brain className="w-12 h-12 text-blue-500 animate-pulse mx-auto mb-4" />
-          <p className="text-gray-600 font-medium">Loading evaluation results...</p>
+          <p className="text-graphite font-medium">Loading evaluation results...</p>
         </div>
       </div>
     );
@@ -211,17 +221,17 @@ export default function EvaluationPage() {
         <div className="w-16 h-16 bg-red-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
           <AlertTriangle className="w-8 h-8 text-red-500" />
         </div>
-        <h2 className="text-xl font-bold text-gray-900" style={{ fontFamily: "var(--font-display)" }}>
-          Evaluation Not Found
+        <h2 className="text-xl font-bold text-ink" style={{ fontFamily: "var(--font-display)" }}>
+          Evaluation not found
         </h2>
-        <p className="text-gray-500 text-sm mt-2 mb-6">
+        <p className="text-graphite text-sm mt-2 mb-6">
           The evaluation report you are trying to access does not exist or you do not have permission to view it.
         </p>
         <button
           onClick={() => router.push("/dashboard")}
           className="inline-flex items-center gap-2 bg-fixed-ink text-white font-semibold px-6 py-3 rounded-xl hover:opacity-90 transition-opacity text-sm shadow-md"
         >
-          <ArrowLeft className="w-4 h-4" /> Back to Dashboard
+          <ArrowLeft className="w-4 h-4" /> Back to dashboard
         </button>
       </div>
     );
@@ -239,15 +249,15 @@ export default function EvaluationPage() {
         <div className="flex items-center gap-3">
           <button
             onClick={() => router.back()}
-            className="w-9 h-9 bg-white border border-gray-200 rounded-xl flex items-center justify-center hover:bg-gray-50 transition-colors"
+            className="w-9 h-9 bg-surface border border-rule rounded-xl flex items-center justify-center hover:bg-paper transition-colors"
           >
-            <ArrowLeft className="w-4 h-4 text-gray-500" />
+            <ArrowLeft className="w-4 h-4 text-graphite" />
           </button>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900" style={{ fontFamily: "var(--font-display)" }}>
-              {data.subject} — Evaluation Report
+            <h1 className="text-2xl font-bold text-ink" style={{ fontFamily: "var(--font-display)" }}>
+              {data.subject} — evaluation report
             </h1>
-            <p className="text-gray-500 text-sm">
+            <p className="text-graphite text-sm">
               {data.grade} • {data.examType} • {new Date(data.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })}
             </p>
           </div>
@@ -259,7 +269,7 @@ export default function EvaluationPage() {
             className={`inline-flex items-center gap-2 border text-sm font-medium px-4 py-2 rounded-xl transition-colors ${
               isSaved
                 ? "bg-green-50 border-green-200 text-green-700 hover:bg-green-100"
-                : "border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
+                : "border-rule bg-surface text-ink hover:bg-paper"
             }`}
           >
             <BookMarked className={`w-4 h-4 ${isSaved ? "fill-green-600 text-green-600" : ""}`} />
@@ -267,7 +277,7 @@ export default function EvaluationPage() {
           </button>
           <button
             onClick={handleShare}
-            className="inline-flex items-center gap-2 border border-gray-200 bg-white text-gray-700 text-sm font-medium px-4 py-2 rounded-xl hover:bg-gray-50 transition-colors"
+            className="inline-flex items-center gap-2 border border-rule bg-surface text-ink text-sm font-medium px-4 py-2 rounded-xl hover:bg-paper transition-colors"
           >
             <Share2 className="w-4 h-4" />
             {shareCopied ? "Copied!" : "Share"}
@@ -286,7 +296,7 @@ export default function EvaluationPage() {
       <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {[
           {
-            label: "Marks Obtained",
+            label: "Marks obtained",
             value: `${data.obtainedMarks}/${data.totalMarks}`,
             icon: Target,
             color: "text-blue-600",
@@ -307,16 +317,16 @@ export default function EvaluationPage() {
             bg: grade.startsWith("A") ? "bg-green-50" : "bg-amber-50",
           },
           {
-            label: "Topics Covered",
+            label: "Topics covered",
             value: breakdown.length.toString(),
             icon: Brain,
             color: "text-purple-600",
             bg: "bg-purple-50",
           },
         ].map((card) => (
-          <div key={card.label} className="bg-white rounded-2xl border border-gray-100 card-shadow-md p-5">
+          <div key={card.label} className="bg-surface rounded-2xl border border-rule card-shadow-md p-5">
             <div className="flex items-center justify-between mb-3">
-              <p className="text-sm text-gray-500 font-medium">{card.label}</p>
+              <p className="text-sm text-graphite font-medium">{card.label}</p>
               <div className={`w-9 h-9 ${card.bg} rounded-xl flex items-center justify-center`}>
                 <card.icon className={`w-4 h-4 ${card.color}`} />
               </div>
@@ -329,14 +339,14 @@ export default function EvaluationPage() {
       </div>
 
       {/* Score Bar */}
-      <div className="bg-white rounded-2xl border border-gray-100 card-shadow-md p-6">
+      <div className="bg-surface rounded-2xl border border-rule card-shadow-md p-6">
         <div className="flex items-center justify-between mb-3">
-          <span className="text-sm font-medium text-gray-600">Overall Performance</span>
+          <span className="text-sm font-medium text-graphite">Overall performance</span>
           <span className={`text-sm font-bold font-mono ${pct >= 75 ? "text-green-600" : "text-amber-600"}`}>
             {pct.toFixed(1)}%
           </span>
         </div>
-        <div className="h-4 bg-gray-100 rounded-full overflow-hidden">
+        <div className="h-4 bg-surface-2 rounded-full overflow-hidden">
           <div
             className="h-full rounded-full transition-all duration-1000"
             style={{
@@ -345,7 +355,7 @@ export default function EvaluationPage() {
             }}
           />
         </div>
-        <div className="flex justify-between text-xs text-gray-400 mt-1.5">
+        <div className="flex justify-between text-xs text-graphite mt-1.5">
           <span>0%</span>
           <span className="text-amber-500 font-medium">Pass: 50%</span>
           <span className="text-green-500 font-medium">Merit: 75%</span>
@@ -356,9 +366,9 @@ export default function EvaluationPage() {
       {/* Charts */}
       {breakdown.length > 0 && (
         <div className="grid lg:grid-cols-2 gap-6">
-          <div className="bg-white rounded-2xl border border-gray-100 card-shadow-md p-6">
-            <h2 className="text-lg font-bold text-gray-900 mb-5" style={{ fontFamily: "var(--font-display)" }}>
-              Topic-wise Marks
+          <div className="bg-surface rounded-2xl border border-rule card-shadow-md p-6">
+            <h2 className="text-lg font-bold text-ink mb-5" style={{ fontFamily: "var(--font-display)" }}>
+              Topic-wise marks
             </h2>
             <div className="h-56">
               <ResponsiveContainer width="100%" height="100%">
@@ -379,9 +389,9 @@ export default function EvaluationPage() {
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl border border-gray-100 card-shadow-md p-6">
-            <h2 className="text-lg font-bold text-gray-900 mb-5" style={{ fontFamily: "var(--font-display)" }}>
-              Performance Radar
+          <div className="bg-surface rounded-2xl border border-rule card-shadow-md p-6">
+            <h2 className="text-lg font-bold text-ink mb-5" style={{ fontFamily: "var(--font-display)" }}>
+              Performance radar
             </h2>
             <div className="h-56">
               <ResponsiveContainer width="100%" height="100%">
@@ -405,21 +415,21 @@ export default function EvaluationPage() {
 
       {/* Topic Detail Table */}
       {breakdown.length > 0 && (
-        <div className="bg-white rounded-2xl border border-gray-100 card-shadow-md p-6">
-          <h2 className="text-lg font-bold text-gray-900 mb-5" style={{ fontFamily: "var(--font-display)" }}>
-            Topic-wise Breakdown
+        <div className="bg-surface rounded-2xl border border-rule card-shadow-md p-6">
+          <h2 className="text-lg font-bold text-ink mb-5" style={{ fontFamily: "var(--font-display)" }}>
+            Topic-wise breakdown
           </h2>
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-gray-100">
-                  <th className="text-left text-xs font-semibold text-gray-500 pb-3">Topic</th>
-                  <th className="text-center text-xs font-semibold text-gray-500 pb-3">Marks</th>
-                  <th className="text-center text-xs font-semibold text-gray-500 pb-3">Score</th>
-                  <th className="text-left text-xs font-semibold text-gray-500 pb-3 pl-4">Feedback</th>
+                <tr className="border-b border-rule">
+                  <th className="text-left text-xs font-semibold text-graphite pb-3">Topic</th>
+                  <th className="text-center text-xs font-semibold text-graphite pb-3">Marks</th>
+                  <th className="text-center text-xs font-semibold text-graphite pb-3">Score</th>
+                  <th className="text-left text-xs font-semibold text-graphite pb-3 pl-4">Feedback</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-50">
+              <tbody className="divide-y divide-rule">
                 {breakdown.map((item, idx) => {
                   const isHighlighted = highlightedIndex === idx;
                   return (
@@ -429,16 +439,16 @@ export default function EvaluationPage() {
                       className={`transition-colors duration-500 ${
                         isHighlighted
                           ? "bg-yellow-100/90 dark:bg-yellow-950/40"
-                          : "hover:bg-gray-50 dark:hover:bg-gray-800/40"
+                          : "hover:bg-paper dark:hover:bg-gray-800/40"
                       }`}
                     >
-                      <td className="py-3 text-sm font-semibold text-gray-900 dark:text-gray-100">{item.topic}</td>
-                      <td className="py-3 text-sm text-gray-600 dark:text-gray-400 text-center font-mono">
+                      <td className="py-3 text-sm font-semibold text-ink">{item.topic}</td>
+                      <td className="py-3 text-sm text-graphite dark:text-graphite text-center font-mono">
                         {item.obtainedMarks}/{item.totalMarks}
                       </td>
                       <td className="py-3 text-center">
                         <div className="flex items-center justify-center gap-2">
-                          <div className="w-20 h-2 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+                          <div className="w-20 h-2 bg-surface-2 rounded-full overflow-hidden">
                             <div
                               className="h-full rounded-full"
                               style={{
@@ -463,7 +473,7 @@ export default function EvaluationPage() {
                           </span>
                         </div>
                       </td>
-                      <td className="py-3 text-xs text-gray-500 dark:text-gray-400 pl-4">{item.feedback}</td>
+                      <td className="py-3 text-xs text-graphite dark:text-graphite pl-4">{item.feedback}</td>
                     </tr>
                   );
                 })}
@@ -473,12 +483,61 @@ export default function EvaluationPage() {
         </div>
       )}
 
+      {/* Question-by-question breakdown — the topic table above is a rollup;
+          this is the actual per-question marks and reasoning the AI produced,
+          each one attached to its own question rather than merged into a
+          single topic-level blob. */}
+      {data.questionWise && data.questionWise.length > 0 && (
+        <div className="bg-surface rounded-2xl border border-rule card-shadow-md p-6">
+          <h2 className="text-lg font-bold text-ink mb-5" style={{ fontFamily: "var(--font-display)" }}>
+            Question-by-question breakdown
+          </h2>
+          <div className="space-y-3">
+            {data.questionWise.map((q) => (
+              <div
+                key={q.questionNumber}
+                className={`rounded-xl border p-4 ${
+                  q.isCorrect ? "border-green-100 bg-green-50/40" : "border-amber-100 bg-amber-50/40"
+                }`}
+              >
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex items-start gap-2.5 min-w-0">
+                    {q.isCorrect ? (
+                      <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
+                    ) : (
+                      <AlertTriangle className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
+                    )}
+                    <div className="min-w-0">
+                      <p className="text-xs font-semibold text-graphite">Question {q.questionNumber}</p>
+                      <p className="text-sm font-medium text-ink mt-0.5">{q.question}</p>
+                    </div>
+                  </div>
+                  <p className={`text-sm font-bold font-mono flex-shrink-0 ${q.isCorrect ? "text-green-600" : "text-amber-600"}`}>
+                    {q.marksAwarded}/{q.totalMarks}
+                  </p>
+                </div>
+                <div className="mt-3 pl-6 space-y-2">
+                  <p className="text-xs text-graphite">
+                    <span className="font-semibold text-graphite">Answer given: </span>
+                    {q.studentAnswer}
+                  </p>
+                  <p className="text-xs text-ink">
+                    <span className="font-semibold text-graphite">Feedback: </span>
+                    {q.feedback}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Strengths / Weaknesses */}
       <div className="grid md:grid-cols-2 gap-6">
-        <div className="bg-white rounded-2xl border-l-4 border-green-400 border border-gray-100 card-shadow-md p-6">
+        <div className="bg-surface rounded-2xl border-l-4 border-green-400 border border-rule card-shadow-md p-6">
           <div className="flex items-center gap-2 mb-4">
             <CheckCircle className="w-5 h-5 text-green-500" />
-            <h2 className="text-lg font-bold text-gray-900" style={{ fontFamily: "var(--font-display)" }}>
+            <h2 className="text-lg font-bold text-ink" style={{ fontFamily: "var(--font-display)" }}>
               Strengths
             </h2>
           </div>
@@ -488,17 +547,17 @@ export default function EvaluationPage() {
                 <span className="w-5 h-5 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
                   <span className="text-green-600 text-xs font-bold">✓</span>
                 </span>
-                <span className="text-sm text-gray-700">{s}</span>
+                <span className="text-sm text-ink">{s}</span>
               </li>
             ))}
           </ul>
         </div>
 
-        <div className="bg-white rounded-2xl border-l-4 border-amber-400 border border-gray-100 card-shadow-md p-6">
+        <div className="bg-surface rounded-2xl border-l-4 border-amber-400 border border-rule card-shadow-md p-6">
           <div className="flex items-center gap-2 mb-4">
             <AlertTriangle className="w-5 h-5 text-amber-500" />
-            <h2 className="text-lg font-bold text-gray-900" style={{ fontFamily: "var(--font-display)" }}>
-              Areas to Improve
+            <h2 className="text-lg font-bold text-ink" style={{ fontFamily: "var(--font-display)" }}>
+              Areas to improve
             </h2>
           </div>
           <ul className="space-y-3">
@@ -507,7 +566,7 @@ export default function EvaluationPage() {
                 <span className="w-5 h-5 bg-amber-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
                   <span className="text-amber-600 text-xs">!</span>
                 </span>
-                <span className="text-sm text-gray-700">{w}</span>
+                <span className="text-sm text-ink">{w}</span>
               </li>
             ))}
           </ul>
@@ -515,26 +574,26 @@ export default function EvaluationPage() {
       </div>
 
       {/* AI Feedback */}
-      <div className="bg-white rounded-2xl border border-gray-100 card-shadow-md p-6">
+      <div className="bg-surface rounded-2xl border border-rule card-shadow-md p-6">
         <div className="flex items-center gap-2 mb-5">
           <div className="w-9 h-9 bg-fixed-ink rounded-xl flex items-center justify-center">
             <Brain className="w-4 h-4 text-white" />
           </div>
-          <h2 className="text-lg font-bold text-gray-900" style={{ fontFamily: "var(--font-display)" }}>
-            AI Overall Feedback
+          <h2 className="text-lg font-bold text-ink" style={{ fontFamily: "var(--font-display)" }}>
+            AI overall feedback
           </h2>
         </div>
-        <p className="text-gray-700 leading-relaxed text-sm bg-gray-50 rounded-xl p-4">
+        <p className="text-ink leading-relaxed text-sm bg-paper rounded-xl p-4">
           {data.aiFeedback || "Evaluation complete. Review your topic-wise breakdown above for detailed insights."}
         </p>
       </div>
 
       {/* Recommendations */}
-      <div className="bg-white rounded-2xl border border-gray-100 card-shadow-md p-6">
+      <div className="bg-surface rounded-2xl border border-rule card-shadow-md p-6">
         <div className="flex items-center gap-2 mb-5">
           <Lightbulb className="w-5 h-5 text-amber-500" />
-          <h2 className="text-lg font-bold text-gray-900" style={{ fontFamily: "var(--font-display)" }}>
-            Study Recommendations
+          <h2 className="text-lg font-bold text-ink" style={{ fontFamily: "var(--font-display)" }}>
+            Study recommendations
           </h2>
         </div>
         <div className="grid sm:grid-cols-2 gap-3">
@@ -546,7 +605,7 @@ export default function EvaluationPage() {
               <span className="w-6 h-6 bg-amber-400 rounded-lg flex items-center justify-center text-white text-xs font-bold flex-shrink-0 mt-0.5">
                 {i + 1}
               </span>
-              <p className="text-sm text-gray-700">{rec}</p>
+              <p className="text-sm text-ink">{rec}</p>
             </div>
           ))}
         </div>

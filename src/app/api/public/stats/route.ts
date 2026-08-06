@@ -7,19 +7,25 @@ export async function GET() {
     
     const completedEvaluations = await prisma.evaluation.findMany({
       where: { status: "SUCCEEDED" },
-      select: { createdAt: true, updatedAt: true, percentage: true }
+      select: { createdAt: true, updatedAt: true, startedAt: true, finishedAt: true, percentage: true }
     });
 
     const totalEvaluations = completedEvaluations.length;
 
-    // Calculate actual average evaluation time in seconds from real rows only
+    // Average evaluation time, computed only from rows with real startedAt/finishedAt
+    // timestamps (set once by the job processor) — createdAt/updatedAt are NOT safe to
+    // use here, since updatedAt is bumped by any later write to the row (e.g. a saved-report
+    // rename), which previously produced multi-day "average" times from unrelated edits.
+    // Also require a minimum sample size, same as the other public stats below, so a
+    // handful of early rows can't produce a misleading published average.
+    const timedEvaluations = completedEvaluations.filter((ev) => ev.startedAt && ev.finishedAt);
     let averageTimeSeconds: number | null = null;
-    if (totalEvaluations > 0) {
-      const totalDurationMs = completedEvaluations.reduce((sum, ev) => {
-        const duration = ev.updatedAt.getTime() - ev.createdAt.getTime();
+    if (timedEvaluations.length >= 100) {
+      const totalDurationMs = timedEvaluations.reduce((sum, ev) => {
+        const duration = ev.finishedAt!.getTime() - ev.startedAt!.getTime();
         return sum + Math.max(0, duration);
       }, 0);
-      averageTimeSeconds = Math.round(totalDurationMs / totalEvaluations / 1000);
+      averageTimeSeconds = Math.round(totalDurationMs / timedEvaluations.length / 1000);
     }
 
     // Calculate actual average score from real rows only

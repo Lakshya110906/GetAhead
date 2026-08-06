@@ -4,6 +4,28 @@ import { authOptions } from "@/lib/auth";
 
 export const maxDuration = 30;
 
+// Heuristic for "this isn't real prose, it's PDF/binary structure
+// reinterpreted as text": real study material is mostly alphabetic
+// characters in reasonably sized words with normal spacing. PDF object
+// structure and compressed-stream noise reinterpreted as latin1 tends to
+// have long runs of non-alphabetic symbols, PDF keywords, or very few
+// actual word breaks relative to its length.
+function looksLikeExtractionGarbage(text: string): boolean {
+  const sample = text.slice(0, 4000);
+  const pdfKeywordHits = (sample.match(/\b(endobj|endstream|xref|obj|stream|startxref|trailer)\b/g) || []).length;
+  if (pdfKeywordHits >= 3) return true;
+
+  const letters = (sample.match(/[a-zA-Z]/g) || []).length;
+  const alphaRatio = letters / Math.max(1, sample.length);
+  if (alphaRatio < 0.55) return true;
+
+  const words = sample.split(/\s+/).filter(Boolean);
+  const avgWordLength = words.length > 0 ? sample.length / words.length : 0;
+  if (avgWordLength > 20) return true;
+
+  return false;
+}
+
 export async function POST(request: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session?.user) {
@@ -114,8 +136,23 @@ export async function POST(request: NextRequest) {
     const wasTrimmed = extractedText.length > maxChars;
 
     if (trimmed.trim().length < 20) {
-      return NextResponse.json({ 
-        error: "Could not extract readable text from this file. Please try a .txt or .md file." 
+      return NextResponse.json({
+        error: "Could not extract readable text from this file. Please try a .txt or .md file."
+      }, { status: 422 });
+    }
+
+    // The PDF/DOCX extraction above is a hand-rolled byte-level parser, not
+    // a real PDF/OOXML library — it only works on legacy, uncompressed PDFs.
+    // Most real-world PDFs (anything exported from Word, Google Docs, LaTeX)
+    // use compressed content streams, so the regexes above find nothing and
+    // fall through to "read printable bytes from the whole file," which
+    // reinterprets binary/compressed data as text — indistinguishable from
+    // garbage without a check like this one. Silently handing that to the
+    // question generator is worse than refusing: reject it instead of
+    // quietly feeding noise into the prompt.
+    if ((file.type === "application/pdf" || file.name.endsWith(".pdf")) && looksLikeExtractionGarbage(trimmed)) {
+      return NextResponse.json({
+        error: "Couldn't reliably extract text from this PDF (it may use a compressed/scanned format this app can't parse). Please copy the text into a .txt or .md file and upload that instead.",
       }, { status: 422 });
     }
 

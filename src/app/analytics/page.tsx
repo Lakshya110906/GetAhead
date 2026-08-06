@@ -40,7 +40,7 @@ export default function AnalyticsPage() {
     return (
       <div className="flex flex-col items-center justify-center gap-3 min-h-[60vh]">
         <Loader2 className="w-10 h-10 animate-spin text-blue-600" />
-        <p className="text-sm text-gray-500">Loading your analytics...</p>
+        <p className="text-sm text-graphite">Loading your analytics...</p>
       </div>
     );
   }
@@ -52,24 +52,24 @@ export default function AnalyticsPage() {
           <h1 className="text-2xl font-bold text-gray-900" style={{ fontFamily: "var(--font-display)" }}>
             Analytics
           </h1>
-          <p className="text-gray-500 text-sm">Deep dive into your academic performance</p>
+          <p className="text-graphite text-sm">Deep dive into your academic performance</p>
         </div>
 
-        <div className="bg-white rounded-3xl border border-gray-150 p-12 text-center max-w-lg mx-auto shadow-sm mt-8">
+        <div className="bg-surface rounded-3xl border border-rule p-12 text-center max-w-lg mx-auto shadow-sm mt-8">
           <div className="w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
             <TrendingUp className="w-8 h-8 text-blue-600" />
           </div>
           <h3 className="text-lg font-bold text-gray-900 mb-1" style={{ fontFamily: "var(--font-display)" }}>
-            No Academic Data Yet
+            No academic data yet
           </h3>
-          <p className="text-gray-500 text-sm max-w-xs mx-auto mb-6">
+          <p className="text-graphite text-sm max-w-xs mx-auto mb-6">
             Complete exam evaluations to generate trend charts, subject performance, and deep analytics.
           </p>
           <Link
             href="/upload"
             className="inline-flex items-center gap-2 bg-fixed-ink text-white font-semibold px-6 py-3 rounded-xl hover:opacity-90 transition-opacity text-sm shadow-md"
           >
-            <BarChart3 className="w-4 h-4" /> Start Evaluation
+            <BarChart3 className="w-4 h-4" /> Start evaluation
           </Link>
         </div>
       </div>
@@ -82,20 +82,20 @@ export default function AnalyticsPage() {
         <h1 className="text-2xl font-bold text-gray-900" style={{ fontFamily: "var(--font-display)" }}>
           Analytics
         </h1>
-        <p className="text-gray-500 text-sm">Deep dive into your academic performance</p>
+        <p className="text-graphite text-sm">Deep dive into your academic performance</p>
       </div>
 
       {/* Summary */}
       <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: "Total Exams", value: total, icon: BarChart3, color: "text-blue-600", bg: "bg-blue-50" },
-          { label: "Avg. Score", value: `${avgPct}%`, icon: TrendingUp, color: "text-green-600", bg: "bg-green-50" },
+          { label: "Total exams", value: total, icon: BarChart3, color: "text-blue-600", bg: "bg-blue-50" },
+          { label: "Avg. score", value: `${avgPct}%`, icon: TrendingUp, color: "text-green-600", bg: "bg-green-50" },
           { label: "Subjects", value: subjects.length, icon: Target, color: "text-purple-600", bg: "bg-purple-50" },
-          { label: "Best Score", value: `${Math.max(...subjects.map((s) => s.avgScore), 0)}%`, icon: Award, color: "text-amber-600", bg: "bg-amber-50" },
+          { label: "Best score", value: `${Math.max(...subjects.map((s) => s.avgScore), 0)}%`, icon: Award, color: "text-amber-600", bg: "bg-amber-50" },
         ].map((stat) => (
-          <div key={stat.label} className="bg-white rounded-2xl border border-gray-100 card-shadow-md p-5">
+          <div key={stat.label} className="bg-surface rounded-2xl border border-rule card-shadow-md p-5">
             <div className="flex items-center justify-between mb-3">
-              <p className="text-sm text-gray-500">{stat.label}</p>
+              <p className="text-sm text-graphite">{stat.label}</p>
               <div className={`w-9 h-9 ${stat.bg} rounded-xl flex items-center justify-center`}>
                 <stat.icon className={`w-4 h-4 ${stat.color}`} />
               </div>
@@ -108,9 +108,9 @@ export default function AnalyticsPage() {
       </div>
 
       {/* Score Trend */}
-      <div className="bg-white rounded-2xl border border-gray-100 card-shadow-md p-6">
+      <div className="bg-surface rounded-2xl border border-rule card-shadow-md p-6">
         <h2 className="text-lg font-bold text-gray-900 mb-5" style={{ fontFamily: "var(--font-display)" }}>
-          Monthly Score Trend
+          Monthly score trend
         </h2>
         <div className="h-72">
           <ResponsiveContainer width="100%" height="100%">
@@ -136,9 +136,9 @@ export default function AnalyticsPage() {
 
       {/* Subject Charts */}
       <div className="grid lg:grid-cols-2 gap-6">
-        <div className="bg-white rounded-2xl border border-gray-100 card-shadow-md p-6">
+        <div className="bg-surface rounded-2xl border border-rule card-shadow-md p-6">
           <h2 className="text-lg font-bold text-gray-900 mb-5" style={{ fontFamily: "var(--font-display)" }}>
-            Subject Performance
+            Subject performance
           </h2>
           <div className="h-60">
             <ResponsiveContainer width="100%" height="100%">
@@ -160,9 +160,9 @@ export default function AnalyticsPage() {
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl border border-gray-100 card-shadow-md p-6">
+        <div className="bg-surface rounded-2xl border border-rule card-shadow-md p-6">
           <h2 className="text-lg font-bold text-gray-900 mb-5" style={{ fontFamily: "var(--font-display)" }}>
-            Evaluations by Subject
+            Evaluations by subject
           </h2>
           <div className="h-60">
             <ResponsiveContainer width="100%" height="100%">
@@ -192,9 +192,9 @@ export default function AnalyticsPage() {
       </div>
 
       {/* Evaluations Count Chart */}
-      <div className="bg-white rounded-2xl border border-gray-100 card-shadow-md p-6">
+      <div className="bg-surface rounded-2xl border border-rule card-shadow-md p-6">
         <h2 className="text-lg font-bold text-gray-900 mb-5" style={{ fontFamily: "var(--font-display)" }}>
-          Evaluations per Month
+          Evaluations per month
         </h2>
         <div className="h-52">
           <ResponsiveContainer width="100%" height="100%">

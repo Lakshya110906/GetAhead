@@ -46,7 +46,7 @@ export function TutorChat({
   }, [messages, isStreaming]);
 
   return (
-    <div className="flex-1 flex flex-col min-h-0 bg-gray-50/30 dark:bg-gray-950/30">
+    <div className="flex-1 flex flex-col min-h-0 bg-gray-50/30">
       {/* Scrollable chat body */}
       <div 
         ref={scrollRef}
@@ -58,21 +58,21 @@ export function TutorChat({
             <div className="w-16 h-16 rounded-2xl bg-fixed-ink flex items-center justify-center text-white shadow-md shadow-blue-500/10 mb-5 animate-pulse">
               <Brain className="w-8 h-8" />
             </div>
-            <h3 className="font-bold text-gray-900 dark:text-gray-100 text-lg mb-2" style={{ fontFamily: "var(--font-display)" }}>
-              AI Evaluation Tutor
+            <h3 className="font-bold text-ink text-lg mb-2" style={{ fontFamily: "var(--font-display)" }}>
+              AI evaluation tutor
             </h3>
-            <p className="text-sm text-gray-500 dark:text-gray-400 max-w-xs leading-relaxed">
+            <p className="text-sm text-graphite dark:text-graphite max-w-xs leading-relaxed">
               Ask questions about this evaluation report. I know your score, strengths, weaknesses, and answer sheet.
             </p>
             <div className="mt-6 flex flex-wrap items-center justify-center gap-2 max-w-sm">
               <span className="text-[11px] font-semibold bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 px-2.5 py-1 rounded-full border border-blue-100/50 dark:border-blue-900/30">
-                📄 Answers Extracted
+                Answers extracted
               </span>
               <span className="text-[11px] font-semibold bg-teal-50 dark:bg-teal-900/20 text-teal-700 dark:text-teal-400 px-2.5 py-1 rounded-full border border-teal-100/50 dark:border-teal-900/30">
-                📊 Marks Calibrated
+                Marks calibrated
               </span>
               <span className="text-[11px] font-semibold bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-400 px-2.5 py-1 rounded-full border border-purple-100/50 dark:border-purple-900/30">
-                🎯 Context Aware
+                Context aware
               </span>
             </div>
           </div>
@@ -121,7 +121,7 @@ export function TutorChat({
               <Brain className="w-4 h-4" />
             </div>
             <div className="flex flex-col max-w-[85%]">
-              <div className="rounded-2xl px-4 py-3 text-sm bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 text-gray-400 dark:text-gray-500 rounded-tl-none flex items-center gap-2 shadow-sm">
+              <div className="rounded-2xl px-4 py-3 text-sm bg-surface border border-rule text-graphite dark:text-graphite rounded-tl-none flex items-center gap-2 shadow-sm">
                 <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
                 <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
                 <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
