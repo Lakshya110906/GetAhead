@@ -83,7 +83,13 @@ export function AudienceSwitcher() {
   return (
     <section className="py-16 border-b border-rule">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-        <p className="text-graphite text-sm font-medium uppercase tracking-wider mb-6 text-center">
+        {/* Matches the accent-colored, semibold kicker style used by every
+            other homepage section ("What it looks like", "Accuracy",
+            "Process", "FAQ") — this one previously used a neutral grey
+            instead, which read as a different (and, in dark mode, lower-
+            contrast) component. Centered alignment is unchanged: every
+            homepage kicker is centered, so that part isn't a divergence. */}
+        <p className="text-blue-600 text-sm font-semibold uppercase tracking-wider mb-6 text-center">
           One product, four ways to use it
         </p>
 
@@ -114,7 +120,7 @@ export function AudienceSwitcher() {
                 <motion.span
                   layoutId="audience-indicator"
                   transition={indicatorTransition}
-                  className="absolute left-0 right-0 -bottom-px h-0.5 bg-fixed-ink"
+                  className="absolute left-0 right-0 -bottom-px h-0.5 bg-ink"
                 />
               )}
             </button>

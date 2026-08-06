@@ -168,7 +168,7 @@ export default function HomeClient({ accuracy }: { accuracy: AccuracySummary | n
               <div className="flex flex-wrap gap-4 mb-10">
                 <Link
                   href={ctaUrl}
-                  className="inline-flex items-center gap-2 bg-fixed-ink text-white font-semibold px-6 py-3 rounded-xl hover:opacity-90 transition-opacity shadow-lg shadow-blue-500/25 group"
+                  className="inline-flex items-center gap-2 bg-ink text-paper font-semibold px-6 py-3 rounded-xl hover:opacity-90 transition-opacity shadow-lg shadow-blue-500/25 group"
                 >
                   Start free evaluation
                   <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
@@ -365,7 +365,7 @@ export default function HomeClient({ accuracy }: { accuracy: AccuracySummary | n
                   <step.icon className="w-10 h-10 text-white" />
                 </div>
                 <div
-                  className="absolute top-0 right-0 -translate-y-2 translate-x-2 bg-fixed-ink text-white text-xs font-bold w-9 h-7 rounded-full flex items-center justify-center"
+                  className="absolute top-0 right-0 -translate-y-2 translate-x-2 bg-ink text-paper text-xs font-bold w-9 h-7 rounded-full flex items-center justify-center"
                   style={{ fontFamily: "var(--font-mono)" }}
                 >
                   {step.step}

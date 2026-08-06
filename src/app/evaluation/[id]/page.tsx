@@ -229,7 +229,7 @@ export default function EvaluationPage() {
         </p>
         <button
           onClick={() => router.push("/dashboard")}
-          className="inline-flex items-center gap-2 bg-fixed-ink text-white font-semibold px-6 py-3 rounded-xl hover:opacity-90 transition-opacity text-sm shadow-md"
+          className="inline-flex items-center gap-2 bg-ink text-paper font-semibold px-6 py-3 rounded-xl hover:opacity-90 transition-opacity text-sm shadow-md"
         >
           <ArrowLeft className="w-4 h-4" /> Back to dashboard
         </button>
@@ -284,7 +284,7 @@ export default function EvaluationPage() {
           </button>
           <button
             onClick={handlePrint}
-            className="inline-flex items-center gap-2 bg-fixed-ink text-white text-sm font-medium px-4 py-2 rounded-xl hover:opacity-90 transition-opacity"
+            className="inline-flex items-center gap-2 bg-ink text-paper text-sm font-medium px-4 py-2 rounded-xl hover:opacity-90 transition-opacity"
           >
             <Download className="w-4 h-4" />
             PDF / Print

@@ -81,7 +81,7 @@ export default function ContactPage() {
             Thanks for reaching out. We have successfully registered your support request as ticket <strong>#TKT-{ticketNumber}</strong>. We&apos;ll get back to you at <strong>{formData.email}</strong> within 24 hours on weekdays.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <Link href="/" className="inline-flex items-center gap-2 bg-fixed-ink text-white font-semibold px-5 py-2.5 rounded-xl hover:opacity-90 transition-opacity">
+            <Link href="/" className="inline-flex items-center gap-2 bg-ink text-paper font-semibold px-5 py-2.5 rounded-xl hover:opacity-90 transition-opacity">
               Back to home
             </Link>
             <Link href="/support/tickets" className="inline-flex items-center gap-2 bg-surface text-ink font-medium px-5 py-2.5 rounded-xl border border-gray-200 hover:bg-gray-50 transition-all">
@@ -271,7 +271,7 @@ export default function ContactPage() {
                   <button
                     type="submit"
                     disabled={status === "submitting"}
-                    className="w-full bg-fixed-ink text-white font-semibold py-3 rounded-xl hover:opacity-90 transition-opacity flex items-center justify-center gap-2 disabled:opacity-60"
+                    className="w-full bg-ink text-paper font-semibold py-3 rounded-xl hover:opacity-90 transition-opacity flex items-center justify-center gap-2 disabled:opacity-60"
                   >
                     {status === "submitting" ? (
                       <><Loader2 className="w-4 h-4 animate-spin" /> Sending…</>

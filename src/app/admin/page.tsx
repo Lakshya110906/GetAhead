@@ -794,7 +794,7 @@ export default function AdminPage() {
                             setResetSuccess(true);
                             setTimeout(() => { setPasswordResetUser(null); setResetSuccess(false); }, 1500);
                           }}
-                          className="px-4 py-2 bg-fixed-ink text-white rounded-xl font-semibold"
+                          className="px-4 py-2 bg-ink text-paper rounded-xl font-semibold"
                         >
                           Confirm Reset
                         </button>
@@ -1022,7 +1022,7 @@ export default function AdminPage() {
                       </button>
                       <button
                         onClick={() => setPaperPreview(null)}
-                        className="px-4 py-2 bg-fixed-ink text-white rounded-xl font-semibold"
+                        className="px-4 py-2 bg-ink text-paper rounded-xl font-semibold"
                       >
                         Close Preview
                       </button>

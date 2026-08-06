@@ -58,7 +58,7 @@ export default function TeachersPage() {
                 GetAhead AI applies the same rubric to every sheet — no fatigue, no drift between the first sheet and the fiftieth — and marks a full set in the time it takes to mark one by hand. Free your time for what matters: teaching.
               </p>
               <div className="flex flex-col sm:flex-row gap-3">
-                <Link href="/signup" className="inline-flex items-center justify-center gap-2 bg-fixed-ink text-white font-semibold px-6 py-3 rounded-xl hover:opacity-90 transition-opacity shadow-lg">
+                <Link href="/signup" className="inline-flex items-center justify-center gap-2 bg-ink text-paper font-semibold px-6 py-3 rounded-xl hover:opacity-90 transition-opacity shadow-lg">
                   Start free <ArrowRight className="w-4 h-4" />
                 </Link>
                 <Link href="/features" className="inline-flex items-center justify-center gap-2 bg-surface text-ink font-medium px-6 py-3 rounded-xl border border-gray-200 hover:bg-gray-50 transition-all">
@@ -215,7 +215,7 @@ export default function TeachersPage() {
             <p className="text-graphite mb-6 leading-relaxed">
               Whether you&apos;re evaluating 5 students or 50, GetAhead AI scales with your workload. Bulk upload (multiple sheets in one go) is on the roadmap for Q3 2026.
             </p>
-            <Link href="/signup" className="inline-flex items-center gap-2 bg-fixed-ink text-white font-semibold px-5 py-2.5 rounded-xl hover:opacity-90 transition-opacity text-sm">
+            <Link href="/signup" className="inline-flex items-center gap-2 bg-ink text-paper font-semibold px-5 py-2.5 rounded-xl hover:opacity-90 transition-opacity text-sm">
               Start evaluating free <ArrowRight className="w-4 h-4" />
             </Link>
           </div>

@@ -26,7 +26,7 @@ export function MarkedAnswerSheet() {
   return (
     <div className="relative mx-auto max-w-[280px] sm:max-w-md select-none" aria-hidden="true">
       <div
-        className="relative bg-surface rounded-sm shadow-2xl border border-fixed-rule"
+        className="relative bg-fixed-paper rounded-sm shadow-2xl dark:shadow-none dark:ring-1 dark:ring-white/15 border border-fixed-rule"
         style={{ transform: "rotate(-1.2deg)" }}
       >
         {/* Sheet header strip */}

@@ -221,7 +221,7 @@ export default function SettingsPage() {
               onClick={() => setActiveSection(s.id)}
               className={`w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
                 activeSection === s.id
-                  ? "bg-fixed-ink text-white"
+                  ? "bg-ink text-paper"
                   : "text-graphite hover:bg-gray-50"
               }`}
             >
@@ -309,7 +309,7 @@ export default function SettingsPage() {
                   id="save-settings"
                   onClick={handleSave}
                   disabled={profileLoading}
-                  className="bg-fixed-ink text-white font-semibold px-6 py-2.5 rounded-xl hover:opacity-90 transition-opacity text-sm flex items-center gap-2 disabled:opacity-60"
+                  className="bg-ink text-paper font-semibold px-6 py-2.5 rounded-xl hover:opacity-90 transition-opacity text-sm flex items-center gap-2 disabled:opacity-60"
                 >
                   {profileLoading ? (
                     <Loader2 className="w-4 h-4 animate-spin" />
@@ -472,7 +472,7 @@ export default function SettingsPage() {
                 <button
                   onClick={handleNotificationsSave}
                   disabled={notificationsLoading}
-                  className="bg-fixed-ink text-white font-semibold px-6 py-2.5 rounded-xl hover:opacity-90 transition-opacity text-sm disabled:opacity-60"
+                  className="bg-ink text-paper font-semibold px-6 py-2.5 rounded-xl hover:opacity-90 transition-opacity text-sm disabled:opacity-60"
                 >
                   {notificationsLoading ? "Saving..." : notificationsSaved ? "✓ Preferences saved!" : "Save preferences"}
                 </button>
@@ -542,7 +542,7 @@ export default function SettingsPage() {
                   <button
                     type="submit"
                     disabled={passwordLoading}
-                    className="bg-fixed-ink text-white font-semibold px-6 py-2.5 rounded-xl hover:opacity-90 transition-opacity text-sm disabled:opacity-50"
+                    className="bg-ink text-paper font-semibold px-6 py-2.5 rounded-xl hover:opacity-90 transition-opacity text-sm disabled:opacity-50"
                   >
                     {passwordLoading ? "Updating..." : "Update password"}
                   </button>

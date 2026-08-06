@@ -315,7 +315,7 @@ export default function FAQPage() {
             Our support team responds within 24 hours on weekdays. You can also browse the help center for detailed guides.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-            <Link href="/contact" className="inline-flex items-center gap-2 bg-fixed-ink text-white font-semibold px-6 py-3 rounded-xl hover:opacity-90 transition-opacity">
+            <Link href="/contact" className="inline-flex items-center gap-2 bg-ink text-paper font-semibold px-6 py-3 rounded-xl hover:opacity-90 transition-opacity">
               Contact support <ArrowRight className="w-4 h-4" />
             </Link>
             <Link href="/help" className="inline-flex items-center gap-2 bg-surface text-ink font-medium px-6 py-3 rounded-xl border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-all">

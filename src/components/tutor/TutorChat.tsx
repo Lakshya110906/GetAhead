@@ -117,7 +117,7 @@ export function TutorChat({
         {/* Streaming indicator */}
         {isStreaming && messages.length > 0 && messages[messages.length - 1].role === "user" && (
           <div className="flex gap-3 mb-6">
-            <div className="w-8 h-8 rounded-xl bg-fixed-ink text-white flex items-center justify-center flex-shrink-0 shadow-sm animate-pulse">
+            <div className="w-8 h-8 rounded-xl bg-ink text-paper flex items-center justify-center flex-shrink-0 shadow-sm animate-pulse">
               <Brain className="w-4 h-4" />
             </div>
             <div className="flex flex-col max-w-[85%]">

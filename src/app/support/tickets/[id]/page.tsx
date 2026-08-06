@@ -167,7 +167,7 @@ export default function UserTicketDetailPage() {
               <p className="text-graphite text-sm mb-6">{error || "The ticket was not found."}</p>
               <button
                 onClick={() => router.push("/support/tickets")}
-                className="inline-flex items-center gap-2 bg-fixed-ink text-white font-semibold px-5 py-2.5 rounded-xl hover:opacity-90 transition-opacity text-sm shadow-md cursor-pointer"
+                className="inline-flex items-center gap-2 bg-ink text-paper font-semibold px-5 py-2.5 rounded-xl hover:opacity-90 transition-opacity text-sm shadow-md cursor-pointer"
               >
                 <ArrowLeft className="w-4 h-4" /> Back to My Tickets
               </button>
@@ -246,7 +246,7 @@ export default function UserTicketDetailPage() {
                     >
                       <div className={`w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 ${
                         isAdmin 
-                          ? "bg-fixed-ink text-white" 
+                          ? "bg-ink text-paper" 
                           : "bg-blue-600 text-white"
                       }`}>
                         {isAdmin ? <LifeBuoy className="w-4 h-4" /> : <User className="w-4 h-4" />}

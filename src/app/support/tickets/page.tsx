@@ -120,7 +120,7 @@ export default function SupportTicketsPage() {
               </div>
               <Link 
                 href="/contact"
-                className="inline-flex items-center gap-1.5 bg-fixed-ink text-white text-sm font-semibold px-4 py-2.5 rounded-xl hover:opacity-95 shadow-md shadow-blue-500/10 cursor-pointer"
+                className="inline-flex items-center gap-1.5 bg-ink text-paper text-sm font-semibold px-4 py-2.5 rounded-xl hover:opacity-95 shadow-md shadow-blue-500/10 cursor-pointer"
               >
                 <Plus className="w-4 h-4" /> Create New Ticket
               </Link>
@@ -195,7 +195,7 @@ export default function SupportTicketsPage() {
                 {tickets.length === 0 && (
                   <Link
                     href="/contact"
-                    className="inline-flex items-center gap-1.5 bg-fixed-ink text-white text-xs font-semibold px-4 py-2.5 rounded-xl hover:opacity-95 shadow-md shadow-blue-500/10 cursor-pointer"
+                    className="inline-flex items-center gap-1.5 bg-ink text-paper text-xs font-semibold px-4 py-2.5 rounded-xl hover:opacity-95 shadow-md shadow-blue-500/10 cursor-pointer"
                   >
                     <Plus className="w-4 h-4" /> Create Ticket
                   </Link>

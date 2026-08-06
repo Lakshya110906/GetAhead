@@ -76,7 +76,7 @@ export function DashboardSidebar() {
               title={collapsed ? item.label : undefined}
               className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all group ${
                 isActive
-                  ? "bg-fixed-ink text-white shadow-sm"
+                  ? "bg-ink text-paper shadow-sm"
                   : "text-graphite hover:bg-gray-50 hover:text-ink"
               } ${collapsed ? "justify-center" : ""}`}
             >

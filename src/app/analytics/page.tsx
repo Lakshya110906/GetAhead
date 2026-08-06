@@ -67,7 +67,7 @@ export default function AnalyticsPage() {
           </p>
           <Link
             href="/upload"
-            className="inline-flex items-center gap-2 bg-fixed-ink text-white font-semibold px-6 py-3 rounded-xl hover:opacity-90 transition-opacity text-sm shadow-md"
+            className="inline-flex items-center gap-2 bg-ink text-paper font-semibold px-6 py-3 rounded-xl hover:opacity-90 transition-opacity text-sm shadow-md"
           >
             <BarChart3 className="w-4 h-4" /> Start evaluation
           </Link>

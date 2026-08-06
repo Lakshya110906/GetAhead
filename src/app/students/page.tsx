@@ -58,7 +58,7 @@ export default function StudentsPage() {
                 GetAhead AI gives you instant, personalised feedback on every answer sheet — so you know exactly what to fix before your real exam.
               </p>
               <div className="flex flex-col sm:flex-row gap-3">
-                <Link href="/signup" className="inline-flex items-center justify-center gap-2 bg-fixed-ink text-white font-semibold px-6 py-3 rounded-xl hover:opacity-90 transition-opacity shadow-lg">
+                <Link href="/signup" className="inline-flex items-center justify-center gap-2 bg-ink text-paper font-semibold px-6 py-3 rounded-xl hover:opacity-90 transition-opacity shadow-lg">
                   Start for free <ArrowRight className="w-4 h-4" />
                 </Link>
                 <Link href="/how-it-works" className="inline-flex items-center justify-center gap-2 bg-surface text-ink font-medium px-6 py-3 rounded-xl border border-gray-200 hover:bg-gray-50 transition-all">
