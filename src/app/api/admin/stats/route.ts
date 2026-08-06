@@ -30,21 +30,24 @@ export async function GET() {
 
     const activeSessionsCount = await prisma.session.count();
 
-    // 2. Average Evaluation Duration
+    // 2. Average Evaluation Duration — only from rows with real startedAt/
+    // finishedAt timestamps (set once by the job processor). createdAt/
+    // updatedAt are NOT safe here: updatedAt is bumped by any later write to
+    // the row (e.g. a saved-report rename), which previously produced
+    // multi-day "average" times from unrelated edits. No fabricated fallback
+    // number either — null means "not enough data yet", shown as such.
     const completedEvals = await prisma.evaluation.findMany({
       where: { status: "SUCCEEDED" },
-      select: { createdAt: true, updatedAt: true, percentage: true, subject: true },
+      select: { startedAt: true, finishedAt: true, percentage: true, subject: true },
     });
 
-    let avgEvalTime = 0;
-    if (completedEvals.length > 0) {
-      const totalDur = completedEvals.reduce((sum, ev) => {
-        return sum + (ev.updatedAt.getTime() - ev.createdAt.getTime());
+    const timedEvals = completedEvals.filter((ev) => ev.startedAt && ev.finishedAt);
+    let avgEvalTime: number | null = null;
+    if (timedEvals.length > 0) {
+      const totalDur = timedEvals.reduce((sum, ev) => {
+        return sum + (ev.finishedAt!.getTime() - ev.startedAt!.getTime());
       }, 0);
-      avgEvalTime = Math.round(totalDur / completedEvals.length / 1000);
-      if (avgEvalTime < 1) avgEvalTime = 12;
-    } else {
-      avgEvalTime = 12;
+      avgEvalTime = Math.round(totalDur / timedEvals.length / 1000);
     }
 
     // 3. Database Size check (MySQL informational query)

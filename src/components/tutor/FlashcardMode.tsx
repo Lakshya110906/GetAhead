@@ -50,13 +50,13 @@ export function FlashcardMode({ cards }: FlashcardModeProps) {
         }}
       >
         {/* Front side */}
-        <div className="absolute inset-0 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-xl p-5 flex flex-col justify-between shadow-sm backface-hidden">
+        <div className="absolute inset-0 bg-surface border border-rule rounded-xl p-5 flex flex-col justify-between shadow-sm backface-hidden">
           <div className="flex-1 flex items-center justify-center text-center">
-            <p className="font-semibold text-gray-800 dark:text-gray-200 text-sm leading-relaxed">
+            <p className="font-semibold text-ink text-sm leading-relaxed">
               {current.front}
             </p>
           </div>
-          <div className="flex items-center justify-center gap-1.5 text-[10px] text-gray-400 font-medium">
+          <div className="flex items-center justify-center gap-1.5 text-[10px] text-graphite font-medium">
             <RotateCw className="w-3 h-3 animate-pulse" /> Click to flip
           </div>
         </div>
@@ -85,7 +85,7 @@ export function FlashcardMode({ cards }: FlashcardModeProps) {
         <button
           onClick={handlePrev}
           disabled={cards.length <= 1}
-          className="w-8 h-8 rounded-full border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 flex items-center justify-center hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          className="w-8 h-8 rounded-full border border-rule bg-surface flex items-center justify-center hover:bg-paper dark:hover:bg-gray-800 text-graphite dark:text-graphite disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
           <ChevronLeft className="w-4 h-4" />
         </button>
@@ -93,7 +93,7 @@ export function FlashcardMode({ cards }: FlashcardModeProps) {
         <button
           onClick={handleNext}
           disabled={cards.length <= 1}
-          className="w-8 h-8 rounded-full border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 flex items-center justify-center hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          className="w-8 h-8 rounded-full border border-rule bg-surface flex items-center justify-center hover:bg-paper dark:hover:bg-gray-800 text-graphite dark:text-graphite disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
           <ChevronRight className="w-4 h-4" />
         </button>

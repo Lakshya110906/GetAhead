@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import {
-  Brain,
   Clock,
   BarChart3,
   FileText,
@@ -14,41 +13,33 @@ import {
   Shield,
   Download,
 } from "lucide-react";
+import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
 
 export const metadata: Metadata = {
-  title: "For Teachers — GetAhead AI",
+  title: "For teachers",
   description: "GetAhead AI helps teachers evaluate answer sheets faster, generate question papers instantly, and get AI-consistent grading across an entire class.",
   alternates: { canonical: "/teachers" },
   openGraph: {
-    title: "For Teachers — GetAhead AI",
+    title: "For teachers — GetAhead AI",
     description: "Save hours of manual grading. Get AI-consistent evaluation, question paper generation, and class-wide analytics.",
     url: "/teachers",
     type: "website",
     images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "GetAhead" }],
   },
+  twitter: {
+    card: "summary_large_image",
+    title: "For teachers — GetAhead AI",
+    description: "Save hours of manual grading. Get AI-consistent evaluation, question paper generation, and class-wide analytics.",
+    images: ["/og-image.png"],
+  },
 };
 
 export default function TeachersPage() {
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-paper">
       {/* Navbar */}
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-white/95 border-b border-gray-100">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16">
-          <Link href="/" className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-paper flex items-center justify-center">
-              <Brain className="w-4 h-4 text-white" />
-            </div>
-            <span className="font-bold text-gray-900" style={{ fontFamily: "var(--font-display)" }}>
-              Get<span className="text-ink">Ahead</span>
-            </span>
-          </Link>
-          <div className="flex items-center gap-3">
-            <Link href="/login" className="text-sm text-gray-600 hover:text-gray-900 font-medium transition-colors">Sign In</Link>
-            <Link href="/signup" className="text-sm bg-fixed-ink text-white font-semibold px-4 py-2 rounded-lg hover:opacity-90 transition-opacity">Get Started Free</Link>
-          </div>
-        </div>
-      </nav>
+      <SiteHeader />
 
       {/* Hero */}
       <section className="pt-32 pb-20 bg-paper">
@@ -63,19 +54,19 @@ export default function TeachersPage() {
                 Grade smarter.<br />
                 <span className="text-ink">Teach better.</span>
               </h1>
-              <p className="text-xl text-gray-600 leading-relaxed mb-8">
-                GetAhead AI evaluates your students&apos; answer sheets with the consistency of an expert examiner — in seconds, not hours. Free your time for what matters: teaching.
+              <p className="text-xl text-graphite leading-relaxed mb-8">
+                GetAhead AI applies the same rubric to every sheet — no fatigue, no drift between the first sheet and the fiftieth — and marks a full set in the time it takes to mark one by hand. Free your time for what matters: teaching.
               </p>
               <div className="flex flex-col sm:flex-row gap-3">
                 <Link href="/signup" className="inline-flex items-center justify-center gap-2 bg-fixed-ink text-white font-semibold px-6 py-3 rounded-xl hover:opacity-90 transition-opacity shadow-lg">
-                  Start Free <ArrowRight className="w-4 h-4" />
+                  Start free <ArrowRight className="w-4 h-4" />
                 </Link>
-                <Link href="/features" className="inline-flex items-center justify-center gap-2 bg-white text-gray-700 font-medium px-6 py-3 rounded-xl border border-gray-200 hover:bg-gray-50 transition-all">
-                  See All Features <ChevronRight className="w-4 h-4" />
+                <Link href="/features" className="inline-flex items-center justify-center gap-2 bg-surface text-ink font-medium px-6 py-3 rounded-xl border border-gray-200 hover:bg-gray-50 transition-all">
+                  See all features <ChevronRight className="w-4 h-4" />
                 </Link>
               </div>
             </div>
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-lg p-6">
+            <div className="bg-surface rounded-2xl border border-rule shadow-lg p-6">
               <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
                 <Clock className="w-5 h-5 text-teal-500" />
                 Time saved per teacher per week
@@ -83,11 +74,11 @@ export default function TeachersPage() {
               <div className="space-y-4">
                 {[
                   { label: "Manual grading (30 sheets)", old: "4–6 hours", new: "30 minutes" },
-                  { label: "Paper creation", old: "1–2 hours", new: "60 seconds" },
+                  { label: "Paper creation", old: "1–2 hours", new: "Minutes" },
                   { label: "Feedback writing", old: "2–3 hours", new: "Auto-generated" },
                 ].map((row) => (
                   <div key={row.label} className="flex items-center justify-between py-3 border-b border-gray-50 last:border-0">
-                    <span className="text-sm text-gray-600">{row.label}</span>
+                    <span className="text-sm text-graphite">{row.label}</span>
                     <div className="flex items-center gap-3 text-sm">
                       <span className="text-gray-400 line-through">{row.old}</span>
                       <span className="text-teal-600 font-semibold">{row.new}</span>
@@ -110,7 +101,7 @@ export default function TeachersPage() {
           <h2 className="text-3xl font-bold text-gray-900 mb-4" style={{ fontFamily: "var(--font-display)" }}>
             Why teachers use GetAhead AI
           </h2>
-          <p className="text-gray-600 text-lg max-w-2xl mx-auto">
+          <p className="text-graphite text-lg max-w-2xl mx-auto">
             From evaluation to paper generation to class analytics — everything a teacher needs in one platform.
           </p>
         </div>
@@ -118,49 +109,49 @@ export default function TeachersPage() {
           {[
             {
               icon: Zap,
-              title: "Instant Evaluation",
-              description: "Evaluate a student's answer sheet in under 30 seconds. No more taking papers home to mark on weekends.",
+              title: "Instant evaluation",
+              description: "Evaluate a student's answer sheet in under a minute. No more taking papers home to mark on weekends.",
               color: "from-teal-500 to-teal-600",
             },
             {
               icon: Shield,
-              title: "Consistent Grading",
+              title: "Consistent grading",
               description: "AI applies the same rubric every time — no fatigue, no subjectivity, no variation between the first and fiftieth sheet.",
               color: "from-blue-500 to-blue-600",
             },
             {
               icon: BarChart3,
-              title: "Class-wide Analytics",
+              title: "Class-wide analytics",
               description: "See subject-wise performance trends across your evaluations. Identify which topics your students consistently struggle with.",
               color: "from-purple-500 to-purple-600",
             },
             {
               icon: GraduationCap,
-              title: "Question Paper Generation",
-              description: "Create balanced, well-structured papers in 60 seconds. Select subject, grade, difficulty, and marks — the AI does the rest.",
+              title: "Question paper generation",
+              description: "Create balanced, well-structured papers without spending your evening on it. Select subject, grade, difficulty, and marks — the AI does the rest.",
               color: "from-orange-500 to-orange-600",
             },
             {
               icon: Download,
-              title: "Shareable PDF Reports",
+              title: "Shareable PDF reports",
               description: "Export evaluation reports as PDFs to share with students or parents. Professional formatting — ready for parent-teacher meetings.",
               color: "from-pink-500 to-pink-600",
             },
             {
               icon: FileText,
-              title: "Detailed Marks Breakdown",
+              title: "Detailed marks breakdown",
               description: "Every evaluation includes a per-question breakdown with the AI's reasoning — so you can review and override if needed.",
               color: "from-indigo-500 to-indigo-600",
             },
           ].map((item) => {
             const Icon = item.icon;
             return (
-              <div key={item.title} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 hover:shadow-md transition-shadow">
+              <div key={item.title} className="bg-surface rounded-2xl border border-rule shadow-sm p-6 hover:shadow-md transition-shadow">
                 <div className={"w-12 h-12 rounded-xl bg-fixed-ink flex items-center justify-center mb-4"}>
                   <Icon className="w-6 h-6 text-white" />
                 </div>
                 <h3 className="font-semibold text-gray-900 mb-2">{item.title}</h3>
-                <p className="text-sm text-gray-600 leading-relaxed">{item.description}</p>
+                <p className="text-sm text-graphite leading-relaxed">{item.description}</p>
               </div>
             );
           })}
@@ -175,18 +166,18 @@ export default function TeachersPage() {
           </h2>
           <div className="grid md:grid-cols-2 gap-6 max-w-3xl mx-auto">
             {[
-              { step: "1", title: "Collect answer sheets", desc: "Collect physical answer sheets from students after a test or mock exam." },
-              { step: "2", title: "Scan and upload", desc: "Photograph each sheet or scan to PDF. Upload to GetAhead AI one by one." },
-              { step: "3", title: "Receive evaluations", desc: "Each evaluation completes in 30 seconds with marks, breakdown, and feedback." },
-              { step: "4", title: "Share reports", desc: "Download PDFs to share with students and parents. Review marks and confirm." },
-              { step: "5", title: "Analyse class performance", desc: "Use Analytics to see which topics the whole class struggled with most." },
-              { step: "6", title: "Generate follow-up paper", desc: "Create a practice paper focused on weak topics using the Question Paper Generator." },
+              { step: "Q1", title: "Collect answer sheets", desc: "Collect physical answer sheets from students after a test or mock exam." },
+              { step: "Q2", title: "Scan and upload", desc: "Photograph each sheet or scan to PDF. Upload to GetAhead one by one." },
+              { step: "Q3", title: "Receive evaluations", desc: "Each evaluation completes in under a minute, with marks, breakdown, and feedback." },
+              { step: "Q4", title: "Share reports", desc: "Download PDFs to share with students and parents. Review marks and confirm." },
+              { step: "Q5", title: "Analyse class performance", desc: "Use analytics to see which topics the whole class struggled with most." },
+              { step: "Q6", title: "Generate follow-up paper", desc: "Create a practice paper focused on weak topics using the question paper generator." },
             ].map((item) => (
-              <div key={item.step} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex gap-4">
-                <div className="w-10 h-10 bg-paper rounded-full flex items-center justify-center text-white font-bold flex-shrink-0">{item.step}</div>
+              <div key={item.step} className="bg-surface rounded-2xl border border-rule shadow-sm p-5 flex gap-4">
+                <div className="w-10 h-10 bg-fixed-ink rounded-full flex items-center justify-center text-white font-bold flex-shrink-0">{item.step}</div>
                 <div>
                   <h3 className="font-semibold text-gray-900 mb-1">{item.title}</h3>
-                  <p className="text-sm text-gray-600 leading-relaxed">{item.desc}</p>
+                  <p className="text-sm text-graphite leading-relaxed">{item.desc}</p>
                 </div>
               </div>
             ))}
@@ -211,7 +202,7 @@ export default function TeachersPage() {
               ].map((item) => (
                 <div key={item} className="flex items-start gap-3">
                   <CheckCircle className="w-5 h-5 text-teal-500 flex-shrink-0 mt-0.5" />
-                  <p className="text-gray-700">{item}</p>
+                  <p className="text-ink">{item}</p>
                 </div>
               ))}
             </div>
@@ -221,11 +212,11 @@ export default function TeachersPage() {
             <h3 className="text-xl font-bold text-gray-900 mb-3" style={{ fontFamily: "var(--font-display)" }}>
               For classrooms of any size
             </h3>
-            <p className="text-gray-600 mb-6 leading-relaxed">
+            <p className="text-graphite mb-6 leading-relaxed">
               Whether you&apos;re evaluating 5 students or 50, GetAhead AI scales with your workload. Bulk upload (multiple sheets in one go) is on the roadmap for Q3 2026.
             </p>
             <Link href="/signup" className="inline-flex items-center gap-2 bg-fixed-ink text-white font-semibold px-5 py-2.5 rounded-xl hover:opacity-90 transition-opacity text-sm">
-              Start Evaluating Free <ArrowRight className="w-4 h-4" />
+              Start evaluating free <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
         </div>
@@ -240,8 +231,8 @@ export default function TeachersPage() {
           <p className="text-teal-100 text-lg mb-8">
             Create a free teacher account and evaluate your first batch of sheets today.
           </p>
-          <Link href="/signup" className="inline-flex items-center gap-2 bg-white text-teal-600 font-bold px-8 py-4 rounded-xl hover:bg-teal-50 transition-colors shadow-lg group">
-            Start Free Today <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+          <Link href="/signup" className="inline-flex items-center gap-2 bg-surface text-teal-600 font-bold px-8 py-4 rounded-xl hover:bg-teal-50 transition-colors shadow-lg group">
+            Start free today <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
           </Link>
         </div>
       </section>

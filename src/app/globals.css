@@ -1,5 +1,15 @@
 @import "tailwindcss";
 
+/* Without this, Tailwind's dark: variant responds to the OS/browser
+   prefers-color-scheme media query — completely independent of this site's
+   own manually-toggled .theme-dark class (see ThemeProvider). That mismatch
+   meant several components (the AI tutor panel, admin/support ticket detail
+   pages, forgot/reset-password) only got their dark: styling when the OS
+   happened to be in dark mode, regardless of what the user picked with the
+   in-app theme toggle. Keying dark: off .theme-dark makes it follow the same
+   toggle as every var(--token)-based color in this file. */
+@custom-variant dark (&:where(.theme-dark, .theme-dark *));
+
 /* =============================================================================
    DESIGN TOKENS — single source of truth for color and type.
    Subject: the marked answer sheet. Ruled paper, examiner's red pen,
@@ -29,8 +39,8 @@
   --color-secondary-dark: #21563F;
   --color-secondary-light: #E9F2EC;
   --color-bg: var(--paper);
-  --color-surface: #FFFFFF;
-  --color-surface-2: #F2F2EE;
+  --surface: #FFFFFF;
+  --surface-2: #F2F2EE;
   --color-fg: var(--ink);
   --color-fg-muted: var(--graphite);
   --color-border: var(--rule);
@@ -64,8 +74,8 @@
   --color-secondary-dark: #6BC198;
   --color-secondary-light: #22302A;
   --color-bg: #1C1F24;
-  --color-surface: #23262C;
-  --color-surface-2: #2A2E35;
+  --surface: #23262C;
+  --surface-2: #2A2E35;
   --color-fg: var(--ink);
   --color-fg-muted: var(--graphite);
   --color-border: var(--rule);
@@ -82,6 +92,13 @@
   --color-tick: var(--tick);
   --color-graphite: var(--graphite);
   --color-rule: var(--rule);
+
+  /* Raised card/surface roles — bg-surface for the standard card face,
+     bg-surface-2 for a slightly deeper surface (subtle section backgrounds,
+     hover/pressed states). Distinct from bg-paper (page ground): cards must
+     sit visibly above ground in both themes. */
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
 
   /* Fixed (theme-invariant) slots: bg-fixed-ink / text-fixed-ink /
      text-fixed-examiner / border-fixed-examiner / text-fixed-graphite /
@@ -126,6 +143,41 @@
      small text — used as an "eyebrow" label color in a few places. Darken to
      orange-700 (#c2410c, ~5:1) so it stays recognizably orange but passes. */
   --color-orange-600: #c2410c;
+
+  /* Decorative accent hues (category badges, colored notice cards) beyond
+     blue/teal/red/green above. These aren't semantic tokens — there's no
+     "purple" or "amber" role in the design — but bg-{hue}-50/100 is used
+     throughout as a colored card background, often paired with a token text
+     color (e.g. text-ink) that correctly inverts to a light color in dark
+     mode. Left as Tailwind's static light-only default, that pairing goes
+     light-text-on-light-background in dark mode — confirmed live on the
+     evaluation report's study-recommendations cards (bg-amber-50 + text-ink).
+     Mixing each hue's own default swatch into --color-surface keeps its
+     identity (still reads as amber, purple, etc.) while moving the actual
+     background toward the dark surface in dark mode, same technique as the
+     red/green mapping above. */
+  --color-orange-50: color-mix(in srgb, #f97316 12%, var(--color-surface));
+  --color-orange-100: color-mix(in srgb, #f97316 20%, var(--color-surface));
+  --color-amber-50: color-mix(in srgb, #f59e0b 12%, var(--color-surface));
+  --color-amber-100: color-mix(in srgb, #f59e0b 20%, var(--color-surface));
+  --color-purple-50: color-mix(in srgb, #a855f7 12%, var(--color-surface));
+  --color-purple-100: color-mix(in srgb, #a855f7 20%, var(--color-surface));
+  --color-pink-50: color-mix(in srgb, #ec4899 12%, var(--color-surface));
+  --color-pink-100: color-mix(in srgb, #ec4899 20%, var(--color-surface));
+  --color-indigo-50: color-mix(in srgb, #6366f1 12%, var(--color-surface));
+  --color-indigo-100: color-mix(in srgb, #6366f1 20%, var(--color-surface));
+  --color-teal-100: color-mix(in srgb, var(--tick) 20%, var(--color-surface));
+  --color-cyan-50: color-mix(in srgb, #06b6d4 12%, var(--color-surface));
+  --color-cyan-100: color-mix(in srgb, #06b6d4 20%, var(--color-surface));
+  --color-violet-50: color-mix(in srgb, #8b5cf6 12%, var(--color-surface));
+  --color-violet-100: color-mix(in srgb, #8b5cf6 20%, var(--color-surface));
+  --color-sky-50: color-mix(in srgb, #0ea5e9 12%, var(--color-surface));
+  --color-sky-100: color-mix(in srgb, #0ea5e9 20%, var(--color-surface));
+  --color-rose-50: color-mix(in srgb, #f43f5e 12%, var(--color-surface));
+  --color-yellow-50: color-mix(in srgb, #eab308 12%, var(--color-surface));
+  --color-yellow-100: color-mix(in srgb, #eab308 20%, var(--color-surface));
+  --color-slate-50: var(--color-surface-2);
+  --color-slate-100: var(--color-surface-2);
 
   /* Type roles — the next/font variables (--display-font/--body-font/--mono-font,
      set on <html> in layout.tsx) are named distinctly from these Tailwind-facing

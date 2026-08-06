@@ -2,8 +2,10 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { Brain, ChevronDown, ArrowRight, HelpCircle } from "lucide-react";
+import { ChevronDown, ArrowRight, HelpCircle } from "lucide-react";
+import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
+import { SUPPORT_EMAIL } from "@/lib/siteConfig";
 
 const faqCategories = [
   {
@@ -11,7 +13,7 @@ const faqCategories = [
     faqs: [
       {
         q: "How do I create a GetAhead AI account?",
-        a: "Go to getahead.ai and click 'Get Started Free'. Enter your name, email, and password, select your role (Student, Teacher, or Institution), and click Create Account. You're signed in immediately and land straight on your dashboard.",
+        a: "From the homepage, click 'Start free'. Enter your name, email, and password, select your role (Student, Teacher, or Institution), and click Create account. You're signed in immediately and land straight on your dashboard.",
       },
       {
         q: "Is GetAhead AI free to use?",
@@ -32,7 +34,7 @@ const faqCategories = [
     ],
   },
   {
-    label: "Login & Authentication",
+    label: "Login and authentication",
     faqs: [
       {
         q: "I forgot my password. How do I reset it?",
@@ -40,16 +42,16 @@ const faqCategories = [
       },
       {
         q: "Can I stay signed in across sessions?",
-        a: "Yes. Sessions persist for 30 days by default. You'll stay logged in unless you explicitly sign out or your session expires. For shared devices, always use the Sign Out button.",
+        a: "Yes, while you're actively using the site — your session refreshes automatically as you browse. It expires after about 15 minutes of inactivity, so on shared devices you should still use the Sign Out button when you're done.",
       },
       {
         q: "Why was I signed out unexpectedly?",
-        a: "Sessions expire after 30 days of inactivity. If you changed your password, all existing sessions are invalidated for security. Admin-initiated account changes may also trigger sign-out.",
+        a: "Sessions expire after about 15 minutes of inactivity. If you changed your password, all existing sessions are invalidated immediately for security. Admin-initiated account changes may also trigger sign-out.",
       },
     ],
   },
   {
-    label: "Privacy & Data Security",
+    label: "Privacy and data security",
     faqs: [
       {
         q: "Is my exam data private?",
@@ -74,11 +76,11 @@ const faqCategories = [
     ],
   },
   {
-    label: "AI Evaluation",
+    label: "AI evaluation",
     faqs: [
       {
         q: "How accurate is the AI evaluation?",
-        a: "We measure this directly against a golden set of real answer sheets marked by real teachers, re-run on every prompt or rubric change — see the accuracy figure and methodology on our homepage. For highly subjective or niche topics, we recommend a final teacher review for high-stakes exams.",
+        a: "We're building a golden set of real answer sheets marked by real teachers so we can measure this directly and re-check it on every prompt or rubric change, rather than just claim it — see the current status on our homepage. Until that figure is published, treat the AI's marks as a strong first pass and have a teacher review anything high-stakes.",
       },
       {
         q: "Does the AI understand partial credit?",
@@ -98,7 +100,7 @@ const faqCategories = [
       },
       {
         q: "How long does an evaluation take?",
-        a: "Most evaluations complete in 10–30 seconds. Longer answer sheets (20+ questions, dense text) may take up to 60 seconds. You can leave the page — the evaluation runs in the background and you'll see the result in your dashboard.",
+        a: "Most evaluations complete in under a minute; longer or denser answer sheets can take a little more. You can leave the page — the evaluation runs in the background and you'll see the result in your dashboard.",
       },
       {
         q: "What subjects does GetAhead AI support?",
@@ -107,11 +109,11 @@ const faqCategories = [
     ],
   },
   {
-    label: "File Uploads",
+    label: "File uploads",
     faqs: [
       {
         q: "What file formats can I upload?",
-        a: "You can upload PDF documents, JPEG images, and PNG images. For multi-page answer sheets, a single consolidated PDF is recommended. Maximum file size is 10MB per upload.",
+        a: "You can upload PDF documents, JPEG images, and PNG images. For multi-page answer sheets, a single consolidated PDF is recommended. Maximum file size is 20MB per upload.",
       },
       {
         q: "Can I upload photos taken on my phone?",
@@ -119,12 +121,12 @@ const faqCategories = [
       },
       {
         q: "What if my upload fails?",
-        a: "Check your internet connection and try again. If the file is over 10MB, compress it first using a free PDF compressor. If problems persist, try converting the file to a different supported format and contact support.",
+        a: "Check your internet connection and try again. If the file is over 20MB, compress it first using a free PDF compressor. If problems persist, try converting the file to a different supported format and contact support.",
       },
     ],
   },
   {
-    label: "Reports & Analytics",
+    label: "Reports and analytics",
     faqs: [
       {
         q: "What does the evaluation report include?",
@@ -140,12 +142,12 @@ const faqCategories = [
       },
       {
         q: "Can I save specific evaluations for quick reference?",
-        a: "Yes. On any evaluation report page, click 'Save Report'. You can give it a custom name (e.g. 'Physics Mock 3 — May'). Saved reports appear in the Saved Reports section of your dashboard.",
+        a: "Yes. On any evaluation report page, click 'Save Report'. You can give it a custom name (e.g. 'Physics Mock 3 — May'). Saved reports appear in the saved reports section of your dashboard.",
       },
     ],
   },
   {
-    label: "Question Paper Generator",
+    label: "Question paper generator",
     faqs: [
       {
         q: "How do I generate a question paper?",
@@ -166,15 +168,15 @@ const faqCategories = [
     ],
   },
   {
-    label: "Teachers & Institutions",
+    label: "Teachers and institutions",
     faqs: [
       {
         q: "Can teachers use GetAhead AI for their entire class?",
-        a: "Yes. Teachers can evaluate each student's answer sheet individually. Bulk upload (multiple sheets in one batch) is on the roadmap. For now, each evaluation takes 30–60 seconds per sheet.",
+        a: "Yes. Teachers can evaluate each student's answer sheet individually. Bulk upload (multiple sheets in one batch) is on the roadmap. For now, each evaluation takes under a minute per sheet.",
       },
       {
-        q: "Is GetAhead AI suitable for schools and coaching centres?",
-        a: "Absolutely. Schools and coaching centres can create an Institution account and use GetAhead AI to evaluate mock tests, generate practice papers, and track student performance. Institutional dashboard features are in development.",
+        q: "Is GetAhead AI suitable for schools and coaching centers?",
+        a: "Absolutely. Schools and coaching centers can create an Institution account and use GetAhead AI to evaluate mock tests, generate practice papers, and track student performance. Institutional dashboard features are in development.",
       },
       {
         q: "Can I use GetAhead AI for competitive exam preparation (JEE, NEET, UPSC)?",
@@ -187,7 +189,7 @@ const faqCategories = [
     ],
   },
   {
-    label: "Future Features",
+    label: "Future features",
     faqs: [
       {
         q: "What features are coming soon?",
@@ -195,7 +197,7 @@ const faqCategories = [
       },
       {
         q: "How can I suggest a feature?",
-        a: "Use the Contact page to submit a feature request. We actively read every submission and prioritise based on user demand. You can also reach us at support@getahead.ai.",
+        a: `Use the Contact page to submit a feature request. We actively read every submission and prioritise based on user demand. You can also reach us at ${SUPPORT_EMAIL}.`,
       },
       {
         q: "Will GetAhead AI always be free?",
@@ -217,24 +219,9 @@ export default function FAQPage() {
   const totalFaqs = faqCategories.reduce((sum, cat) => sum + cat.faqs.length, 0);
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-paper">
       {/* Navbar */}
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-white/95 border-b border-gray-100">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16">
-          <Link href="/" className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-fixed-ink flex items-center justify-center">
-              <Brain className="w-4 h-4 text-white" />
-            </div>
-            <span className="font-bold text-gray-900" style={{ fontFamily: "var(--font-display)" }}>
-              Get<span className="text-ink">Ahead</span>
-            </span>
-          </Link>
-          <div className="flex items-center gap-3">
-            <Link href="/login" className="text-sm text-gray-600 hover:text-gray-900 font-medium transition-colors">Sign In</Link>
-            <Link href="/signup" className="text-sm bg-fixed-ink text-white font-semibold px-4 py-2 rounded-lg hover:opacity-90 transition-opacity">Get Started Free</Link>
-          </div>
-        </div>
-      </nav>
+      <SiteHeader />
 
       {/* Hero */}
       <section className="pt-32 pb-20 bg-paper">
@@ -244,10 +231,10 @@ export default function FAQPage() {
             {totalFaqs} questions answered
           </div>
           <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6 leading-tight" style={{ fontFamily: "var(--font-display)" }}>
-            Frequently Asked<br />
-            <span className="text-ink">Questions</span>
+            Frequently asked<br />
+            <span className="text-ink">questions</span>
           </h1>
-          <p className="text-xl text-gray-600 leading-relaxed mb-8">
+          <p className="text-xl text-graphite leading-relaxed mb-8">
             Everything you need to know about GetAhead AI. Can&apos;t find your answer?{" "}
             <Link href="/contact" className="text-blue-600 font-medium hover:underline">Contact us</Link>.
           </p>
@@ -259,7 +246,7 @@ export default function FAQPage() {
         <div className="flex flex-col lg:flex-row gap-12">
           {/* Category sidebar */}
           <aside className="lg:w-56 flex-shrink-0">
-            <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-4">Categories</h2>
+            <h2 className="text-xs font-semibold text-graphite uppercase tracking-wide mb-4">Categories</h2>
             <nav className="space-y-1">
               {faqCategories.map((cat) => (
                 <button
@@ -268,7 +255,7 @@ export default function FAQPage() {
                   className={`w-full text-left px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
                     activeCategory === cat.label
                       ? "bg-blue-50 text-blue-700"
-                      : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                      : "text-graphite hover:bg-gray-50 hover:text-ink"
                   }`}
                 >
                   {cat.label}
@@ -289,7 +276,7 @@ export default function FAQPage() {
                 const slug = key.toLowerCase().replace(/[^a-z0-9]+/g, "-");
                 const isOpen = openItems[key];
                 return (
-                  <div key={key} className="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+                  <div key={key} className="bg-surface border border-rule rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow">
                     <button
                       id={`faq-question-${slug}`}
                       onClick={() => toggle(key)}
@@ -307,7 +294,7 @@ export default function FAQPage() {
                         aria-labelledby={`faq-question-${slug}`}
                         className="px-5 pb-5 border-t border-gray-50"
                       >
-                        <p className="text-gray-600 text-sm leading-relaxed pt-4">{faq.a}</p>
+                        <p className="text-graphite text-sm leading-relaxed pt-4">{faq.a}</p>
                       </div>
                     )}
                   </div>
@@ -324,15 +311,15 @@ export default function FAQPage() {
           <h2 className="text-2xl font-bold text-gray-900 mb-3" style={{ fontFamily: "var(--font-display)" }}>
             Still have questions?
           </h2>
-          <p className="text-gray-600 mb-6">
-            Our support team responds within 24 hours on weekdays. You can also browse the Help Center for detailed guides.
+          <p className="text-graphite mb-6">
+            Our support team responds within 24 hours on weekdays. You can also browse the help center for detailed guides.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
             <Link href="/contact" className="inline-flex items-center gap-2 bg-fixed-ink text-white font-semibold px-6 py-3 rounded-xl hover:opacity-90 transition-opacity">
-              Contact Support <ArrowRight className="w-4 h-4" />
+              Contact support <ArrowRight className="w-4 h-4" />
             </Link>
-            <Link href="/help" className="inline-flex items-center gap-2 bg-white text-gray-700 font-medium px-6 py-3 rounded-xl border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-all">
-              Browse Help Center
+            <Link href="/help" className="inline-flex items-center gap-2 bg-surface text-ink font-medium px-6 py-3 rounded-xl border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-all">
+              Browse help center
             </Link>
           </div>
         </div>

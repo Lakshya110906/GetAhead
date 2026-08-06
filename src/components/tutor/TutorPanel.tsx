@@ -95,7 +95,7 @@ export function TutorPanel({
       {/* Main Panel Wrapper */}
       <div
         ref={sidebarRef}
-        className={`fixed top-0 right-0 h-screen z-40 bg-white dark:bg-gray-950 border-l border-gray-100 dark:border-gray-800 shadow-2xl flex flex-col transition-all duration-300 ease-out no-print ${
+        className={`fixed top-0 right-0 h-screen z-40 bg-surface border-l border-rule shadow-2xl flex flex-col transition-all duration-300 ease-out no-print ${
           isOpen ? "translate-x-0" : "translate-x-full"
         }`}
         style={{
@@ -111,7 +111,7 @@ export function TutorPanel({
         )}
 
         {/* Panel Header */}
-        <div className="flex items-center justify-between border-b border-gray-100 dark:border-gray-800 p-4 select-none">
+        <div className="flex items-center justify-between border-b border-rule p-4 select-none">
           <div className="flex items-center gap-2 flex-1 min-w-0 pr-2">
             {isEditing ? (
               <div className="flex items-center gap-1.5 w-full">
@@ -120,7 +120,7 @@ export function TutorPanel({
                   value={editTitle}
                   onChange={(e) => setEditTitle(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && handleRenameSubmit()}
-                  className="w-full text-sm font-semibold bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg px-2.5 py-1 text-gray-800 dark:text-gray-200 focus:outline-none focus:border-blue-500"
+                  className="w-full text-sm font-semibold bg-paper border border-rule rounded-lg px-2.5 py-1 text-ink focus:outline-none focus:border-blue-500"
                 />
                 <button
                   onClick={handleRenameSubmit}
@@ -132,14 +132,14 @@ export function TutorPanel({
             ) : (
               <div className="flex items-center gap-1.5 min-w-0 group">
                 <h2
-                  className="font-bold text-gray-800 dark:text-gray-200 text-sm truncate"
+                  className="font-bold text-ink text-sm truncate"
                   style={{ fontFamily: "var(--font-display)" }}
                 >
                   {title}
                 </h2>
                 <button
                   onClick={startEditing}
-                  className="p-1 rounded-md text-gray-400 hover:text-blue-500 hover:bg-gray-50 dark:hover:bg-gray-900 opacity-0 group-hover:opacity-100 transition-opacity"
+                  className="p-1 rounded-md text-graphite hover:text-blue-500 hover:bg-paper dark:hover:bg-gray-900 opacity-0 group-hover:opacity-100 transition-opacity"
                   title="Rename session"
                 >
                   <Edit2 className="w-3 h-3" />
@@ -151,14 +151,14 @@ export function TutorPanel({
           <div className="flex items-center gap-1.5">
             <button
               onClick={onClearChat}
-              className="p-2 rounded-xl text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 transition-all"
+              className="p-2 rounded-xl text-graphite hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 transition-all"
               title="Clear chat"
             >
               <Trash2 className="w-4 h-4" />
             </button>
             <button
               onClick={onToggle}
-              className="p-2 rounded-xl text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-900 transition-all"
+              className="p-2 rounded-xl text-graphite hover:text-graphite dark:hover:text-gray-200 hover:bg-paper dark:hover:bg-gray-900 transition-all"
               title="Collapse tutor"
             >
               {window.innerWidth < 768 ? <X className="w-4 h-4" /> : <PanelRightClose className="w-4 h-4" />}

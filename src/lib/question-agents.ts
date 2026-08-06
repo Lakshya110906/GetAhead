@@ -1,7 +1,15 @@
-import { GoogleGenerativeAI, SchemaType, Tool } from "@google/generative-ai";
-import { performTavilySearch } from "./gemini";
+import { GoogleGenerativeAI } from "@google/generative-ai";
+import {
+  plannerPlanSchema,
+  generatedPaperSchema,
+  GEMINI_PLANNER_RESPONSE_SCHEMA,
+  GEMINI_PAPER_RESPONSE_SCHEMA,
+  type PlannerPlan,
+  type GeneratedPaperShape,
+} from "./questionPaperSchema";
 
 const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY || process.env.GEMINI_API_KEY;
+const MODEL_ID = "gemini-2.5-flash";
 
 // Gemini's free-tier rate limit is the single most common reason an agent
 // call fails — a bare try/catch that gave up after one attempt turned a
@@ -88,7 +96,7 @@ export interface GeneratedPaper {
 function getMockQuestionPaper(config: PaperConfig): GeneratedPaper {
   const sections: PaperSection[] = [];
   let questionCounter = 1;
-  
+
   const hasMCQ = config.questionTypes.includes("MCQ");
   const hasShort = config.questionTypes.includes("Short Answer");
   const hasLong = config.questionTypes.includes("Long Answer");
@@ -187,245 +195,188 @@ function getMockQuestionPaper(config: PaperConfig): GeneratedPaper {
   };
 }
 
-// Tavily search tool declaration for Gemini
-const tavilyTool: Tool = {
-  functionDeclarations: [
-    {
-      name: "tavilysearch",
-      description: "Search the web using Tavily to verify facts, retrieve educational content, or lookup exam answers.",
-      parameters: {
-        type: SchemaType.OBJECT,
-        properties: {
-          query: {
-            type: SchemaType.STRING,
-            description: "The search query to verify."
-          }
-        },
-        required: ["query"]
-      }
-    }
-  ]
-};
+function round2(n: number): number {
+  return Math.round(n * 100) / 100;
+}
+
+/**
+ * Structured output constrains the SHAPE Gemini returns (valid JSON, right
+ * field types) — it cannot constrain that questionCount × marksPerQuestion
+ * sums to the marks the user actually asked for, which is exactly the
+ * arithmetic instruction-following LLMs are least reliable at, and exactly
+ * why "10 questions of 10 marks each" used to silently not happen. Rather
+ * than hope the model got it right, force it: if the plan's total is off,
+ * adjust the last section's question count deterministically so downstream
+ * agents are handed a plan that is guaranteed to add up, every time.
+ */
+function correctPlanMarks(plan: PlannerPlan, targetTotal: number): PlannerPlan {
+  const sections = plan.sections.map((s) => ({ ...s }));
+  const currentTotal = sections.reduce((sum, s) => sum + s.marksPerQuestion * s.questionCount, 0);
+  const diff = round2(targetTotal - currentTotal);
+  if (diff === 0) return { sections };
+
+  const last = sections[sections.length - 1];
+  // Prefer adjusting question count (keeps the requested marks-per-question
+  // intact, which is usually the more specific part of what the user asked
+  // for — "10 questions of 10 marks" cares about both, but marksPerQuestion
+  // is the number most often stated explicitly).
+  const extraQuestions = diff / last.marksPerQuestion;
+  if (Number.isInteger(extraQuestions) && last.questionCount + extraQuestions >= 1) {
+    last.questionCount += extraQuestions;
+  } else {
+    // Fall back to absorbing the remainder into this section's per-question
+    // marks, spread across its questions.
+    const newMarksPerQuestion = round2((last.marksPerQuestion * last.questionCount + diff) / last.questionCount);
+    last.marksPerQuestion = Math.max(1, newMarksPerQuestion);
+  }
+  return { sections };
+}
+
+function planTotal(plan: PlannerPlan): number {
+  return round2(plan.sections.reduce((sum, s) => sum + s.marksPerQuestion * s.questionCount, 0));
+}
+
+// A custom instruction is allowed to override the numeric "total marks"
+// field on purpose (see the planner prompt) — "10 questions of 10 marks
+// each" implies 100 marks even if the total-marks field still says 30.
+// Force-correcting the plan back to the field's value in that case would
+// silently undo the exact override the prompt told the model to make. Only
+// force an exact match to the field when there's no custom instruction to
+// have overridden it; otherwise trust the plan's own total and carry that
+// forward as the real target for the rest of the pipeline.
+function resolveEffectiveTotal(plan: PlannerPlan, config: PaperConfig): { plan: PlannerPlan; effectiveTotal: number } {
+  if (!config.customPrompt?.trim()) {
+    return { plan: correctPlanMarks(plan, config.totalMarks), effectiveTotal: config.totalMarks };
+  }
+  const total = planTotal(plan);
+  return { plan, effectiveTotal: total > 0 ? total : config.totalMarks };
+}
+
+/**
+ * Mirrors recomputeFromQuestionMarks() in lib/gemini.ts: never trust the
+ * model's self-reported totalMarks, even inside a schema it's constrained
+ * to — recompute it from the actual per-question marks. If that computed
+ * total still doesn't match what the user asked for (the generator/reviewer
+ * didn't perfectly follow the corrected plan), say so plainly instead of
+ * quietly displaying a number that doesn't match reality.
+ */
+function recomputePaperMarks(paper: GeneratedPaperShape, targetTotal: number): GeneratedPaper {
+  const computedTotal = round2(
+    paper.sections.reduce((sum, s) => sum + s.questions.reduce((qSum, q) => qSum + q.marks, 0), 0)
+  );
+  const reviewNotes = [...(paper.reviewNotes ?? [])];
+  if (Math.abs(computedTotal - targetTotal) > 0.01) {
+    reviewNotes.push(
+      `[Warning] This paper totals ${computedTotal} marks; you requested ${targetTotal}. Question marks were not adjusted automatically so the content stays consistent with what was written — use Apply Tweaks to ask for a specific section to be resized.`
+    );
+  }
+  return { ...paper, totalMarks: computedTotal, reviewNotes };
+}
 
 // 1. Planner Agent
-async function runPlannerAgent(genAI: GoogleGenerativeAI, config: PaperConfig): Promise<unknown> {
-  const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
-  const prompt = `You are an expert Educational Curriculum Planner. Your job is to structure a question paper.
-  
-  Subject: ${config.subject}
-  Grade/Level: ${config.grade}
-  Topic: ${config.topic}
-  Difficulty: ${config.difficulty}
-  Total Marks: ${config.totalMarks}
-  Allowed Question Types: ${config.questionTypes.join(", ")}
-  ${config.customPrompt ? `Custom User Instructions/Prompt: ${config.customPrompt}` : ""}
-  ${config.studyMaterialText ? `Study Material Reference (Strictly prioritize and structure exam based on this):
-  --- START STUDY MATERIAL ---
-  ${config.studyMaterialText}
-  --- END STUDY MATERIAL ---` : ""}
+async function runPlannerAgent(genAI: GoogleGenerativeAI, config: PaperConfig): Promise<PlannerPlan> {
+  const model = genAI.getGenerativeModel({
+    model: MODEL_ID,
+    generationConfig: {
+      responseMimeType: "application/json",
+      responseSchema: GEMINI_PLANNER_RESPONSE_SCHEMA,
+    },
+  });
+  const prompt = `You are an expert educational curriculum planner. Structure a question paper.
 
-  Provide a structured layout. Determine the number of sections, the types of questions in each section, the marks per question, and the specific subtopics covered in each section.
-  
-  You must output your response in this EXACT JSON format:
-  {
-    "sections": [
-      {
-        "title": "Section A: ...",
-        "description": "Short directions...",
-        "questionType": "MCQ | Short | Long",
-        "marksPerQuestion": 1,
-        "questionCount": 5,
-        "topicsCovered": ["subtopic 1", "subtopic 2"]
-      }
-    ]
-  }
-  
-  CRITICAL: The sum of (marksPerQuestion * questionCount) across all sections MUST equal EXACTLY ${config.totalMarks}.
-  Do not include any conversational text before or after the JSON.`;
+Subject: ${config.subject}
+Grade/Level: ${config.grade}
+Topic: ${config.topic}
+Difficulty: ${config.difficulty}
+Total marks: ${config.totalMarks}
+Allowed question types: ${config.questionTypes.join(", ")}
+${config.customPrompt ? `Custom user instructions: ${config.customPrompt}` : ""}
+${config.studyMaterialText ? `Study material reference (strictly prioritize and structure the exam based on this):
+--- START STUDY MATERIAL ---
+${config.studyMaterialText}
+--- END STUDY MATERIAL ---` : ""}
+
+Determine the number of sections, the question type of each section, the marks per question, the question count, and the specific subtopics covered in each section.
+
+The sum of (marksPerQuestion × questionCount) across all sections must equal ${config.totalMarks} as closely as possible — this is the single most important constraint. If the custom instructions specify an exact question count or marks-per-question (e.g. "10 questions of 10 marks each"), follow that exactly and let it drive the total, even if it doesn't match the total-marks field.`;
 
   const result = await model.generateContent(prompt);
-  const text = result.response.text();
-  const jsonMatch = text.match(/\{[\s\S]*\}/);
-  if (!jsonMatch) {
-    throw new Error("Planner Agent failed to return a valid JSON structure");
-  }
-  return JSON.parse(jsonMatch[0]);
+  const parsed = JSON.parse(result.response.text());
+  return plannerPlanSchema.parse(parsed);
 }
 
 // 2. Generator Agent
-async function runGeneratorAgent(genAI: GoogleGenerativeAI, config: PaperConfig, plan: unknown): Promise<unknown> {
-  const model = genAI.getGenerativeModel({ 
-    model: "gemini-2.5-flash",
-    tools: [tavilyTool]
+async function runGeneratorAgent(genAI: GoogleGenerativeAI, config: PaperConfig, plan: PlannerPlan): Promise<GeneratedPaperShape> {
+  const model = genAI.getGenerativeModel({
+    model: MODEL_ID,
+    generationConfig: {
+      responseMimeType: "application/json",
+      responseSchema: GEMINI_PAPER_RESPONSE_SCHEMA,
+    },
   });
 
-  const prompt = `You are a Question Generator Agent. Your job is to generate the actual questions, options (for MCQs), and answers based on the planner's layout.
-  
-  Subject: ${config.subject}
-  Grade: ${config.grade}
-  Difficulty: ${config.difficulty}
-  ${config.customPrompt ? `Custom User Instructions/Prompt: ${config.customPrompt}` : ""}
-  ${config.studyMaterialText ? `Study Material Reference (Strictly prioritize and base questions on this text):
-  --- START STUDY MATERIAL ---
-  ${config.studyMaterialText}
-  --- END STUDY MATERIAL ---` : ""}
-  
-  Structure Plan:
-  ${JSON.stringify(plan, null, 2)}
-  
-  You have access to the 'tavilysearch' tool. If you need to search the web to verify dates, formulas, facts, or retrieve correct answers for your questions, call the tool.
-  
-  Generate all questions. For MCQs, provide exactly 4 options and the correct letter (A, B, C, or D). For short and long answers, provide a full model answer that an evaluator can use.
-  
-  Output in this EXACT JSON format:
-  {
-    "title": "Exam Paper Title",
-    "sections": [
-      {
-        "title": "Section Title",
-        "description": "Directions...",
-        "questions": [
-          {
-            "number": 1,
-            "type": "MCQ | Short | Long",
-            "question": "Question text...",
-            "options": ["Option A text", "Option B text", "Option C text", "Option D text"],
-            "answer": "A", // Or answer text for short/long
-            "marks": 2
-          }
-        ]
-      }
-    ]
-  }
-  Do not include any conversational text.`;
+  const prompt = `You are a question generator agent. Generate the actual questions, options (for MCQs), and answers based on the planner's layout below.
 
-  const chat = model.startChat();
-  let result = await chat.sendMessage(prompt);
-  
-  let functionCalls = result.response.functionCalls();
-  while (functionCalls && functionCalls.length > 0) {
-    const call = functionCalls[0];
-    if (call.name === "tavilysearch") {
-      const query = (call.args as { query?: string }).query || "";
-      console.log(`🔍 Generator Agent requested Tavily search: "${query}"`);
-      const searchResults = await performTavilySearch(query);
-      console.log(`✅ Search results retrieved for: "${query}"`);
-      
-      result = await chat.sendMessage([
-        {
-          functionResponse: {
-            name: "tavilysearch",
-            response: { result: searchResults },
-          },
-        },
-      ]);
-      functionCalls = result.response.functionCalls();
-    } else {
-      break;
-    }
-  }
+Subject: ${config.subject}
+Grade: ${config.grade}
+Difficulty: ${config.difficulty}
+${config.customPrompt ? `Custom user instructions: ${config.customPrompt}` : ""}
+${config.studyMaterialText ? `Study material reference (strictly prioritize and base questions on this text):
+--- START STUDY MATERIAL ---
+${config.studyMaterialText}
+--- END STUDY MATERIAL ---` : ""}
 
-  const text = result.response.text();
-  const jsonMatch = text.match(/\{[\s\S]*\}/);
-  if (!jsonMatch) {
-    throw new Error("Generator Agent failed to return valid JSON");
-  }
-  return JSON.parse(jsonMatch[0]);
+Structure plan (follow the exact questionCount and marksPerQuestion for every section — do not add, drop, or resize questions):
+${JSON.stringify(plan, null, 2)}
+
+For MCQs, provide exactly 4 options as plain text (do not prefix them with "A)", "B)", etc. — that numbering is added when the paper is displayed) and the correct letter (A, B, C, or D) as the answer. For short and long answers, provide a full model answer an evaluator can use. Write plain text only — no LaTeX, no markdown, no dollar signs; spell out formulas in words or plain characters (e.g. "H2O", "x^2" as "x squared" or "x^2").`;
+
+  const result = await model.generateContent(prompt);
+  const parsed = JSON.parse(result.response.text());
+  return generatedPaperSchema.parse(parsed);
 }
 
 // 3. Reviewer Agent
-async function runReviewerAgent(genAI: GoogleGenerativeAI, config: PaperConfig, plan: unknown, draft: unknown): Promise<GeneratedPaper> {
-  const model = genAI.getGenerativeModel({ 
-    model: "gemini-2.5-flash",
-    tools: [tavilyTool]
+async function runReviewerAgent(genAI: GoogleGenerativeAI, config: PaperConfig, plan: PlannerPlan, draft: GeneratedPaperShape): Promise<GeneratedPaperShape> {
+  const model = genAI.getGenerativeModel({
+    model: MODEL_ID,
+    generationConfig: {
+      responseMimeType: "application/json",
+      responseSchema: GEMINI_PAPER_RESPONSE_SCHEMA,
+    },
   });
 
-  const prompt = `You are the Quality Reviewer Agent. Your job is to audit the draft question paper.
-  
-  Subject: ${config.subject}
-  Grade: ${config.grade}
-  Target Difficulty: ${config.difficulty}
-  ${config.customPrompt ? `Custom User Instructions/Prompt: ${config.customPrompt}` : ""}
-  ${config.studyMaterialText ? `Study Material Reference:
-  --- START STUDY MATERIAL ---
-  ${config.studyMaterialText}
-  --- END STUDY MATERIAL ---` : ""}
-  
-  Structure Plan:
-  ${JSON.stringify(plan, null, 2)}
-  
-  Draft Question Paper:
-  ${JSON.stringify(draft, null, 2)}
-  
-  Auditing instructions:
-  1. Ensure the difficulty of all questions matches "${config.difficulty}".
-  2. Verify that all answers are factually correct. You can use 'tavilysearch' to double-check any fact, date, spelling, or formula.
-  3. Ensure there are no typos, grammatical mistakes, or layout issues.
-  4. Verify that MCQs have exactly 4 options, and the answer matches one of them.
-  5. Refine the questions to make them clear and pedagogically sound.
-  
-  Output the final polished question paper in this EXACT JSON format, along with a list of review notes detailing what you improved:
-  {
-    "title": "Polished Exam Title",
-    "subject": "${config.subject}",
-    "grade": "${config.grade}",
-    "difficulty": "${config.difficulty}",
-    "totalMarks": ${config.totalMarks},
-    "sections": [
-      {
-        "title": "Section Title",
-        "description": "Directions...",
-        "questions": [
-          {
-            "number": 1,
-            "type": "MCQ | Short | Long",
-            "question": "Polished question text...",
-            "options": [...],
-            "answer": "...",
-            "marks": 2
-          }
-        ]
-      }
-    ],
-    "reviewNotes": [
-      "Reviewer Agent: Corrected question 2 to be more descriptive.",
-      "Reviewer Agent: Re-verified formula in question 4 using web search."
-    ]
-  }
-  Do not include any conversational text.`;
+  const prompt = `You are the quality reviewer agent. Audit and polish the draft question paper below.
 
-  const chat = model.startChat();
-  let result = await chat.sendMessage(prompt);
-  
-  let functionCalls = result.response.functionCalls();
-  while (functionCalls && functionCalls.length > 0) {
-    const call = functionCalls[0];
-    if (call.name === "tavilysearch") {
-      const query = (call.args as { query?: string }).query || "";
-      console.log(`🔍 Reviewer Agent requested Tavily search: "${query}"`);
-      const searchResults = await performTavilySearch(query);
-      console.log(`✅ Search results retrieved for: "${query}"`);
-      
-      result = await chat.sendMessage([
-        {
-          functionResponse: {
-            name: "tavilysearch",
-            response: { result: searchResults },
-          },
-        },
-      ]);
-      functionCalls = result.response.functionCalls();
-    } else {
-      break;
-    }
-  }
+Subject: ${config.subject}
+Grade: ${config.grade}
+Target difficulty: ${config.difficulty}
+${config.customPrompt ? `Custom user instructions: ${config.customPrompt}` : ""}
+${config.studyMaterialText ? `Study material reference:
+--- START STUDY MATERIAL ---
+${config.studyMaterialText}
+--- END STUDY MATERIAL ---` : ""}
 
-  const text = result.response.text();
-  const jsonMatch = text.match(/\{[\s\S]*\}/);
-  if (!jsonMatch) {
-    throw new Error("Reviewer Agent failed to return valid JSON");
-  }
-  return JSON.parse(jsonMatch[0]) as GeneratedPaper;
+Structure plan (the draft must match this exactly — same number of questions per section, same marks per question; do not add, drop, or resize questions):
+${JSON.stringify(plan, null, 2)}
+
+Draft question paper:
+${JSON.stringify(draft, null, 2)}
+
+Auditing instructions:
+1. Ensure the difficulty of all questions matches "${config.difficulty}".
+2. Check that answers are factually and mathematically correct; fix any that are wrong.
+3. Fix typos, grammar, and layout issues.
+4. Verify MCQs have exactly 4 options and the answer matches one of them.
+5. Refine questions to be clear and pedagogically sound.
+6. Do not change the number of questions or the marks assigned to any question — only improve their content.
+7. Write plain text only — no LaTeX, no markdown, no dollar signs.
+
+Output the final polished question paper, with reviewNotes listing what you improved (or an empty array if nothing needed changing).`;
+
+  const result = await model.generateContent(prompt);
+  const parsed = JSON.parse(result.response.text());
+  return generatedPaperSchema.parse(parsed);
 }
 
 // Master workflow controller
@@ -447,46 +398,40 @@ export async function generateQuestionPaper(config: PaperConfig): Promise<{
   }
 
   const genAI = new GoogleGenerativeAI(apiKey);
-  let plannerPlan: unknown = {};
-  let generatorDraft: unknown = {};
+  let plannerPlan: PlannerPlan | null = null;
+  let generatorDraft: GeneratedPaperShape | null = null;
+  let effectiveTotal = config.totalMarks;
 
   try {
     console.log("📅 Running Planner Agent...");
-    plannerPlan = await withRetry(() => runPlannerAgent(genAI, config), "Planner Agent");
+    const rawPlan = await withRetry(() => runPlannerAgent(genAI, config), "Planner Agent");
+    ({ plan: plannerPlan, effectiveTotal } = resolveEffectiveTotal(rawPlan, config));
     console.log("✅ Planner Agent complete.");
 
     console.log("✍️ Running Generator Agent...");
-    generatorDraft = await withRetry(() => runGeneratorAgent(genAI, config, plannerPlan), "Generator Agent");
+    generatorDraft = await withRetry(() => runGeneratorAgent(genAI, config, plannerPlan!), "Generator Agent");
     console.log("✅ Generator Agent complete.");
 
     console.log("🔍 Running Reviewer Agent...");
-    const finalPaper = await withRetry(() => runReviewerAgent(genAI, config, plannerPlan, generatorDraft), "Reviewer Agent");
+    const reviewed = await withRetry(() => runReviewerAgent(genAI, config, plannerPlan!, generatorDraft!), "Reviewer Agent");
     console.log("✅ Reviewer Agent complete.");
 
-    return { paper: finalPaper, plannerPlan, generatorDraft };
+    return { paper: recomputePaperMarks(reviewed, effectiveTotal), plannerPlan, generatorDraft };
   } catch (error) {
     console.error("Multi-Agent Paper Generation failed:", error);
     // The generator's real, on-topic draft is almost always a better result
     // than the fully generic mock — only fall all the way back to the mock
     // if there's genuinely no usable draft content.
-    const draft = generatorDraft as Partial<GeneratedPaper> | null;
-    if (draft && Array.isArray(draft.sections) && draft.sections.length > 0) {
-      const paper: GeneratedPaper = {
-        title: draft.title || `${config.difficulty} ${config.subject} Examination Paper on ${config.topic || "Core Syllabus"}`,
-        subject: config.subject,
-        grade: config.grade,
-        difficulty: config.difficulty,
-        totalMarks: config.totalMarks,
-        sections: draft.sections,
-        reviewNotes: [
-          "⚠️ Automated quality review couldn't complete due to a temporary AI service issue. These questions were generated but not independently fact-checked — review them before use, or try regenerating.",
-        ],
-      };
+    if (generatorDraft && generatorDraft.sections.length > 0) {
+      const paper = recomputePaperMarks(
+        { ...generatorDraft, reviewNotes: ["[Warning] Automated quality review couldn't complete due to a temporary AI service issue. These questions were generated but not independently fact-checked — review them before use, or try regenerating."] },
+        effectiveTotal
+      );
       return { paper, plannerPlan, generatorDraft };
     }
     const paper = getMockQuestionPaper(config);
     paper.reviewNotes = [
-      "⚠️ We couldn't reach the AI service to generate your custom paper right now. This is a generic placeholder — it does not reflect your subject, topic, or custom instructions. Please try again in a moment.",
+      "[Warning] We couldn't reach the AI service to generate your custom paper right now. This is a generic placeholder — it does not reflect your subject, topic, or custom instructions. Please try again in a moment.",
     ];
     return { paper, plannerPlan: {}, generatorDraft: {} };
   }
@@ -529,10 +474,6 @@ export async function generateQuestionPaperStreamed(
       emit("agent_log", { agent: "generator", message: "Prioritizing question generation from uploaded study material..." });
       await delay(600);
     }
-    emit("agent_tool_call", { agent: "generator", query: `${config.subject} ${config.topic} exam questions ${config.grade}` });
-    await delay(900);
-    emit("agent_tool_result", { agent: "generator", message: "Search returned 12 relevant syllabus entries." });
-    await delay(600);
     if (config.customPrompt) {
       emit("agent_log", { agent: "generator", message: "Applying custom styles and constraint prompts..." });
       await delay(700);
@@ -548,10 +489,6 @@ export async function generateQuestionPaperStreamed(
     await delay(500);
     emit("agent_log", { agent: "reviewer", message: "Checking difficulty calibration across all questions..." });
     await delay(600);
-    emit("agent_tool_call", { agent: "reviewer", query: `Verify: ${config.topic} answer key` });
-    await delay(900);
-    emit("agent_tool_result", { agent: "reviewer", message: "All facts verified. 0 errors found." });
-    await delay(500);
     emit("agent_log", { agent: "reviewer", message: "Polishing language, fixing typos, confirming MCQ answer keys..." });
     await delay(600);
     emit("agent_done", { agent: "reviewer", message: "Review complete. Paper finalized." });
@@ -577,69 +514,60 @@ export async function generateQuestionPaperStreamed(
   }
   emit("agent_log", { agent: "planner", message: `Subject: ${config.subject} | Grade: ${config.grade} | Difficulty: ${config.difficulty}` });
   emit("agent_log", { agent: "planner", message: `Allocating ${config.totalMarks} marks across: ${config.questionTypes.join(", ")}` });
-  let plannerPlan: unknown;
+  let plannerPlan: PlannerPlan;
+  let effectiveTotal = config.totalMarks;
   try {
-    plannerPlan = await withRetry(() => runPlannerAgent(genAI, config), "Planner Agent");
+    const rawPlan = await withRetry(() => runPlannerAgent(genAI, config), "Planner Agent");
+    ({ plan: plannerPlan, effectiveTotal } = resolveEffectiveTotal(rawPlan, config));
+    if (effectiveTotal !== config.totalMarks) {
+      emit("agent_log", { agent: "planner", message: `Custom instructions specify a different question/marks structure — following that instead of the ${config.totalMarks}-mark target (paper will total ${effectiveTotal}).` });
+    }
     emit("agent_log", { agent: "planner", message: "Blueprint structured successfully." });
     emit("agent_done", { agent: "planner", message: "Planner complete." });
   } catch (e) {
     emit("agent_log", { agent: "planner", message: `Warning: ${String(e)}. Using fallback.` });
-    plannerPlan = {};
+    plannerPlan = { sections: [] };
     emit("agent_done", { agent: "planner", message: "Planner done (fallback used)." });
   }
 
   // --- Generator ---
   emit("agent_start", { agent: "generator", message: "Generator Agent activated. Drafting questions..." });
-
-  // Monkey-patch Tavily search to emit events
-  const originalSearch = performTavilySearch;
-  let generatorDraft: unknown;
+  emit("agent_log", { agent: "generator", message: "Writing questions and model answers from the structure plan..." });
+  if (config.customPrompt) {
+    emit("agent_log", { agent: "generator", message: "Applying custom style and constraint instructions..." });
+  }
+  let generatorDraft: GeneratedPaperShape | null = null;
   try {
-    // We run the generator, intercepting its Tavily calls by replacing them at module level.
-    // Since we can't easily intercept, we emit a synthetic tool_call before and after.
-    emit("agent_log", { agent: "generator", message: "Consulting knowledge base for accurate questions..." });
-    emit("agent_tool_call", { agent: "generator", query: `${config.subject} ${config.topic} ${config.grade} curriculum` });
     generatorDraft = await withRetry(() => runGeneratorAgent(genAI, config, plannerPlan), "Generator Agent");
-    emit("agent_tool_result", { agent: "generator", message: "Research complete. Questions drafted." });
-    emit("agent_done", { agent: "generator", message: "Generator complete." });
+    emit("agent_done", { agent: "generator", message: "Generator complete. Draft paper ready." });
   } catch (e) {
-    emit("agent_log", { agent: "generator", message: `Warning: ${String(e)}. Generating without web search.` });
-    generatorDraft = {};
+    emit("agent_log", { agent: "generator", message: `Warning: ${String(e)}.` });
     emit("agent_done", { agent: "generator", message: "Generator done (fallback used)." });
   }
-  void originalSearch; // suppress unused warning
 
   // --- Reviewer ---
   emit("agent_start", { agent: "reviewer", message: "Quality Reviewer Agent activated. Auditing draft..." });
-  emit("agent_log", { agent: "reviewer", message: "Checking difficulty calibration, grammar, and factual accuracy..." });
+  emit("agent_log", { agent: "reviewer", message: "Checking difficulty calibration, grammar, and answer accuracy..." });
   let finalPaper: GeneratedPaper;
   try {
-    emit("agent_tool_call", { agent: "reviewer", query: `Fact-check ${config.subject} answers for ${config.grade}` });
-    finalPaper = await withRetry(() => runReviewerAgent(genAI, config, plannerPlan, generatorDraft), "Reviewer Agent");
-    emit("agent_tool_result", { agent: "reviewer", message: "Fact-check complete. Paper polished." });
+    if (!generatorDraft) throw new Error("No draft available to review.");
+    const reviewed = await withRetry(() => runReviewerAgent(genAI, config, plannerPlan, generatorDraft!), "Reviewer Agent");
+    finalPaper = recomputePaperMarks(reviewed, effectiveTotal);
     emit("agent_done", { agent: "reviewer", message: "Review complete. Paper ready." });
   } catch (e) {
     emit("agent_log", { agent: "reviewer", message: `Warning: ${String(e)}. Using generator draft.` });
     // The generator's real, on-topic draft is almost always a better result
     // than the fully generic mock paper — only fall all the way back to the
     // mock if there's genuinely no usable draft content to fall back on.
-    const draft = generatorDraft as Partial<GeneratedPaper> | null;
-    if (draft && Array.isArray(draft.sections) && draft.sections.length > 0) {
-      finalPaper = {
-        title: draft.title || `${config.difficulty} ${config.subject} Examination Paper on ${config.topic || "Core Syllabus"}`,
-        subject: config.subject,
-        grade: config.grade,
-        difficulty: config.difficulty,
-        totalMarks: config.totalMarks,
-        sections: draft.sections,
-        reviewNotes: [
-          "⚠️ Automated quality review couldn't complete due to a temporary AI service issue. These questions were generated but not independently fact-checked — review them before use, or try regenerating.",
-        ],
-      };
+    if (generatorDraft && generatorDraft.sections.length > 0) {
+      finalPaper = recomputePaperMarks(
+        { ...generatorDraft, reviewNotes: ["[Warning] Automated quality review couldn't complete due to a temporary AI service issue. These questions were generated but not independently fact-checked — review them before use, or try regenerating."] },
+        effectiveTotal
+      );
     } else {
       finalPaper = getMockQuestionPaper(config);
       finalPaper.reviewNotes = [
-        "⚠️ We couldn't reach the AI service to generate your custom paper right now. This is a generic placeholder — it does not reflect your subject, topic, or custom instructions. Please try again in a moment.",
+        "[Warning] We couldn't reach the AI service to generate your custom paper right now. This is a generic placeholder — it does not reflect your subject, topic, or custom instructions. Please try again in a moment.",
       ];
     }
     emit("agent_done", { agent: "reviewer", message: "Reviewer done (fallback used)." });

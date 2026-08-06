@@ -32,8 +32,8 @@ export function TutorChips({ onChipClick, breakdownCount = 0 }: ChipsProps) {
   const allChips = [...questionChips, ...generalChips];
 
   return (
-    <div className="border-t border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/50 p-3">
-      <div className="flex items-center gap-1 mb-2 text-xs font-semibold text-gray-500 dark:text-gray-400">
+    <div className="border-t border-rule bg-gray-50/50 p-3">
+      <div className="flex items-center gap-1 mb-2 text-xs font-semibold text-graphite dark:text-graphite">
         <Sparkles className="w-3.5 h-3.5 text-blue-500" />
         <span>Smart Suggested Actions</span>
       </div>
@@ -42,7 +42,7 @@ export function TutorChips({ onChipClick, breakdownCount = 0 }: ChipsProps) {
           <button
             key={idx}
             onClick={() => onChipClick(chip)}
-            className="flex-shrink-0 snap-start bg-white dark:bg-gray-800 hover:bg-blue-50 dark:hover:bg-blue-900/30 border border-gray-200/60 dark:border-gray-700/60 hover:border-blue-200 dark:hover:border-blue-800 text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 text-xs px-3 py-1.5 rounded-full transition-all cursor-pointer shadow-sm"
+            className="flex-shrink-0 snap-start bg-surface hover:bg-blue-50 dark:hover:bg-blue-900/30 border border-rule/60 hover:border-blue-200 dark:hover:border-blue-800 text-ink hover:text-blue-600 dark:hover:text-blue-400 text-xs px-3 py-1.5 rounded-full transition-all cursor-pointer shadow-sm"
           >
             {chip}
           </button>

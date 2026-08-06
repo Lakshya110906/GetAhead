@@ -67,27 +67,27 @@ function ResetPasswordForm() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-6 bg-gray-50 dark:bg-gray-950">
+    <div className="min-h-screen flex items-center justify-center p-6 bg-paper">
       <motion.div
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
-        className="w-full max-w-md bg-white dark:bg-gray-900 border border-gray-150 dark:border-gray-800 rounded-3xl card-shadow-lg p-8"
+        className="w-full max-w-md bg-surface border border-rule rounded-3xl card-shadow-lg p-8"
       >
         {/* Header Logo */}
         <div className="flex items-center justify-center gap-2 mb-8 select-none">
           <div className="w-10 h-10 rounded-2xl bg-fixed-ink flex items-center justify-center text-white shadow-md shadow-blue-500/10">
             <Brain className="w-5.5 h-5.5" />
           </div>
-          <span className="font-bold text-gray-900 dark:text-gray-100 text-lg" style={{ fontFamily: "var(--font-display)" }}>
+          <span className="font-bold text-ink text-lg" style={{ fontFamily: "var(--font-display)" }}>
             GetAhead AI
           </span>
         </div>
 
         <div className="text-center mb-6">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2" style={{ fontFamily: "var(--font-display)" }}>
-            Reset Password
+          <h1 className="text-2xl font-bold text-ink mb-2" style={{ fontFamily: "var(--font-display)" }}>
+            Reset password
           </h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400">
+          <p className="text-sm text-graphite dark:text-graphite">
             Choose a strong new password with at least 8 characters.
           </p>
         </div>
@@ -98,8 +98,8 @@ function ResetPasswordForm() {
               <CheckCircle className="w-7 h-7" />
             </div>
             <div>
-              <h3 className="font-bold text-gray-900 dark:text-gray-100 text-lg">Password Reset Complete</h3>
-              <p className="text-xs text-gray-500 dark:text-gray-450 mt-1.5 leading-relaxed">
+              <h3 className="font-bold text-ink text-lg">Password Reset Complete</h3>
+              <p className="text-xs text-graphite dark:text-graphite mt-1.5 leading-relaxed">
                 Your password has been successfully updated. You can now sign in with your new credentials.
               </p>
             </div>
@@ -113,18 +113,18 @@ function ResetPasswordForm() {
         ) : (
           <form onSubmit={handleSubmit} className="space-y-5">
             {error && (
-              <div className="bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/30 text-red-750 dark:text-red-450 rounded-xl px-4 py-3 text-sm flex items-start gap-2.5 shadow-sm">
-                <XCircle className="w-5 h-5 text-red-600 dark:text-red-450 mt-0.5 flex-shrink-0" />
+              <div className="bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/30 text-red-700 dark:text-red-400 rounded-xl px-4 py-3 text-sm flex items-start gap-2.5 shadow-sm">
+                <XCircle className="w-5 h-5 text-red-600 dark:text-red-400 mt-0.5 flex-shrink-0" />
                 <p className="text-xs">{error}</p>
               </div>
             )}
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-                New Password
+              <label className="block text-sm font-medium text-ink mb-1.5">
+                New password
               </label>
               <div className="relative">
-                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-graphite" />
                 <input
                   type={showPass ? "text" : "password"}
                   value={password}
@@ -132,13 +132,13 @@ function ResetPasswordForm() {
                   placeholder="Enter new password (min 8 chars)"
                   required
                   disabled={!token}
-                  className="w-full pl-10 pr-12 py-3 border border-gray-200 dark:border-gray-800 dark:bg-gray-950 rounded-xl text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all disabled:opacity-50"
+                  className="w-full pl-10 pr-12 py-3 border border-rule rounded-xl text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all disabled:opacity-50"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPass(!showPass)}
                   disabled={!token}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 disabled:opacity-50"
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-graphite hover:text-graphite disabled:opacity-50"
                 >
                   {showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
@@ -146,11 +146,11 @@ function ResetPasswordForm() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-                Confirm New Password
+              <label className="block text-sm font-medium text-ink mb-1.5">
+                Confirm new password
               </label>
               <div className="relative">
-                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-graphite" />
                 <input
                   type={showPass ? "text" : "password"}
                   value={confirmPassword}
@@ -158,7 +158,7 @@ function ResetPasswordForm() {
                   placeholder="Confirm new password"
                   required
                   disabled={!token}
-                  className="w-full pl-10 pr-12 py-3 border border-gray-200 dark:border-gray-800 dark:bg-gray-950 rounded-xl text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all disabled:opacity-50"
+                  className="w-full pl-10 pr-12 py-3 border border-rule rounded-xl text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all disabled:opacity-50"
                 />
               </div>
             </div>
@@ -171,7 +171,7 @@ function ResetPasswordForm() {
               {loading ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
               ) : (
-                "Reset Password"
+                "Reset password"
               )}
             </button>
 
@@ -190,7 +190,7 @@ function ResetPasswordForm() {
 export default function ResetPasswordPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950">
+      <div className="min-h-screen flex items-center justify-center bg-paper">
         <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
       </div>
     }>

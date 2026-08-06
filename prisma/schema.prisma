@@ -23,6 +23,7 @@ model User {
   role          String    @default("STUDENT")
   avatar        String?
   suspended     Boolean   @default(false)
+  notificationPreferences String? @db.Text // JSON: { evaluationCompletion, featureUpdates, weeklyProgress, pushNotifications }
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 

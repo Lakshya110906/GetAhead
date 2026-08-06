@@ -55,6 +55,22 @@ export default function SettingsPage() {
   const [weeklyEmail, setWeeklyEmail] = useState(false);
   const [pushNotif, setPushNotif] = useState(true);
   const [notificationsSaved, setNotificationsSaved] = useState(false);
+  const [notificationsLoading, setNotificationsLoading] = useState(false);
+  const [notificationsError, setNotificationsError] = useState("");
+
+  useEffect(() => {
+    fetch("/api/user/notification-preferences")
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.success && d.preferences) {
+          setEvalEmail(d.preferences.evaluationCompletion);
+          setFeatureEmail(d.preferences.featureUpdates);
+          setWeeklyEmail(d.preferences.weeklyProgress);
+          setPushNotif(d.preferences.pushNotifications);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const handleSave = async () => {
     setProfileError("");
@@ -62,7 +78,7 @@ export default function SettingsPage() {
     setProfileLoading(true);
 
     if (!profileName.trim()) {
-      setProfileError("Full Name is required");
+      setProfileError("Full name is required");
       setProfileLoading(false);
       return;
     }
@@ -159,9 +175,32 @@ export default function SettingsPage() {
     }
   };
 
-  const handleNotificationsSave = () => {
-    setNotificationsSaved(true);
-    setTimeout(() => setNotificationsSaved(false), 2000);
+  const handleNotificationsSave = async () => {
+    setNotificationsError("");
+    setNotificationsLoading(true);
+    try {
+      const res = await fetch("/api/user/notification-preferences", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          evaluationCompletion: evalEmail,
+          featureUpdates: featureEmail,
+          weeklyProgress: weeklyEmail,
+          pushNotifications: pushNotif,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setNotificationsError(data.error || "Failed to save notification preferences");
+      } else {
+        setNotificationsSaved(true);
+        setTimeout(() => setNotificationsSaved(false), 2000);
+      }
+    } catch {
+      setNotificationsError("Couldn't reach the server to save your preferences. Check your connection and try again.");
+    } finally {
+      setNotificationsLoading(false);
+    }
   };
 
   return (
@@ -170,12 +209,12 @@ export default function SettingsPage() {
         <h1 className="text-2xl font-bold text-gray-900" style={{ fontFamily: "var(--font-display)" }}>
           Settings
         </h1>
-        <p className="text-gray-500 text-sm">Manage your account preferences</p>
+        <p className="text-graphite text-sm">Manage your account preferences</p>
       </div>
 
       <div className="grid lg:grid-cols-4 gap-6">
         {/* Sidebar nav */}
-        <div className="bg-white rounded-2xl border border-gray-100 card-shadow-md p-3 h-fit">
+        <div className="bg-surface rounded-2xl border border-rule card-shadow-md p-3 h-fit">
           {sections.map((s) => (
             <button
               key={s.id}
@@ -183,7 +222,7 @@ export default function SettingsPage() {
               className={`w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
                 activeSection === s.id
                   ? "bg-fixed-ink text-white"
-                  : "text-gray-600 hover:bg-gray-50"
+                  : "text-graphite hover:bg-gray-50"
               }`}
             >
               <div className="flex items-center gap-3">
@@ -196,11 +235,11 @@ export default function SettingsPage() {
         </div>
 
         {/* Content */}
-        <div className="lg:col-span-3 bg-white rounded-2xl border border-gray-100 card-shadow-md p-6">
+        <div className="lg:col-span-3 bg-surface rounded-2xl border border-rule card-shadow-md p-6">
           {activeSection === "profile" && (
             <div>
               <h2 className="text-lg font-bold text-gray-900 mb-6" style={{ fontFamily: "var(--font-display)" }}>
-                Profile Information
+                Profile information
               </h2>
 
               {/* Avatar */}
@@ -210,7 +249,7 @@ export default function SettingsPage() {
                 </div>
                 <div>
                   <p className="font-semibold text-gray-900">{session?.user?.name}</p>
-                  <p className="text-gray-500 text-sm">{session?.user?.email}</p>
+                  <p className="text-graphite text-sm">{session?.user?.email}</p>
                   <button className="text-blue-600 text-xs font-medium mt-1.5 hover:underline">
                     Change photo
                   </button>
@@ -225,8 +264,8 @@ export default function SettingsPage() {
 
               <div className="grid sm:grid-cols-2 gap-5">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                    Full Name
+                  <label className="block text-sm font-medium text-ink mb-1.5">
+                    Full name
                   </label>
                   <input
                     id="settings-name"
@@ -238,8 +277,8 @@ export default function SettingsPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                    Email Address
+                  <label className="block text-sm font-medium text-ink mb-1.5">
+                    Email address
                   </label>
                   <input
                     id="settings-email"
@@ -251,7 +290,7 @@ export default function SettingsPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                  <label className="block text-sm font-medium text-ink mb-1.5">
                     Role
                   </label>
                   <input
@@ -259,22 +298,10 @@ export default function SettingsPage() {
                     type="text"
                     disabled
                     value={session?.user && (session.user as { role?: string }).role ? (session.user as { role?: string }).role : "STUDENT"}
-                    className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm bg-gray-50 text-gray-500 cursor-not-allowed outline-none"
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm bg-gray-50 text-graphite cursor-not-allowed outline-none"
                   />
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                    Institution
-                  </label>
-                  <input
-                    id="settings-institution"
-                    type="text"
-                    disabled
-                    value="GetAhead AI Board"
-                    className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm bg-gray-50 text-gray-500 cursor-not-allowed outline-none"
-                  />
-                </div>
               </div>
 
               <div className="mt-6 flex items-center gap-3">
@@ -289,7 +316,7 @@ export default function SettingsPage() {
                   ) : saved ? (
                     "✓ Saved!"
                   ) : (
-                    "Save Changes"
+                    "Save changes"
                   )}
                 </button>
                 <button 
@@ -300,7 +327,7 @@ export default function SettingsPage() {
                     }
                     setProfileError("");
                   }}
-                  className="border border-gray-200 text-gray-600 font-medium px-6 py-2.5 rounded-xl hover:bg-gray-50 transition-colors text-sm"
+                  className="border border-gray-200 text-graphite font-medium px-6 py-2.5 rounded-xl hover:bg-gray-50 transition-colors text-sm"
                 >
                   Cancel
                 </button>
@@ -314,7 +341,7 @@ export default function SettingsPage() {
               <h2 className="text-lg font-bold text-gray-900 mb-2">
                 Appearance & Theme
               </h2>
-              <p className="text-gray-500 text-xs mb-6">
+              <p className="text-graphite text-xs mb-6">
                 Choose light or dark mode for your workspace.
               </p>
 
@@ -341,7 +368,7 @@ export default function SettingsPage() {
                       className={`flex flex-col text-left p-5 rounded-2xl border-2 transition-all hover:scale-[1.01] ${
                         isActive
                           ? "border-ink bg-ink/5"
-                          : "border-gray-100 hover:border-gray-200 bg-white"
+                          : "border-rule hover:border-gray-200 bg-surface"
                       }`}
                     >
                       {/* Preview Box */}
@@ -358,7 +385,7 @@ export default function SettingsPage() {
                       </div>
 
                       <p className="font-bold text-gray-900 text-sm mb-1">{t.name}</p>
-                      <p className="text-gray-500 text-xs">{t.description}</p>
+                      <p className="text-graphite text-xs">{t.description}</p>
                     </button>
                   );
                 })}
@@ -369,15 +396,15 @@ export default function SettingsPage() {
           {activeSection === "notifications" && (
             <div>
               <h2 className="text-lg font-bold text-gray-900 mb-2" style={{ fontFamily: "var(--font-display)" }}>
-                Notification Preferences
+                Notification preferences
               </h2>
-              <p className="text-gray-500 text-xs mb-6">
+              <p className="text-graphite text-xs mb-6">
                 Choose how and when you receive system and performance updates.
               </p>
 
               <div className="space-y-6">
                 <div className="space-y-4">
-                  <h3 className="font-semibold text-gray-800 text-sm uppercase tracking-wide">Email Notifications</h3>
+                  <h3 className="font-semibold text-ink text-sm uppercase tracking-wide">Email notifications</h3>
                   <div className="space-y-3">
                     <label className="flex items-center gap-3 cursor-pointer">
                       <input
@@ -387,8 +414,8 @@ export default function SettingsPage() {
                         className="w-4.5 h-4.5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                       />
                       <div>
-                        <p className="text-sm font-medium text-gray-900">Evaluation Completion</p>
-                        <p className="text-xs text-gray-500">Notify me as soon as an uploaded answer sheet is graded.</p>
+                        <p className="text-sm font-medium text-gray-900">Evaluation completion</p>
+                        <p className="text-xs text-graphite">Notify me as soon as an uploaded answer sheet is graded.</p>
                       </div>
                     </label>
                     <label className="flex items-center gap-3 cursor-pointer">
@@ -399,8 +426,8 @@ export default function SettingsPage() {
                         className="w-4.5 h-4.5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                       />
                       <div>
-                        <p className="text-sm font-medium text-gray-900">Feature Updates</p>
-                        <p className="text-xs text-gray-500">Keep me updated on newly supported built-in subjects and features.</p>
+                        <p className="text-sm font-medium text-gray-900">Feature updates</p>
+                        <p className="text-xs text-graphite">Keep me updated on newly supported built-in subjects and features.</p>
                       </div>
                     </label>
                     <label className="flex items-center gap-3 cursor-pointer">
@@ -411,15 +438,15 @@ export default function SettingsPage() {
                         className="w-4.5 h-4.5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                       />
                       <div>
-                        <p className="text-sm font-medium text-gray-900">Weekly Progress</p>
-                        <p className="text-xs text-gray-500">Receive a weekly digest of evaluation accuracy and scores.</p>
+                        <p className="text-sm font-medium text-gray-900">Weekly progress</p>
+                        <p className="text-xs text-graphite">Receive a weekly digest of evaluation accuracy and scores.</p>
                       </div>
                     </label>
                   </div>
                 </div>
 
-                <div className="pt-4 border-t border-gray-100 space-y-4">
-                  <h3 className="font-semibold text-gray-800 text-sm uppercase tracking-wide">Browser Notifications</h3>
+                <div className="pt-4 border-t border-rule space-y-4">
+                  <h3 className="font-semibold text-ink text-sm uppercase tracking-wide">Browser notifications</h3>
                   <label className="flex items-center gap-3 cursor-pointer">
                     <input
                       type="checkbox"
@@ -428,19 +455,26 @@ export default function SettingsPage() {
                       className="w-4.5 h-4.5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                     />
                     <div>
-                      <p className="text-sm font-medium text-gray-900">Push Notifications</p>
-                      <p className="text-xs text-gray-500">Display real-time evaluation status alerts inside your browser window.</p>
+                      <p className="text-sm font-medium text-gray-900">Push notifications</p>
+                      <p className="text-xs text-graphite">Display real-time evaluation status alerts inside your browser window.</p>
                     </div>
                   </label>
                 </div>
               </div>
 
+              {notificationsError && (
+                <div className="mt-4 p-3.5 bg-red-50 border border-red-200 text-red-700 rounded-xl text-sm font-medium">
+                  {notificationsError}
+                </div>
+              )}
+
               <div className="mt-8 flex items-center gap-3">
                 <button
                   onClick={handleNotificationsSave}
-                  className="bg-fixed-ink text-white font-semibold px-6 py-2.5 rounded-xl hover:opacity-90 transition-opacity text-sm"
+                  disabled={notificationsLoading}
+                  className="bg-fixed-ink text-white font-semibold px-6 py-2.5 rounded-xl hover:opacity-90 transition-opacity text-sm disabled:opacity-60"
                 >
-                  {notificationsSaved ? "✓ Preferences Saved!" : "Save Preferences"}
+                  {notificationsLoading ? "Saving..." : notificationsSaved ? "✓ Preferences saved!" : "Save preferences"}
                 </button>
               </div>
             </div>
@@ -449,9 +483,9 @@ export default function SettingsPage() {
           {activeSection === "security" && (
             <div>
               <h2 className="text-lg font-bold text-gray-900 mb-2" style={{ fontFamily: "var(--font-display)" }}>
-                Security Settings
+                Security settings
               </h2>
-              <p className="text-gray-500 text-xs mb-6">
+              <p className="text-graphite text-xs mb-6">
                 Update your account password and configure security options.
               </p>
 
@@ -469,8 +503,8 @@ export default function SettingsPage() {
 
               <form onSubmit={handlePasswordChange} className="space-y-4 max-w-md">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                    Current Password
+                  <label className="block text-sm font-medium text-ink mb-1.5">
+                    Current password
                   </label>
                   <input
                     type="password"
@@ -481,8 +515,8 @@ export default function SettingsPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                    New Password
+                  <label className="block text-sm font-medium text-ink mb-1.5">
+                    New password
                   </label>
                   <input
                     type="password"
@@ -493,8 +527,8 @@ export default function SettingsPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                    Confirm New Password
+                  <label className="block text-sm font-medium text-ink mb-1.5">
+                    Confirm new password
                   </label>
                   <input
                     type="password"
@@ -510,16 +544,16 @@ export default function SettingsPage() {
                     disabled={passwordLoading}
                     className="bg-fixed-ink text-white font-semibold px-6 py-2.5 rounded-xl hover:opacity-90 transition-opacity text-sm disabled:opacity-50"
                   >
-                    {passwordLoading ? "Updating..." : "Update Password"}
+                    {passwordLoading ? "Updating..." : "Update password"}
                   </button>
                 </div>
               </form>
 
-              <div className="mt-10 pt-8 border-t border-gray-100 max-w-md">
+              <div className="mt-10 pt-8 border-t border-rule max-w-md">
                 <h3 className="text-sm font-bold text-red-700 mb-1 flex items-center gap-1.5">
-                  <AlertTriangle className="w-4 h-4" /> Danger Zone
+                  <AlertTriangle className="w-4 h-4" /> Danger zone
                 </h3>
-                <p className="text-gray-500 text-xs mb-4">
+                <p className="text-graphite text-xs mb-4">
                   Permanently deletes your account and all associated data (evaluations, reports, question papers,
                   sessions). This cannot be undone.
                 </p>
@@ -535,12 +569,12 @@ export default function SettingsPage() {
                     onClick={() => setDeleteConfirming(true)}
                     className="border border-red-200 text-red-700 font-semibold px-6 py-2.5 rounded-xl hover:bg-red-50 transition-colors text-sm"
                   >
-                    Delete Account
+                    Delete account
                   </button>
                 ) : (
                   <div className="space-y-3">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                      <label className="block text-sm font-medium text-ink mb-1.5">
                         Confirm your password
                       </label>
                       <input
@@ -557,11 +591,11 @@ export default function SettingsPage() {
                         disabled={deleteLoading}
                         className="bg-red-600 text-white font-semibold px-6 py-2.5 rounded-xl hover:bg-red-700 transition-colors text-sm disabled:opacity-50"
                       >
-                        {deleteLoading ? "Deleting..." : "Permanently Delete My Account"}
+                        {deleteLoading ? "Deleting..." : "Permanently delete my account"}
                       </button>
                       <button
                         onClick={() => { setDeleteConfirming(false); setDeleteError(""); setDeletePassword(""); }}
-                        className="border border-gray-200 text-gray-600 font-semibold px-6 py-2.5 rounded-xl hover:bg-gray-50 transition-colors text-sm"
+                        className="border border-gray-200 text-graphite font-semibold px-6 py-2.5 rounded-xl hover:bg-gray-50 transition-colors text-sm"
                       >
                         Cancel
                       </button>

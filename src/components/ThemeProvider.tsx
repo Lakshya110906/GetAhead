@@ -22,13 +22,14 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   };
 
   useEffect(() => {
-    // Read from localStorage on mount
+    // The blocking inline script in layout.tsx already applied the right
+    // class before first paint (saved preference, or system preference on a
+    // first visit) — this just syncs React state to match, no re-apply needed.
     const savedTheme = localStorage.getItem("site-theme") as ThemeType;
     if (savedTheme && ["default", "dark"].includes(savedTheme)) {
-      setTimeout(() => {
-        setThemeState(savedTheme);
-        applyThemeClass(savedTheme);
-      }, 0);
+      setThemeState(savedTheme);
+    } else if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
+      setThemeState("dark");
     }
   }, []);
 

@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useState } from "react";
 import {
-  Brain,
   Search,
   User,
   Lock,
@@ -18,7 +17,9 @@ import {
   ArrowRight,
   Mail,
 } from "lucide-react";
+import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
+import { SUPPORT_EMAIL } from "@/lib/siteConfig";
 
 const categories = [
   {
@@ -31,15 +32,15 @@ const categories = [
     articles: [
       {
         title: "How to create a GetAhead AI account",
-        content: `Creating an account is quick and free. Visit getahead.ai and click "Get Started Free" in the top navigation. Fill in your full name, email address, and a strong password (minimum 8 characters). Select your role — Student, Teacher, or Institution — and click "Create Account". You're signed in immediately and land straight on your dashboard — no separate verification step.`,
+        content: `Creating an account is quick and free. From the homepage, click "Start free" in the top navigation. Fill in your full name, email address, and a strong password (minimum 8 characters). Select your role — Student, Teacher, or Institution — and click "Create account". You're signed in immediately and land straight on your dashboard — no separate verification step.`,
       },
       {
         title: "How to change your name or profile details",
-        content: `Go to Settings from the dashboard sidebar. Under "Profile", you can update your display name. Click "Save Changes" when done. Email addresses cannot currently be changed — contact support@getahead.ai if you need to update your email.`,
+        content: `Go to Settings from the dashboard sidebar. Under "Profile", you can update your display name. Click "Save Changes" when done. Email addresses cannot currently be changed — contact ${SUPPORT_EMAIL} if you need to update your email.`,
       },
       {
         title: "How to delete your account",
-        content: `Account deletion is permanent and cannot be undone. To delete your account: go to Settings → Account → scroll to "Danger Zone" → click "Delete Account" → confirm by typing your email address. All evaluations, reports, and question papers associated with your account will be permanently deleted within 7 days.`,
+        content: `Account deletion is permanent and cannot be undone. To delete your account: go to Settings → Security → scroll to "Danger zone" → click "Delete account" → confirm by entering your password. All evaluations, reports, and question papers associated with your account will be permanently deleted within 7 days.`,
       },
       {
         title: "How to change your password",
@@ -61,7 +62,7 @@ const categories = [
       },
       {
         title: "My password reset link isn't working",
-        content: `Reset links expire after 1 hour. If the link expired, go to the login page and request a new one. If the link still doesn't work, try: copying and pasting the full URL from the email into your browser, clearing browser cache, or using a different browser. If problems persist, contact support@getahead.ai.`,
+        content: `Reset links expire after 1 hour. If the link expired, go to the login page and request a new one. If the link still doesn't work, try: copying and pasting the full URL from the email into your browser, clearing browser cache, or using a different browser. If problems persist, contact ${SUPPORT_EMAIL}.`,
       },
       {
         title: "I'm getting 'Invalid credentials' on login",
@@ -79,7 +80,7 @@ const categories = [
     articles: [
       {
         title: "What file formats can I upload?",
-        content: `GetAhead AI accepts PDF documents, JPEG images, and PNG images. For best results: use PDF for multi-page answer sheets, JPEG or PNG for single-page scans. Maximum file size is 10MB per upload. For files over 10MB, compress using a free tool like ilovepdf.com or smallpdf.com before uploading.`,
+        content: `GetAhead AI accepts PDF documents, JPEG images, and PNG images. For best results: use PDF for multi-page answer sheets, JPEG or PNG for single-page scans. Maximum file size is 20MB per upload. For files over 20MB, compress using a free tool like ilovepdf.com or smallpdf.com before uploading.`,
       },
       {
         title: "Tips for best OCR accuracy",
@@ -87,11 +88,11 @@ const categories = [
       },
       {
         title: "My upload is failing — what should I do?",
-        content: `Check: your internet connection is stable, the file is under 10MB, the file is a supported format (PDF, JPEG, PNG). Try converting to a different format. If the problem persists: refresh the page, try a different browser, clear browser cache. If still failing, contact support with the error message shown.`,
+        content: `Check: your internet connection is stable, the file is under 20MB, the file is a supported format (PDF, JPEG, PNG). Try converting to a different format. If the problem persists: refresh the page, try a different browser, clear browser cache. If still failing, contact support with the error message shown.`,
       },
       {
         title: "Can I upload multiple answer sheets at once?",
-        content: `Currently, each upload evaluates one answer sheet at a time. Bulk upload (multiple sheets in one batch) is planned for a future release. Each sheet evaluation takes 30–60 seconds, so a class of 30 can be evaluated in approximately 15–30 minutes with individual uploads.`,
+        content: `Currently, each upload evaluates one answer sheet at a time. Bulk upload (multiple sheets in one batch) is planned for a future release. Each sheet evaluation takes under a minute, so a class of 30 can be evaluated in well under an hour with individual uploads.`,
       },
     ],
   },
@@ -124,14 +125,14 @@ const categories = [
   {
     id: "question-papers",
     icon: GraduationCap,
-    label: "Question Papers",
+    label: "Question papers",
     color: "bg-purple-600",
     bg: "bg-purple-50",
     textColor: "text-purple-700",
     articles: [
       {
         title: "How do I generate a question paper?",
-        content: `Go to "Generate Paper" in the dashboard sidebar. Fill in: Subject (e.g., Physics), Grade (e.g., Class 12), Difficulty (Easy / Medium / Hard), Total Marks (e.g., 70). Click "Generate". A complete, structured question paper is generated in 30–60 seconds. You can regenerate up to your daily quota (currently 10 generations/day during beta).`,
+        content: `Go to "Generate Paper" in the dashboard sidebar. Fill in: Subject (e.g., Physics), Grade (e.g., Class 12), Difficulty (Easy / Medium / Hard), Total Marks (e.g., 70). Click "Generate". A complete, structured question paper is generated in minutes. You can regenerate up to your daily quota (currently 10 generations/day during beta).`,
       },
       {
         title: "How do I use the generated question paper?",
@@ -168,14 +169,14 @@ const categories = [
   {
     id: "ai",
     icon: Cpu,
-    label: "AI Evaluation",
+    label: "AI evaluation",
     color: "bg-orange-600",
     bg: "bg-orange-50",
     textColor: "text-orange-700",
     articles: [
       {
         title: "How accurate is the AI evaluation?",
-        content: `GetAhead AI's grading accuracy is measured against a golden set of real, teacher-marked answer sheets — see the accuracy figure and methodology on our homepage. Accuracy is highest for well-structured written answers, factual content (science, history, geography), mathematical solutions with shown workings, and MCQ evaluation. Accuracy may be lower for highly interpretive essay questions, very niche topics, messy handwriting, and diagrams (described in text only). For high-stakes exams, we recommend a teacher review of results.`,
+        content: `We're building a golden set of real, teacher-marked answer sheets so grading accuracy can be measured and published rather than asserted — see the current status on our homepage. In the meantime, accuracy is likely highest for well-structured written answers, factual content (science, history, geography), mathematical solutions with shown workings, and MCQ evaluation, and likely lower for highly interpretive essay questions, very niche topics, messy handwriting, and diagrams (described in text only). For high-stakes exams, we recommend a teacher review of results.`,
       },
       {
         title: "Does the AI support handwritten answers?",
@@ -201,11 +202,11 @@ const categories = [
       },
       {
         title: "Page not loading or showing blank content",
-        content: `Try: hard refresh (Cmd+Shift+R on Mac / Ctrl+Shift+R on Windows), clear browser cache and cookies, try a different browser, disable browser extensions temporarily. If using a VPN, try disabling it — some VPNs block cloud DB connections. If the problem persists, contact support@getahead.ai with a screenshot and your browser/OS details.`,
+        content: `Try: hard refresh (Cmd+Shift+R on Mac / Ctrl+Shift+R on Windows), clear browser cache and cookies, try a different browser, disable browser extensions temporarily. If using a VPN, try disabling it — some VPNs block cloud DB connections. If the problem persists, contact ${SUPPORT_EMAIL} with a screenshot and your browser/OS details.`,
       },
       {
         title: "How to report a bug",
-        content: `We take bugs seriously. To report a bug: go to the Contact page and select "Bug Report". Describe what you were doing, what you expected to happen, and what actually happened. Include a screenshot if possible. Alternatively email support@getahead.ai with "BUG:" in the subject line. We aim to respond within 24 hours on weekdays.`,
+        content: `We take bugs seriously. To report a bug: go to the Contact page and select "Bug Report". Describe what you were doing, what you expected to happen, and what actually happened. Include a screenshot if possible. Alternatively email ${SUPPORT_EMAIL} with "BUG:" in the subject line. We aim to respond within 24 hours on weekdays.`,
       },
     ],
   },
@@ -231,24 +232,9 @@ export default function HelpCenterPage() {
     : null;
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-paper">
       {/* Navbar */}
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-white/95 border-b border-gray-100">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16">
-          <Link href="/" className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-fixed-ink flex items-center justify-center">
-              <Brain className="w-4 h-4 text-white" />
-            </div>
-            <span className="font-bold text-gray-900" style={{ fontFamily: "var(--font-display)" }}>
-              Get<span className="text-ink">Ahead</span>
-            </span>
-          </Link>
-          <div className="flex items-center gap-3">
-            <Link href="/login" className="text-sm text-gray-600 hover:text-gray-900 font-medium transition-colors">Sign In</Link>
-            <Link href="/signup" className="text-sm bg-fixed-ink text-white font-semibold px-4 py-2 rounded-lg hover:opacity-90 transition-opacity">Get Started Free</Link>
-          </div>
-        </div>
-      </nav>
+      <SiteHeader />
 
       {/* Hero + Search */}
       <section className="pt-32 pb-16 bg-fixed-ink">
@@ -283,16 +269,16 @@ export default function HelpCenterPage() {
             <div className="space-y-3">
               {filteredArticles?.length === 0 ? (
                 <div className="text-center py-12">
-                  <p className="text-gray-500">No articles found. <Link href="/contact" className="text-blue-600 hover:underline">Contact support</Link> for help.</p>
+                  <p className="text-graphite">No articles found. <Link href="/contact" className="text-blue-600 hover:underline">Contact support</Link> for help.</p>
                 </div>
               ) : (
                 filteredArticles?.map((a) => (
-                  <div key={a.title} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+                  <div key={a.title} className="bg-surface rounded-2xl border border-rule shadow-sm p-5">
                     <div className="flex items-start gap-3">
-                      <span className={`text-xs font-semibold ${a.catColor} bg-gray-50 px-2 py-1 rounded-md border border-gray-100 whitespace-nowrap mt-0.5`}>{a.catLabel}</span>
+                      <span className={`text-xs font-semibold ${a.catColor} bg-gray-50 px-2 py-1 rounded-md border border-rule whitespace-nowrap mt-0.5`}>{a.catLabel}</span>
                       <div>
                         <h3 className="font-semibold text-gray-900 mb-2">{a.title}</h3>
-                        <p className="text-sm text-gray-600 leading-relaxed">{a.content.slice(0, 200)}…</p>
+                        <p className="text-sm text-graphite leading-relaxed">{a.content.slice(0, 200)}…</p>
                       </div>
                     </div>
                   </div>
@@ -310,7 +296,7 @@ export default function HelpCenterPage() {
                   <button
                     key={cat.id}
                     onClick={() => setActiveCategory(cat.id)}
-                    className={`flex flex-col items-center gap-2 p-3 rounded-xl border text-xs font-medium transition-all ${activeCategory === cat.id ? "border-blue-300 bg-blue-50 text-blue-700" : "border-gray-200 bg-white text-gray-600 hover:border-blue-200"}`}
+                    className={`flex flex-col items-center gap-2 p-3 rounded-xl border text-xs font-medium transition-all ${activeCategory === cat.id ? "border-blue-300 bg-blue-50 text-blue-700" : "border-gray-200 bg-surface text-graphite hover:border-blue-200"}`}
                   >
                     <Icon className="w-5 h-5" />
                     {cat.label}
@@ -321,7 +307,7 @@ export default function HelpCenterPage() {
 
             {/* Sidebar for desktop */}
             <aside className="hidden lg:block lg:w-56 flex-shrink-0">
-              <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-4">Browse by topic</h2>
+              <h2 className="text-xs font-semibold text-graphite uppercase tracking-wide mb-4">Browse by topic</h2>
               <nav className="space-y-1">
                 {categories.map((cat) => {
                   const Icon = cat.icon;
@@ -329,7 +315,7 @@ export default function HelpCenterPage() {
                     <button
                       key={cat.id}
                       onClick={() => setActiveCategory(cat.id)}
-                      className={`w-full text-left flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${activeCategory === cat.id ? "bg-blue-50 text-blue-700" : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"}`}
+                      className={`w-full text-left flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${activeCategory === cat.id ? "bg-blue-50 text-blue-700" : "text-graphite hover:bg-gray-50 hover:text-ink"}`}
                     >
                       <Icon className="w-4 h-4 flex-shrink-0" />
                       {cat.label}
@@ -348,7 +334,7 @@ export default function HelpCenterPage() {
                 </div>
                 <div>
                   <h2 className="text-xl font-bold text-gray-900" style={{ fontFamily: "var(--font-display)" }}>{currentCat.label}</h2>
-                  <p className="text-sm text-gray-500">{currentCat.articles.length} articles</p>
+                  <p className="text-sm text-graphite">{currentCat.articles.length} articles</p>
                 </div>
               </div>
               <div className="space-y-3">
@@ -357,7 +343,7 @@ export default function HelpCenterPage() {
                   const slug = key.toLowerCase().replace(/[^a-z0-9]+/g, "-");
                   const isOpen = openArticle === key;
                   return (
-                    <div key={key} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden hover:shadow-md transition-shadow">
+                    <div key={key} className="bg-surface rounded-2xl border border-rule shadow-sm overflow-hidden hover:shadow-md transition-shadow">
                       <button
                         id={`help-question-${slug}`}
                         onClick={() => setOpenArticle(isOpen ? null : key)}
@@ -375,7 +361,7 @@ export default function HelpCenterPage() {
                           aria-labelledby={`help-question-${slug}`}
                           className="px-5 pb-5 border-t border-gray-50"
                         >
-                          <p className="text-sm text-gray-600 leading-relaxed pt-4">{article.content}</p>
+                          <p className="text-sm text-graphite leading-relaxed pt-4">{article.content}</p>
                         </div>
                       )}
                     </div>
@@ -394,11 +380,11 @@ export default function HelpCenterPage() {
           <h2 className="text-2xl font-bold text-gray-900 mb-3" style={{ fontFamily: "var(--font-display)" }}>
             Can&apos;t find your answer?
           </h2>
-          <p className="text-gray-600 mb-6">
+          <p className="text-graphite mb-6">
             Our support team responds within 24 hours on weekdays.
           </p>
           <Link href="/contact" className="inline-flex items-center gap-2 bg-fixed-ink text-white font-semibold px-6 py-3 rounded-xl hover:opacity-90 transition-opacity">
-            Contact Support <ArrowRight className="w-4 h-4" />
+            Contact support <ArrowRight className="w-4 h-4" />
           </Link>
         </div>
       </section>
@@ -406,9 +392,9 @@ export default function HelpCenterPage() {
       {/* Breadcrumb */}
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pb-4">
         <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-sm text-gray-400">
-          <Link href="/" className="hover:text-gray-600 transition-colors">Home</Link>
+          <Link href="/" className="hover:text-graphite transition-colors">Home</Link>
           <ChevronRight className="w-4 h-4" />
-          <span className="text-gray-600">Help Center</span>
+          <span className="text-graphite">Help center</span>
         </nav>
       </div>
 

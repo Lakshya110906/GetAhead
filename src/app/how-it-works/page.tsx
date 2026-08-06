@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useState } from "react";
 import {
-  Brain,
   ArrowRight,
   ChevronRight,
   UserPlus,
@@ -21,13 +20,14 @@ import {
   CheckCircle,
   Zap,
 } from "lucide-react";
+import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
 
 const steps = [
   {
     number: "01",
     icon: UserPlus,
-    title: "Create Your Account",
+    title: "Create your account",
     description: "Sign up with your email address and choose your role — Student, Teacher, or Institution. Takes under 60 seconds. No credit card required, ever.",
     detail: "Your account is created with a secure hashed password (bcrypt, 12 rounds). We never store your plain-text password. You're signed in immediately — no separate verification step.",
     color: "from-blue-500 to-blue-700",
@@ -37,7 +37,7 @@ const steps = [
   {
     number: "02",
     icon: LogIn,
-    title: "Land on Your Dashboard",
+    title: "Land on your dashboard",
     description: "Signup drops you straight into your personalised dashboard, ready to start your first evaluation.",
     detail: "Sessions are stored securely in the database and expire automatically. You can stay signed in across devices.",
     color: "from-violet-500 to-violet-700",
@@ -47,7 +47,7 @@ const steps = [
   {
     number: "03",
     icon: Upload,
-    title: "Upload Your Answer Sheet",
+    title: "Upload your answer sheet",
     description: "Navigate to 'New Evaluation'. Select your subject, grade, and exam type (MCQ, Descriptive, or Mixed). Upload your PDF or image file.",
     detail: "Supported formats: PDF, JPEG, PNG. For best results, ensure the scan is clear and well-lit. Handwritten answers are supported.",
     color: "from-teal-500 to-teal-700",
@@ -57,7 +57,7 @@ const steps = [
   {
     number: "04",
     icon: Scan,
-    title: "AI Extracts Your Answers",
+    title: "AI extracts your answers",
     description: "Our OCR engine reads your answer sheet — both typed and handwritten. The extracted text is structured for evaluation.",
     detail: "OCR uses advanced text recognition tuned for academic content. Numbers, equations, diagrams (described), and structured answers are all handled.",
     color: "from-green-500 to-green-700",
@@ -67,8 +67,8 @@ const steps = [
   {
     number: "05",
     icon: Cpu,
-    title: "Gemini AI Evaluates",
-    description: "Gemini 2.5 Flash reads every answer against subject-specific rubrics. It scores each question, identifies errors, and understands partial credit.",
+    title: "AI evaluates",
+    description: "The AI reads every answer against subject-specific rubrics. It scores each question, identifies errors, and understands partial credit.",
     detail: "Evaluation is context-aware — a correct method with a calculation error gets partial credit. The AI understands academic language, not just keyword matching.",
     color: "from-orange-500 to-orange-700",
     bg: "bg-orange-50",
@@ -77,7 +77,7 @@ const steps = [
   {
     number: "06",
     icon: Star,
-    title: "Marks Generated",
+    title: "Marks generated",
     description: "Each question receives a score. Total marks and percentage are calculated instantly. The breakdown is stored in your evaluation record.",
     detail: "Marks breakdown is stored as structured data — you can see obtained vs. maximum marks per question, per section, and for the whole paper.",
     color: "from-yellow-500 to-yellow-700",
@@ -87,7 +87,7 @@ const steps = [
   {
     number: "07",
     icon: MessageSquare,
-    title: "Feedback Generated",
+    title: "Feedback generated",
     description: "Alongside marks, the AI generates a personalised feedback report: strengths, weaknesses, conceptual errors, and specific study recommendations.",
     detail: "Feedback is not generic — it's tied to your actual answers. If you misidentified a chemical reaction, the feedback will tell you exactly which reaction and why it was incorrect.",
     color: "from-pink-500 to-pink-700",
@@ -97,7 +97,7 @@ const steps = [
   {
     number: "08",
     icon: TrendingUp,
-    title: "Performance Analysis",
+    title: "Performance analysis",
     description: "Your Analytics dashboard updates automatically. See monthly score trends, subject-wise averages, and compare your performance over time.",
     detail: "Analytics are computed from all your completed evaluations. The more you evaluate, the richer your trend data becomes.",
     color: "from-cyan-500 to-cyan-700",
@@ -107,7 +107,7 @@ const steps = [
   {
     number: "09",
     icon: Bookmark,
-    title: "Save Important Reports",
+    title: "Save important reports",
     description: "Found a particularly useful evaluation? Save it to your Saved Reports with a custom name for quick future reference.",
     detail: "Saved reports are pinned in your dashboard sidebar. Great for bookmarking mock test results, board exam practice papers, and milestone evaluations.",
     color: "from-rose-500 to-rose-700",
@@ -117,7 +117,7 @@ const steps = [
   {
     number: "10",
     icon: GraduationCap,
-    title: "Generate Question Papers",
+    title: "Generate question papers",
     description: "Need to practise? Head to Generate Paper. Choose subject, grade, difficulty, and marks — get a complete, structured question paper instantly.",
     detail: "Generated papers follow standard exam structures with a mix of objective, short-answer, and long-answer questions proportional to the marks you specified.",
     color: "from-purple-500 to-purple-700",
@@ -127,7 +127,7 @@ const steps = [
   {
     number: "11",
     icon: Download,
-    title: "Download & Share Reports",
+    title: "Download and share reports",
     description: "Export any evaluation report as a PDF. Share it with your teacher, use it in a parent-teacher meeting, or keep it for offline revision.",
     detail: "PDF reports include your name, date, subject, marks breakdown, AI feedback, strengths, weaknesses, and study recommendations — all in one clean document.",
     color: "from-slate-500 to-slate-700",
@@ -140,42 +140,27 @@ export default function HowItWorksPage() {
   const [activeStep, setActiveStep] = useState<number | null>(null);
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-paper">
       {/* Navbar */}
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-white/95 border-b border-gray-100">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16">
-          <Link href="/" className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-paper flex items-center justify-center">
-              <Brain className="w-4 h-4 text-white" />
-            </div>
-            <span className="font-bold text-gray-900" style={{ fontFamily: "var(--font-display)" }}>
-              Get<span className="text-ink">Ahead</span>
-            </span>
-          </Link>
-          <div className="flex items-center gap-3">
-            <Link href="/login" className="text-sm text-gray-600 hover:text-gray-900 font-medium transition-colors">Sign In</Link>
-            <Link href="/signup" className="text-sm bg-fixed-ink text-white font-semibold px-4 py-2 rounded-lg hover:opacity-90 transition-opacity">Get Started Free</Link>
-          </div>
-        </div>
-      </nav>
+      <SiteHeader />
 
       {/* Hero */}
       <section className="pt-32 pb-20 bg-paper">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <div className="inline-flex items-center gap-2 bg-teal-100 text-teal-700 text-sm font-semibold px-4 py-1.5 rounded-full mb-6">
             <Zap className="w-4 h-4" />
-            Evaluate in under 30 seconds
+            Evaluate in under a minute
           </div>
           <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6 leading-tight" style={{ fontFamily: "var(--font-display)" }}>
             From upload to insights —<br />
             <span className="text-ink">here&apos;s exactly how it works</span>
           </h1>
-          <p className="text-xl text-gray-600 leading-relaxed mb-10 max-w-2xl mx-auto">
-            GetAhead AI is designed to be fast and simple. Follow the 12-step journey from account creation to downloading your first report.
+          <p className="text-xl text-graphite leading-relaxed mb-10 max-w-2xl mx-auto">
+            GetAhead AI is designed to be fast and simple. Follow the 11-step journey from account creation to downloading your first report.
           </p>
-          <div className="flex flex-wrap items-center justify-center gap-3 text-sm text-gray-500">
-            {["No setup required", "No credit card", "Works on mobile", "Results in seconds"].map((t) => (
-              <span key={t} className="flex items-center gap-1.5 bg-white border border-gray-200 px-3 py-1.5 rounded-lg">
+          <div className="flex flex-wrap items-center justify-center gap-3 text-sm text-graphite">
+            {["No setup required", "No credit card", "Works on mobile", "Results in under a minute"].map((t) => (
+              <span key={t} className="flex items-center gap-1.5 bg-surface border border-gray-200 px-3 py-1.5 rounded-lg">
                 <CheckCircle className="w-3.5 h-3.5 text-teal-500" />{t}
               </span>
             ))}
@@ -207,7 +192,7 @@ export default function HowItWorksPage() {
                     aria-expanded={isOpen}
                     aria-controls={`how-it-works-detail-${idx}`}
                   >
-                    <div className={`bg-white border rounded-2xl p-6 hover:border-blue-200 hover:shadow-md transition-all ${isOpen ? "border-blue-200 shadow-md" : "border-gray-100 shadow-sm"}`}>
+                    <div className={`bg-surface border rounded-2xl p-6 hover:border-blue-200 hover:shadow-md transition-all ${isOpen ? "border-blue-200 shadow-md" : "border-rule shadow-sm"}`}>
                       <div className="flex items-start gap-4">
                         <div className={"w-10 h-10 lg:w-12 lg:h-12 rounded-xl bg-fixed-ink flex items-center justify-center flex-shrink-0 shadow-sm lg:hidden"}>
                           <Icon className="w-5 h-5 text-white" />
@@ -225,7 +210,7 @@ export default function HowItWorksPage() {
                             </div>
                             <ChevronRight className={`w-5 h-5 text-gray-400 flex-shrink-0 transition-transform ${isOpen ? "rotate-90" : ""}`} />
                           </div>
-                          <p className="text-gray-600 text-sm mt-2 leading-relaxed">{step.description}</p>
+                          <p className="text-graphite text-sm mt-2 leading-relaxed">{step.description}</p>
                           {isOpen && (
                             <div
                               id={`how-it-works-detail-${idx}`}
@@ -256,18 +241,18 @@ export default function HowItWorksPage() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
             {[
               { icon: Upload, label: "Upload answer sheet", sub: "PDF, JPEG, PNG" },
-              { icon: Cpu, label: "AI evaluates", sub: "Gemini 2.5 Flash" },
+              { icon: Cpu, label: "AI evaluates", sub: "Rubric-based grading" },
               { icon: FileText, label: "Detailed report", sub: "Marks + feedback" },
               { icon: TrendingUp, label: "Track progress", sub: "Analytics dashboard" },
             ].map((item) => {
               const Icon = item.icon;
               return (
-                <div key={item.label} className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm text-center">
-                  <div className="w-12 h-12 bg-paper rounded-xl flex items-center justify-center mx-auto mb-3">
+                <div key={item.label} className="bg-surface rounded-2xl p-6 border border-rule shadow-sm text-center">
+                  <div className="w-12 h-12 bg-fixed-ink rounded-xl flex items-center justify-center mx-auto mb-3">
                     <Icon className="w-6 h-6 text-white" />
                   </div>
                   <p className="font-semibold text-gray-900 text-sm mb-1">{item.label}</p>
-                  <p className="text-xs text-gray-500">{item.sub}</p>
+                  <p className="text-xs text-graphite">{item.sub}</p>
                 </div>
               );
             })}
@@ -284,8 +269,8 @@ export default function HowItWorksPage() {
           <p className="text-white/70 text-lg mb-8">
             Create a free account in 60 seconds and upload your first answer sheet today.
           </p>
-          <Link href="/signup" className="inline-flex items-center gap-2 bg-white text-blue-600 font-bold px-8 py-4 rounded-xl hover:bg-blue-50 transition-colors shadow-lg group">
-            Start Free Today <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+          <Link href="/signup" className="inline-flex items-center gap-2 bg-surface text-blue-600 font-bold px-8 py-4 rounded-xl hover:bg-blue-50 transition-colors shadow-lg group">
+            Start free today <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
           </Link>
         </div>
       </section>

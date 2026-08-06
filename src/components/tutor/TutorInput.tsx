@@ -41,8 +41,8 @@ export function TutorInput({ onSend, isStreaming, disabled = false }: InputProps
   };
 
   return (
-    <form onSubmit={handleSubmit} className="border-t border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-950 p-3">
-      <div className="relative flex items-end gap-2 bg-gray-50 dark:bg-gray-900 border border-gray-200/80 dark:border-gray-800 rounded-2xl p-1.5 focus-within:ring-2 focus-within:ring-blue-500/25 focus-within:border-blue-500 transition-all">
+    <form onSubmit={handleSubmit} className="border-t border-rule bg-surface p-3">
+      <div className="relative flex items-end gap-2 bg-paper border border-rule/80 rounded-2xl p-1.5 focus-within:ring-2 focus-within:ring-blue-500/25 focus-within:border-blue-500 transition-all">
         <textarea
           ref={textareaRef}
           rows={1}
@@ -52,12 +52,12 @@ export function TutorInput({ onSend, isStreaming, disabled = false }: InputProps
           placeholder="Ask GetAhead AI Tutor..."
           disabled={disabled}
           maxLength={4000}
-          className="flex-1 max-h-40 min-h-[36px] bg-transparent border-0 outline-none focus:ring-0 text-sm text-gray-800 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500 p-2 resize-none leading-relaxed"
+          className="flex-1 max-h-40 min-h-[36px] bg-transparent border-0 outline-none focus:ring-0 text-sm text-ink placeholder-gray-400 dark:placeholder-gray-500 p-2 resize-none leading-relaxed"
         />
 
         <div className="flex items-center gap-2 pr-1.5 pb-1">
           {input.length > 3000 && (
-            <span className="text-[10px] text-gray-400 font-medium">
+            <span className="text-[10px] text-graphite font-medium">
               {input.length}/4000
             </span>
           )}
@@ -68,7 +68,7 @@ export function TutorInput({ onSend, isStreaming, disabled = false }: InputProps
             className={`w-8 h-8 rounded-xl flex items-center justify-center transition-all ${
               input.trim() && !isStreaming && !disabled
                 ? "bg-blue-600 hover:bg-blue-700 text-white cursor-pointer shadow-sm hover:scale-105"
-                : "bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-600 cursor-not-allowed"
+                : "bg-surface-2 text-graphite dark:text-graphite cursor-not-allowed"
             }`}
             title="Send message"
           >

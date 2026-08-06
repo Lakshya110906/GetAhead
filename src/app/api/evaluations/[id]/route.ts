@@ -45,6 +45,19 @@ export async function GET(
       return NextResponse.json(base);
     }
 
+    // questionWise (per-question marks, answer summary, and feedback) lives
+    // inside the full model response — it's already computed by the AI and
+    // used server-side to total up marks, but wasn't being surfaced to the
+    // report UI, which only showed the topic-level rollup.
+    let questionWise = null;
+    if (job.aiResponse) {
+      try {
+        questionWise = JSON.parse(job.aiResponse).questionWise ?? null;
+      } catch {
+        questionWise = null;
+      }
+    }
+
     return NextResponse.json({
       ...base,
       result: {
@@ -53,6 +66,7 @@ export async function GET(
         percentage: job.percentage,
         aiFeedback: job.aiFeedback,
         marksBreakdown: job.marksBreakdown ? JSON.parse(job.marksBreakdown) : null,
+        questionWise,
         strengths: job.strengths ? JSON.parse(job.strengths) : [],
         weaknesses: job.weaknesses ? JSON.parse(job.weaknesses) : [],
         recommendations: job.recommendations ? JSON.parse(job.recommendations) : [],
