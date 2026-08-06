@@ -46,12 +46,12 @@ export function SiteFooter() {
           {Object.entries(footerLinks).map(([title, links]) => (
             <div key={title}>
               <h3 className="text-white font-semibold text-sm mb-4 tracking-wide">{title}</h3>
-              <ul className="space-y-3">
+              <ul>
                 {links.map((link) => (
                   <li key={link.href}>
                     <Link
                       href={link.href}
-                      className="text-sm text-gray-300 hover:text-white transition-colors"
+                      className="flex items-center min-h-11 text-sm text-gray-300 hover:text-white transition-colors"
                     >
                       {link.label}
                     </Link>

@@ -28,7 +28,7 @@ export function ThemeSlider({ compact = false }: { compact?: boolean }) {
             aria-checked={isActive}
             onClick={() => setTheme(t.id)}
             title={`${t.label} theme`}
-            className={`flex-1 flex items-center justify-center gap-1 px-2 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 ${
+            className={`flex-1 flex items-center justify-center gap-1 px-2 py-2.5 rounded-lg text-xs font-semibold transition-all duration-200 ${
               isActive
                 ? "bg-surface text-ink shadow-sm font-bold scale-[1.03]"
                 : "text-graphite hover:text-ink hover:bg-surface"
