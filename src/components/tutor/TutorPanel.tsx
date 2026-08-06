@@ -84,7 +84,7 @@ export function TutorPanel({
       {!isOpen && (
         <button
           onClick={onToggle}
-          className="fixed right-6 bottom-6 z-40 bg-fixed-ink hover:opacity-90 text-white font-semibold p-4 rounded-full shadow-xl hover:scale-105 transition-all flex items-center gap-2 cursor-pointer no-print"
+          className="fixed right-6 bottom-6 z-40 bg-ink hover:opacity-90 text-paper font-semibold p-4 rounded-full shadow-xl hover:scale-105 transition-all flex items-center gap-2 cursor-pointer no-print"
           title="Open AI Tutor"
         >
           <span className="text-sm font-semibold tracking-wide">AI Tutor</span>

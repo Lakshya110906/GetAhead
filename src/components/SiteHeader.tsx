@@ -50,7 +50,7 @@ export function SiteHeader() {
             {isAuthenticated ? (
               <Link
                 href="/dashboard"
-                className="text-sm font-semibold text-white bg-fixed-ink rounded-lg px-5 py-2 hover:opacity-90 transition-opacity shadow-sm whitespace-nowrap"
+                className="text-sm font-semibold text-paper bg-ink rounded-lg px-5 py-2 hover:opacity-90 transition-opacity shadow-sm whitespace-nowrap"
               >
                 Go to dashboard
               </Link>
@@ -64,7 +64,7 @@ export function SiteHeader() {
                 </Link>
                 <Link
                   href="/signup"
-                  className="text-sm font-semibold text-white bg-fixed-ink rounded-lg px-5 py-2 hover:opacity-90 transition-opacity shadow-sm whitespace-nowrap"
+                  className="text-sm font-semibold text-paper bg-ink rounded-lg px-5 py-2 hover:opacity-90 transition-opacity shadow-sm whitespace-nowrap"
                 >
                   Start free
                 </Link>
@@ -106,7 +106,7 @@ export function SiteHeader() {
           {isAuthenticated ? (
             <Link
               href="/dashboard"
-              className="block text-white bg-fixed-ink rounded-lg px-4 py-2 text-sm font-semibold text-center"
+              className="block text-paper bg-ink rounded-lg px-4 py-2 text-sm font-semibold text-center"
               onClick={() => setMobileMenuOpen(false)}
             >
               Go to dashboard
@@ -122,7 +122,7 @@ export function SiteHeader() {
               </Link>
               <Link
                 href="/signup"
-                className="block text-white bg-fixed-ink rounded-lg px-4 py-2 text-sm font-semibold text-center"
+                className="block text-paper bg-ink rounded-lg px-4 py-2 text-sm font-semibold text-center"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 Start free

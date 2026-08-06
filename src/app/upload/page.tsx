@@ -393,7 +393,7 @@ export default function UploadPage() {
                       step.done
                         ? "bg-green-100 text-green-600"
                         : step.active
-                        ? "bg-fixed-ink text-white"
+                        ? "bg-ink text-paper"
                         : "bg-surface-2 text-gray-400"
                     }`}
                   >
@@ -508,7 +508,7 @@ export default function UploadPage() {
                 <button
                   id="view-results"
                   onClick={() => jobId && router.push(`/evaluation/${jobId}`)}
-                  className="w-full bg-fixed-ink text-white font-semibold py-3 rounded-xl hover:opacity-90 transition-opacity flex items-center justify-center gap-2"
+                  className="w-full bg-ink text-paper font-semibold py-3 rounded-xl hover:opacity-90 transition-opacity flex items-center justify-center gap-2"
                 >
                   View results <ArrowRight className="w-4 h-4" />
                 </button>
@@ -517,7 +517,7 @@ export default function UploadPage() {
               <div className="space-y-2">
                 <button
                   onClick={handleRetry}
-                  className="w-full bg-fixed-ink text-white font-semibold py-3 rounded-xl hover:opacity-90 transition-opacity"
+                  className="w-full bg-ink text-paper font-semibold py-3 rounded-xl hover:opacity-90 transition-opacity"
                 >
                   Retry evaluation
                 </button>
@@ -531,7 +531,7 @@ export default function UploadPage() {
             ) : status === "cancelled" ? (
               <button
                 onClick={handleStartOver}
-                className="w-full bg-fixed-ink text-white font-semibold py-3 rounded-xl hover:opacity-90 transition-opacity"
+                className="w-full bg-ink text-paper font-semibold py-3 rounded-xl hover:opacity-90 transition-opacity"
               >
                 Start a new evaluation
               </button>
@@ -548,7 +548,7 @@ export default function UploadPage() {
                   id="start-evaluation"
                   onClick={handleEvaluate}
                   disabled={!file || !subject || !grade || isBusy}
-                  className="w-full bg-fixed-ink text-white font-semibold py-3 rounded-xl hover:opacity-90 transition-opacity flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="w-full bg-ink text-paper font-semibold py-3 rounded-xl hover:opacity-90 transition-opacity flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   {status === "idle" ? (
                     <>

@@ -56,6 +56,12 @@
   --fixed-examiner: #C4342C;
   --fixed-tick: #2E7355;
   --fixed-rule: #E2E4E9;
+  /* The literal paper surface itself (answer-sheet hero, paper-preview
+     cards, generated-paper document view) — a real answer sheet is white
+     paper, and scanned pages stay white in a dark PDF reader, so this never
+     inverts, same principle as the other --fixed-* tokens above. Distinct
+     from --surface (which deliberately DOES invert for ordinary UI cards). */
+  --fixed-paper: #FAFAF8;
 }
 
 /* ===== DARK THEME — graphite ground, never pure black ===== */
@@ -102,12 +108,14 @@
 
   /* Fixed (theme-invariant) slots: bg-fixed-ink / text-fixed-ink /
      text-fixed-examiner / border-fixed-examiner / text-fixed-graphite /
-     text-fixed-tick / border-fixed-rule — for literal-paper surfaces only. */
+     text-fixed-tick / border-fixed-rule / bg-fixed-paper — for literal-paper
+     surfaces only. */
   --color-fixed-ink: var(--fixed-ink);
   --color-fixed-examiner: var(--fixed-examiner);
   --color-fixed-tick: var(--fixed-tick);
   --color-fixed-graphite: var(--fixed-graphite);
   --color-fixed-rule: var(--fixed-rule);
+  --color-fixed-paper: var(--fixed-paper);
 
   /* Legacy slot remapping so existing bg-blue, text-gray, etc. utility
      classes inherit the new palette instead of the old generic SaaS blue/teal. */

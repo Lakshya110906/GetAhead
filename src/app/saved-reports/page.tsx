@@ -275,7 +275,7 @@ export default function SavedReportsPage() {
         {activeTab === "reports" ? (
           <Link
             href="/upload"
-            className="inline-flex items-center gap-2 bg-fixed-ink text-white text-sm font-semibold px-4 py-2.5 rounded-xl hover:opacity-90 transition-opacity"
+            className="inline-flex items-center gap-2 bg-ink text-paper text-sm font-semibold px-4 py-2.5 rounded-xl hover:opacity-90 transition-opacity"
           >
             <PlusCircle className="w-4 h-4" />
             New evaluation
@@ -283,7 +283,7 @@ export default function SavedReportsPage() {
         ) : (
           <Link
             href="/generate-paper"
-            className="inline-flex items-center gap-2 bg-fixed-ink text-white text-sm font-semibold px-4 py-2.5 rounded-xl hover:opacity-90 transition-opacity"
+            className="inline-flex items-center gap-2 bg-ink text-paper text-sm font-semibold px-4 py-2.5 rounded-xl hover:opacity-90 transition-opacity"
           >
             <PlusCircle className="w-4 h-4" />
             Generate paper
@@ -336,7 +336,7 @@ export default function SavedReportsPage() {
               </p>
               <Link
                 href="/upload"
-                className="inline-flex items-center gap-2 bg-fixed-ink text-white font-semibold px-6 py-3 rounded-xl hover:opacity-90 transition-opacity text-sm shadow-md"
+                className="inline-flex items-center gap-2 bg-ink text-paper font-semibold px-6 py-3 rounded-xl hover:opacity-90 transition-opacity text-sm shadow-md"
               >
                 <FileText className="w-4 h-4" /> Start first evaluation
               </Link>
@@ -444,7 +444,7 @@ export default function SavedReportsPage() {
               </p>
               <Link
                 href="/generate-paper"
-                className="inline-flex items-center gap-2 bg-fixed-ink text-white text-sm font-semibold px-5 py-2.5 rounded-xl mt-6 hover:opacity-90 shadow-md"
+                className="inline-flex items-center gap-2 bg-ink text-paper text-sm font-semibold px-5 py-2.5 rounded-xl mt-6 hover:opacity-90 shadow-md"
               >
                 <PlusCircle className="w-4 h-4" /> Generate first paper
               </Link>
@@ -544,7 +544,7 @@ export default function SavedReportsPage() {
                 </button>
                 <button
                   onClick={handlePrint}
-                  className="flex items-center gap-1 bg-fixed-ink text-white px-3 py-1.5 rounded-xl text-xs font-bold shadow hover:opacity-95"
+                  className="flex items-center gap-1 bg-ink text-paper px-3 py-1.5 rounded-xl text-xs font-bold shadow hover:opacity-95"
                 >
                   <Printer className="w-3.5 h-3.5" /> Print / PDF
                 </button>

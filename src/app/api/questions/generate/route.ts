@@ -2,79 +2,102 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { generateQuestionPaper } from "@/lib/question-agents";
-import { consumeQuota, QuotaExceededError } from "@/lib/quota";
+import { generateQuestionPaper, DailyQuotaExhaustedError, PaperValidationFailedError } from "@/lib/question-agents";
+import { consumeQuota, refundQuota, QuotaExceededError } from "@/lib/quota";
 import { assertSpendGateOpen, SpendLimitReachedError } from "@/lib/spendControl";
+import { parseCustomInstructions, checkForConflict } from "@/lib/paperConstraintParser";
 
+// Dead code from the frontend's perspective (only generate-stream/route.ts is
+// called by /generate-paper), but kept working and consistent with that
+// route rather than left to rot with its own, different set of bugs —
+// same conflict gate, resolved defaults, and refund-on-hard-failure behavior.
 export async function POST(request: NextRequest) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const userId = (session.user as { id: string }).id;
+
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    await assertSpendGateOpen();
+  } catch (err) {
+    if (err instanceof SpendLimitReachedError) {
+      return NextResponse.json({ error: err.message, maintenance: true }, { status: 503 });
     }
-    const userId = (session.user as { id: string }).id;
+    throw err;
+  }
 
-    try {
-      await assertSpendGateOpen();
-    } catch (err) {
-      if (err instanceof SpendLimitReachedError) {
-        return NextResponse.json({ error: err.message, maintenance: true }, { status: 503 });
-      }
-      throw err;
+  const body = await request.json();
+  const {
+    subject, grade, topic, difficulty, totalMarks, questionTypes,
+    institutionName, courseCode, timeAllowed, instructions,
+    customPrompt, studyMaterialText, conflictResolution,
+  } = body;
+
+  if (!subject || !grade || !topic || !difficulty || !totalMarks || !questionTypes || !Array.isArray(questionTypes)) {
+    return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+  }
+
+  const parsedTotalMarks = parseInt(totalMarks);
+  if (isNaN(parsedTotalMarks)) {
+    return NextResponse.json({ error: "Invalid total marks" }, { status: 400 });
+  }
+
+  const parsedConstraints = parseCustomInstructions(customPrompt);
+  let effectiveTotalMarks = parsedTotalMarks;
+  let effectiveQuestionTypes: string[] = questionTypes;
+
+  if (!conflictResolution) {
+    const conflict = checkForConflict(parsedConstraints, parsedTotalMarks, questionTypes);
+    if (conflict.hasConflict) {
+      return NextResponse.json(
+        {
+          conflict: true,
+          message: conflict.message,
+          impliedTotal: conflict.impliedTotal,
+          fieldTotal: conflict.fieldTotal,
+          typeConflict: conflict.typeConflict,
+          impliedQuestionTypes: parsedConstraints.impliedQuestionTypes,
+          fieldQuestionTypes: conflict.fieldQuestionTypes,
+        },
+        { status: 409 }
+      );
     }
+  } else if (conflictResolution === "useImplied") {
+    if (parsedConstraints.impliedTotalMarks !== null) effectiveTotalMarks = parsedConstraints.impliedTotalMarks;
+    if (parsedConstraints.impliedQuestionTypes !== null) effectiveQuestionTypes = parsedConstraints.impliedQuestionTypes;
+  }
 
-    try {
-      await consumeQuota(userId, "PAPER_GENERATION");
-    } catch (err) {
-      if (err instanceof QuotaExceededError) {
-        return NextResponse.json(
-          { error: err.message, quotaExceeded: true, limit: err.limit, resetsAt: err.resetsAt.toISOString() },
-          { status: 429 }
-        );
-      }
-      throw err;
+  try {
+    await consumeQuota(userId, "PAPER_GENERATION");
+  } catch (err) {
+    if (err instanceof QuotaExceededError) {
+      return NextResponse.json(
+        { error: err.message, quotaExceeded: true, limit: err.limit, resetsAt: err.resetsAt.toISOString() },
+        { status: 429 }
+      );
     }
+    throw err;
+  }
 
-    const body = await request.json();
-    const {
-      subject,
-      grade,
-      topic,
-      difficulty,
-      totalMarks,
-      questionTypes,
-      institutionName,
-      courseCode,
-      timeAllowed,
-      instructions,
-    } = body;
-
-    if (!subject || !grade || !topic || !difficulty || !totalMarks || !questionTypes || !Array.isArray(questionTypes)) {
-      return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
-    }
-
-    const parsedTotalMarks = parseInt(totalMarks);
-    if (isNaN(parsedTotalMarks)) {
-      return NextResponse.json({ error: "Invalid total marks" }, { status: 400 });
-    }
-
-    // Run the multi-agent generator
+  try {
     const result = await generateQuestionPaper({
       subject,
       grade,
       topic,
       difficulty,
-      totalMarks: parsedTotalMarks,
-      questionTypes
+      totalMarks: effectiveTotalMarks,
+      questionTypes: effectiveQuestionTypes,
+      customPrompt: customPrompt || "",
+      studyMaterialText: studyMaterialText || "",
     });
 
-    // Save to database
     const dbPayload = {
       ...result,
       metadata: {
-        institutionName: institutionName || "University Examination Board",
+        institutionName: institutionName || "",
         courseCode: courseCode || "",
-        timeAllowed: timeAllowed || "2 Hours",
+        timeAllowed: timeAllowed || result.paper.timeAllowed,
         instructions: instructions || ""
       }
     };
@@ -85,19 +108,37 @@ export async function POST(request: NextRequest) {
         subject,
         grade,
         difficulty,
-        totalMarks: parsedTotalMarks,
+        totalMarks: result.paper.totalMarks,
         title: result.paper.title,
         content: JSON.stringify(dbPayload)
       }
     });
 
-
-
-    return NextResponse.json({
-      success: true,
-      paper: savedPaper
-    });
+    return NextResponse.json({ success: true, paper: savedPaper });
   } catch (error) {
+    if (error instanceof DailyQuotaExhaustedError) {
+      await refundQuota(userId, "PAPER_GENERATION");
+      return NextResponse.json(
+        {
+          error: "The AI service's shared daily request quota is exhausted for today — this is not something retrying will fix. Your generation credit has been refunded; please try again after the quota resets (daily, at midnight UTC).",
+          quotaRefunded: true,
+          retryWorthwhile: false,
+        },
+        { status: 503 }
+      );
+    }
+    if (error instanceof PaperValidationFailedError) {
+      await refundQuota(userId, "PAPER_GENERATION");
+      return NextResponse.json(
+        {
+          error: `We couldn't generate a paper that satisfies your request after ${error.attemptLogs.length} attempts. Remaining issue(s): ${error.finalViolations.join("; ")}. Your generation credit has been refunded — try adjusting your total marks, question count, or custom instructions so they don't conflict, then try again.`,
+          quotaRefunded: true,
+          retryWorthwhile: true,
+          attemptLogs: error.attemptLogs,
+        },
+        { status: 422 }
+      );
+    }
     console.error("API generate questions error:", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }

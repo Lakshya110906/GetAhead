@@ -63,6 +63,24 @@ export async function consumeQuota(userId: string, kind: QuotaKind): Promise<{ u
   return { used: row.count, limit };
 }
 
+/**
+ * Releases one previously-consumed unit for today. consumeQuota() is called
+ * before generation starts (so quota reflects "attempted", not just
+ * "succeeded", protecting against retry storms) — but a hard pipeline
+ * failure the user did nothing wrong to cause (daily Gemini quota exhausted,
+ * or the repair loop couldn't produce a valid paper after 3 attempts)
+ * shouldn't cost them one of their 10 daily generations for nothing. Call
+ * this from the failure path for those specific, non-user-caused failures
+ * only — never for ordinary validation errors on the user's own input.
+ */
+export async function refundQuota(userId: string, kind: QuotaKind): Promise<void> {
+  const date = todayUtc();
+  const row = await prisma.usageCounter.findUnique({ where: { userId_kind_date: { userId, kind, date } } });
+  if (row && row.count > 0) {
+    await prisma.usageCounter.update({ where: { id: row.id }, data: { count: { decrement: 1 } } });
+  }
+}
+
 /** Read-only check, for UI to show "X of Y used today" without consuming a unit. */
 export async function getQuotaUsage(userId: string, kind: QuotaKind): Promise<{ used: number; limit: number; resetsAt: Date }> {
   const date = todayUtc();

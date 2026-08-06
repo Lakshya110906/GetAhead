@@ -117,7 +117,7 @@ export default function DashboardPage() {
         </div>
         <Link
           href="/upload"
-          className="inline-flex items-center gap-2 bg-fixed-ink text-white font-semibold px-5 py-2.5 rounded-xl hover:opacity-90 transition-opacity text-sm"
+          className="inline-flex items-center gap-2 bg-ink text-paper font-semibold px-5 py-2.5 rounded-xl hover:opacity-90 transition-opacity text-sm"
         >
           <PlusCircle className="w-4 h-4" />
           New evaluation
@@ -236,7 +236,7 @@ export default function DashboardPage() {
             <p className="text-gray-400 text-sm mt-1">Start your first evaluation to see results here</p>
             <Link
               href="/upload"
-              className="inline-flex items-center gap-2 bg-fixed-ink text-white text-sm font-semibold px-5 py-2.5 rounded-xl mt-4 hover:opacity-90"
+              className="inline-flex items-center gap-2 bg-ink text-paper text-sm font-semibold px-5 py-2.5 rounded-xl mt-4 hover:opacity-90"
             >
               <PlusCircle className="w-4 h-4" />
               Start evaluation

@@ -383,7 +383,7 @@ export default function HelpCenterPage() {
           <p className="text-graphite mb-6">
             Our support team responds within 24 hours on weekdays.
           </p>
-          <Link href="/contact" className="inline-flex items-center gap-2 bg-fixed-ink text-white font-semibold px-6 py-3 rounded-xl hover:opacity-90 transition-opacity">
+          <Link href="/contact" className="inline-flex items-center gap-2 bg-ink text-paper font-semibold px-6 py-3 rounded-xl hover:opacity-90 transition-opacity">
             Contact support <ArrowRight className="w-4 h-4" />
           </Link>
         </div>

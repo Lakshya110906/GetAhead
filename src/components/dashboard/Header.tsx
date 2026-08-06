@@ -68,7 +68,7 @@ export function DashboardHeader({ title, subtitle }: { title?: string; subtitle?
       <div className="flex items-center gap-3">
         <Link
           href="/upload"
-          className="hidden sm:inline-flex items-center gap-2 bg-fixed-ink text-white text-sm font-semibold px-4 py-2 rounded-xl hover:opacity-90 transition-opacity"
+          className="hidden sm:inline-flex items-center gap-2 bg-ink text-paper text-sm font-semibold px-4 py-2 rounded-xl hover:opacity-90 transition-opacity"
         >
           <Plus className="w-4 h-4" />
           New evaluation

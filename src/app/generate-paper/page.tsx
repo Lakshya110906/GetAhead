@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import { GeneratedPaper } from "@/lib/question-agents";
 import { SubjectSelector } from "@/components/SubjectSelector";
+import { computeTimeAllowed } from "@/lib/timeAllowed";
 
 const grades = [
   "8th Grade",
@@ -39,6 +40,20 @@ const grades = [
 // ─── Types ───────────────────────────────────────────────────────────────────
 type GenerationStatus = "idle" | "generating" | "complete" | "error" | "quota_exceeded" | "maintenance";
 type AgentStatus = "idle" | "active" | "done" | "error";
+
+interface ConflictInfo {
+  message: string;
+  impliedTotal: number | null;
+  fieldTotal: number;
+  typeConflict: boolean;
+  impliedQuestionTypes: string[] | null;
+  fieldQuestionTypes: string[];
+}
+
+interface RepairAttemptLog {
+  attempt: number;
+  violations: string[];
+}
 
 interface AgentLogEntry {
   type: "log" | "tool_call" | "tool_result" | "done";
@@ -195,6 +210,15 @@ export default function GeneratePaperPage() {
   const [quotaResetsAt, setQuotaResetsAt] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
+  // Conflict resolution (structured field vs. parsed custom-instruction constraint)
+  const [conflictInfo, setConflictInfo] = useState<ConflictInfo | null>(null);
+  // Failure UX detail: why it failed, whether the quota credit was refunded,
+  // and whether retrying is worth it — so a failure is never just "Something
+  // went wrong" with no next step.
+  const [quotaRefunded, setQuotaRefunded] = useState(false);
+  const [retryWorthwhile, setRetryWorthwhile] = useState(true);
+  const [repairAttemptLogs, setRepairAttemptLogs] = useState<RepairAttemptLog[] | null>(null);
+
   // Custom Paper Style & Study Material Upload
   const [customPrompt, setCustomPrompt] = useState("");
   const [studyMaterialText, setStudyMaterialText] = useState("");
@@ -230,8 +254,15 @@ export default function GeneratePaperPage() {
   // Printable Exam Metadata
   const [institutionName, setInstitutionName] = useState("");
   const [courseCode, setCourseCode] = useState("");
-  const [timeAllowed, setTimeAllowed] = useState("2 Hours");
+  const [timeAllowed, setTimeAllowed] = useState(() => computeTimeAllowed(30));
+  const [timeAllowedTouched, setTimeAllowedTouched] = useState(false);
   const [instructions, setInstructions] = useState("1. All questions are compulsory.\n2. Write your Candidate Name and Roll Number clearly at the top right.");
+
+  // Time allowed must track total marks, not sit at a fixed default — but
+  // once the user has typed their own value, stop overwriting it.
+  useEffect(() => {
+    if (!timeAllowedTouched) setTimeAllowed(computeTimeAllowed(totalMarks));
+  }, [totalMarks, timeAllowedTouched]);
 
   const handleTypeChange = (type: string) => {
     if (questionTypes.includes(type)) {
@@ -285,14 +316,18 @@ export default function GeneratePaperPage() {
     setUploadError("");
   };
 
-  const addLog = (agent: "planner" | "generator" | "reviewer", entry: Omit<AgentLogEntry, "ts">) => {
+  const addLog = (agent: "planner" | "generator" | "reviewer" | "repair", entry: Omit<AgentLogEntry, "ts">) => {
     const full: AgentLogEntry = { ...entry, ts: Date.now() };
     if (agent === "planner") setPlannerLogs(p => [...p, full]);
     else if (agent === "generator") setGeneratorLogs(p => [...p, full]);
+    // "repair" events (validation attempts / re-prompts) surface on the
+    // Reviewer card — validating and repairing the paper against the
+    // request is part of the same quality-audit stage from the user's
+    // point of view.
     else setReviewerLogs(p => [...p, full]);
   };
 
-  const handleGenerate = async (e: React.FormEvent) => {
+  const handleGenerate = async (e: React.FormEvent, conflictResolution?: "useImplied" | "useField") => {
     e.preventDefault();
     if (!subject || !grade || !topic || questionTypes.length === 0) {
       setError("Please fill in all required fields and select at least one question type.");
@@ -300,6 +335,10 @@ export default function GeneratePaperPage() {
     }
 
     setError("");
+    setConflictInfo(null);
+    setQuotaRefunded(false);
+    setRetryWorthwhile(true);
+    setRepairAttemptLogs(null);
     setStatus("generating");
     setPaper(null);
     setPlannerStatus("idle"); setGeneratorStatus("idle"); setReviewerStatus("idle");
@@ -313,11 +352,26 @@ export default function GeneratePaperPage() {
           subject, grade, topic, difficulty, totalMarks, questionTypes,
           institutionName, courseCode, timeAllowed, instructions,
           customPrompt, studyMaterialText,
+          ...(conflictResolution ? { conflictResolution } : {}),
         }),
       });
 
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
+        if (res.status === 409 && body.conflict) {
+          // Your instructions disagree with the structured fields — never
+          // silently pick one. Surface the conflict and let the user choose.
+          setConflictInfo({
+            message: body.message,
+            impliedTotal: body.impliedTotal,
+            fieldTotal: body.fieldTotal,
+            typeConflict: body.typeConflict,
+            impliedQuestionTypes: body.impliedQuestionTypes,
+            fieldQuestionTypes: body.fieldQuestionTypes,
+          });
+          setStatus("idle");
+          return;
+        }
         if (body.quotaExceeded) {
           setQuotaResetsAt(body.resetsAt || null);
           setStatus("quota_exceeded");
@@ -329,6 +383,9 @@ export default function GeneratePaperPage() {
           setError(body.error || "Question generation is temporarily unavailable.");
           return;
         }
+        if (body.quotaRefunded) setQuotaRefunded(true);
+        if (body.retryWorthwhile === false) setRetryWorthwhile(false);
+        if (body.attemptLogs) setRepairAttemptLogs(body.attemptLogs);
         throw new Error(body.error || "Failed to connect to generation service.");
       }
       if (!res.body) throw new Error("No response stream.");
@@ -374,6 +431,9 @@ export default function GeneratePaperPage() {
               setGeneratorDraft(results.generatorDraft);
               setStatus("complete");
             } else if (event === "error") {
+              if (payload.quotaRefunded) setQuotaRefunded(true);
+              if (payload.retryWorthwhile === false) setRetryWorthwhile(false);
+              if (payload.attemptLogs) setRepairAttemptLogs(payload.attemptLogs);
               throw new Error(payload.message || "Generation failed.");
             }
           } catch (parseErr) {
@@ -522,6 +582,9 @@ ${JSON.stringify(paper, null, 2)}
               setGeneratorDraft(results.generatorDraft);
               setStatus("complete");
             } else if (event === "error") {
+              if (payload.quotaRefunded) setQuotaRefunded(true);
+              if (payload.retryWorthwhile === false) setRetryWorthwhile(false);
+              if (payload.attemptLogs) setRepairAttemptLogs(payload.attemptLogs);
               throw new Error(payload.message || "Generation failed.");
             }
           } catch (parseErr) {
@@ -632,7 +695,7 @@ ${JSON.stringify(paper, null, 2)}
             AI question paper generator
           </h1>
           <p className="text-graphite mt-1 text-xs sm:text-sm">
-            Collaborative multi-agent AI designs complete exam papers.
+            A planner, generator, and reviewer agent pipeline drafts your paper, then validates and repairs it against your exact requirements.
           </p>
         </div>
         {paper && (
@@ -655,6 +718,41 @@ ${JSON.stringify(paper, null, 2)}
       {status === "idle" && (
         <div className="bg-surface rounded-2xl border border-rule card-shadow-md p-4 sm:p-8 no-print">
           <form onSubmit={handleGenerate} className="space-y-6">
+            {conflictInfo && (
+              <div className="flex flex-col gap-3 bg-amber-50 border border-amber-200 text-amber-900 p-4 rounded-xl text-sm">
+                <div className="flex items-start gap-3">
+                  <AlertTriangle className="w-5 h-5 flex-shrink-0 mt-0.5 text-amber-600" />
+                  <p>{conflictInfo.message} Which should I use?</p>
+                </div>
+                <div className="flex flex-wrap gap-2 pl-8">
+                  {conflictInfo.impliedTotal !== null && (
+                    <button
+                      type="button"
+                      onClick={(e) => handleGenerate(e, "useImplied")}
+                      className="px-4 py-2 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold transition-colors"
+                    >
+                      Use {conflictInfo.impliedTotal}
+                      {conflictInfo.typeConflict && conflictInfo.impliedQuestionTypes ? ` (${conflictInfo.impliedQuestionTypes.join(", ")})` : ""}
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={(e) => handleGenerate(e, "useField")}
+                    className="px-4 py-2 rounded-lg bg-white border border-amber-300 hover:bg-amber-100 text-amber-900 text-xs font-bold transition-colors"
+                  >
+                    Use {conflictInfo.fieldTotal}
+                    {conflictInfo.typeConflict ? ` (${conflictInfo.fieldQuestionTypes.join(", ")})` : ""}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setConflictInfo(null)}
+                    className="px-4 py-2 rounded-lg text-amber-700 hover:bg-amber-100 text-xs font-bold transition-colors"
+                  >
+                    Let me edit
+                  </button>
+                </div>
+              </div>
+            )}
             {error && (
               <div className="flex items-start gap-3 bg-red-50 text-red-700 p-4 rounded-xl text-sm">
                 <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
@@ -717,7 +815,7 @@ ${JSON.stringify(paper, null, 2)}
                       onClick={() => setDifficulty(level)}
                       className={`py-3 rounded-xl border text-sm font-semibold transition-all ${
                         difficulty === level
-                          ? "bg-fixed-ink text-white border-transparent shadow-sm"
+                          ? "bg-ink text-paper border-transparent shadow-sm"
                           : "border-gray-200 text-graphite bg-gray-50 hover:bg-surface hover:text-ink"
                       }`}
                     >
@@ -880,7 +978,7 @@ ${JSON.stringify(paper, null, 2)}
                   <input
                     type="text"
                     value={timeAllowed}
-                    onChange={(e) => setTimeAllowed(e.target.value)}
+                    onChange={(e) => { setTimeAllowed(e.target.value); setTimeAllowedTouched(true); }}
                     placeholder="e.g. 3 Hours"
                     className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50 hover:bg-surface focus:bg-surface focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-xs"
                   />
@@ -900,7 +998,7 @@ ${JSON.stringify(paper, null, 2)}
 
             <button
               type="submit"
-              className="w-full py-4 rounded-xl text-white font-bold bg-fixed-ink shadow-lg hover:opacity-90 active:scale-[0.99] transition-all flex items-center justify-center gap-2 text-base"
+              className="w-full py-4 rounded-xl text-paper font-bold bg-ink shadow-lg hover:opacity-90 active:scale-[0.99] transition-all flex items-center justify-center gap-2 text-base"
             >
               <GraduationCap className="w-5 h-5" />
               Generate question paper
@@ -988,12 +1086,30 @@ ${JSON.stringify(paper, null, 2)}
           <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
           <h2 className="text-xl font-bold text-gray-900">Generation Failed</h2>
           <p className="text-graphite text-sm mt-1">{error}</p>
+          {quotaRefunded && (
+            <p className="text-green-700 text-xs font-semibold mt-3 bg-green-50 rounded-lg px-3 py-2 inline-block">
+              Your daily generation credit was refunded — this attempt won&apos;t count against your limit.
+            </p>
+          )}
+          {repairAttemptLogs && repairAttemptLogs.length > 0 && (
+            <div className="text-left text-xs text-graphite bg-gray-50 rounded-lg p-3 mt-3 space-y-1">
+              <p className="font-bold uppercase tracking-wide text-[10px] text-gray-500">What each attempt found</p>
+              {repairAttemptLogs.map((a) => (
+                <p key={a.attempt}>
+                  Attempt {a.attempt}: {a.violations.length === 0 ? "passed" : a.violations.join("; ")}
+                </p>
+              ))}
+            </div>
+          )}
           <button
             onClick={() => setStatus("idle")}
             className="mt-6 px-6 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm shadow-md transition-colors"
           >
-            Try Again
+            {retryWorthwhile ? "Try Again" : "Back to form"}
           </button>
+          {!retryWorthwhile && (
+            <p className="text-graphite text-xs mt-2">Retrying right now won&apos;t help — see the message above for why.</p>
+          )}
         </div>
       )}
 
@@ -1096,7 +1212,7 @@ ${JSON.stringify(paper, null, 2)}
               </button>
               <button
                 onClick={handlePrint}
-                className="flex items-center gap-1.5 bg-fixed-ink px-4 py-2 rounded-xl text-sm font-bold text-white shadow-md hover:opacity-95 transition-colors"
+                className="flex items-center gap-1.5 bg-ink px-4 py-2 rounded-xl text-sm font-bold text-paper shadow-md hover:opacity-95 transition-colors"
               >
                 <Printer className="w-4 h-4" /> Print / PDF
               </button>
@@ -1309,7 +1425,7 @@ ${JSON.stringify(paper, null, 2)}
                                       savePaperEdits(updatedPaper);
                                       setEditingIndex(null);
                                     }}
-                                    className="px-3 py-1.5 text-xs font-bold text-white bg-fixed-ink rounded-lg shadow-sm"
+                                    className="px-3 py-1.5 text-xs font-bold text-paper bg-ink rounded-lg shadow-sm"
                                   >
                                     Save Question
                                   </button>
@@ -1350,6 +1466,21 @@ ${JSON.stringify(paper, null, 2)}
                                     <p className="text-sm text-blue-900 font-medium">
                                       {cleanMathText(q.answer)}
                                     </p>
+                                    {q.markScheme && q.markScheme.length > 0 && (
+                                      <div className="mt-3 pt-3 border-t border-blue-200">
+                                        <p className="text-xs font-bold text-blue-700 uppercase tracking-wider mb-1.5">
+                                          Mark Scheme:
+                                        </p>
+                                        <ul className="space-y-1">
+                                          {q.markScheme.map((p, pIdx) => (
+                                            <li key={pIdx} className="text-sm text-blue-900 flex justify-between gap-3">
+                                              <span>{cleanMathText(p.point)}</span>
+                                              <span className="font-bold flex-shrink-0">{p.marks} {p.marks === 1 ? "mark" : "marks"}</span>
+                                            </li>
+                                          ))}
+                                        </ul>
+                                      </div>
+                                    )}
                                   </div>
                                 )}
                               </>
@@ -1390,7 +1521,7 @@ ${JSON.stringify(paper, null, 2)}
                 <button
                   onClick={handleAIRefine}
                   disabled={!aiFeedback.trim()}
-                  className="inline-flex items-center gap-2 bg-fixed-ink text-white font-semibold text-sm px-5 py-3.5 rounded-xl hover:opacity-90 transition-opacity shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
+                  className="inline-flex items-center gap-2 bg-ink text-paper font-semibold text-sm px-5 py-3.5 rounded-xl hover:opacity-90 transition-opacity shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
                 >
                   <Sparkles className="w-4 h-4" />
                   Apply tweaks

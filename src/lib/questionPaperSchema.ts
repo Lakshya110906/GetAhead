@@ -46,12 +46,24 @@ export const GEMINI_PLANNER_RESPONSE_SCHEMA: Schema = {
   required: ["sections"],
 };
 
+export const markSchemePointSchema = z.object({
+  point: z.string().min(1),
+  marks: z.number().positive(),
+});
+
 export const questionSchema = z.object({
   number: z.number().int().positive(),
   type: z.enum(["MCQ", "Short", "Long"]),
   question: z.string().min(1),
   options: z.array(z.string()).optional(),
   answer: z.string().min(1),
+  // Structured per-mark breakdown — the actual source of truth for grading.
+  // `answer` above is kept as a full model-answer string for the existing
+  // UI (copy-to-clipboard export, answer-key view, inline edit) but the
+  // per-mark allocation must come from here, and its marks must sum to
+  // question.marks (enforced in paperValidation.ts, not by Zod, since it's
+  // a cross-field check).
+  markScheme: z.array(markSchemePointSchema).min(1),
   marks: z.number().positive(),
 });
 
@@ -73,6 +85,15 @@ export const generatedPaperSchema = z.object({
 
 export type GeneratedPaperShape = z.infer<typeof generatedPaperSchema>;
 
+const GEMINI_MARK_SCHEME_POINT_SCHEMA: Schema = {
+  type: SchemaType.OBJECT,
+  properties: {
+    point: { type: SchemaType.STRING },
+    marks: { type: SchemaType.NUMBER },
+  },
+  required: ["point", "marks"],
+};
+
 const GEMINI_QUESTION_SCHEMA: Schema = {
   type: SchemaType.OBJECT,
   properties: {
@@ -81,9 +102,10 @@ const GEMINI_QUESTION_SCHEMA: Schema = {
     question: { type: SchemaType.STRING },
     options: { type: SchemaType.ARRAY, items: { type: SchemaType.STRING } },
     answer: { type: SchemaType.STRING },
+    markScheme: { type: SchemaType.ARRAY, items: GEMINI_MARK_SCHEME_POINT_SCHEMA },
     marks: { type: SchemaType.NUMBER },
   },
-  required: ["number", "type", "question", "answer", "marks"],
+  required: ["number", "type", "question", "answer", "markScheme", "marks"],
 };
 
 export const GEMINI_PAPER_RESPONSE_SCHEMA: Schema = {

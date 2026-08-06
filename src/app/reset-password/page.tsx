@@ -105,7 +105,7 @@ function ResetPasswordForm() {
             </div>
             <Link
               href="/login"
-              className="w-full inline-flex items-center justify-center gap-2 bg-fixed-ink text-white font-semibold py-3 rounded-2xl hover:opacity-95 transition-opacity text-sm shadow-md shadow-blue-500/10"
+              className="w-full inline-flex items-center justify-center gap-2 bg-ink text-paper font-semibold py-3 rounded-2xl hover:opacity-95 transition-opacity text-sm shadow-md shadow-blue-500/10"
             >
               Sign In Now <ArrowRight className="w-4 h-4" />
             </Link>
@@ -166,7 +166,7 @@ function ResetPasswordForm() {
             <button
               type="submit"
               disabled={loading || !token}
-              className="w-full bg-fixed-ink text-white font-semibold py-3 rounded-2xl hover:opacity-95 transition-opacity flex items-center justify-center gap-2 disabled:opacity-60 text-sm"
+              className="w-full bg-ink text-paper font-semibold py-3 rounded-2xl hover:opacity-95 transition-opacity flex items-center justify-center gap-2 disabled:opacity-60 text-sm"
             >
               {loading ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
