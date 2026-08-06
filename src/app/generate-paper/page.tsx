@@ -647,7 +647,7 @@ ${JSON.stringify(paper, null, 2)}
             }}
             className="flex items-center gap-2 text-sm text-graphite hover:text-ink border border-gray-200 px-4 py-2 rounded-xl bg-surface hover:bg-gray-50 transition-colors"
           >
-            <ArrowLeft className="w-4 h-4" /> Create New
+            <ArrowLeft className="w-4 h-4" /> Create new
           </button>
         )}
       </div>
@@ -1062,7 +1062,7 @@ ${JSON.stringify(paper, null, 2)}
                     : "text-graphite hover:bg-gray-50"
                 }`}
               >
-                <FileText className="w-4 h-4" /> Question Paper
+                <FileText className="w-4 h-4" /> Question paper
               </button>
               <button
                 onClick={() => setViewMode("answers")}
@@ -1072,7 +1072,7 @@ ${JSON.stringify(paper, null, 2)}
                     : "text-graphite hover:bg-gray-50"
                 }`}
               >
-                <Eye className="w-4 h-4" /> Answer Key
+                <Eye className="w-4 h-4" /> Answer key
               </button>
               <button
                 onClick={() => setViewMode("logs")}
@@ -1082,7 +1082,7 @@ ${JSON.stringify(paper, null, 2)}
                     : "text-graphite hover:bg-gray-50"
                 }`}
               >
-                <Settings className="w-4 h-4" /> Agent Logs
+                <Settings className="w-4 h-4" /> Agent logs
               </button>
             </div>
 
@@ -1092,7 +1092,7 @@ ${JSON.stringify(paper, null, 2)}
                 className="flex items-center gap-1.5 border border-gray-200 px-4 py-2 rounded-xl text-sm font-semibold bg-surface hover:bg-gray-50 text-ink transition-colors"
               >
                 {copied ? <CheckCircle className="w-4 h-4 text-green-600" /> : <Copy className="w-4 h-4" />}
-                {copied ? "Copied!" : "Copy Text"}
+                {copied ? "Copied!" : "Copy text"}
               </button>
               <button
                 onClick={handlePrint}
@@ -1371,7 +1371,7 @@ ${JSON.stringify(paper, null, 2)}
                 </div>
                 <div>
                   <h3 className="text-base font-bold text-gray-900" style={{ fontFamily: "var(--font-display)" }}>
-                    AI Paper Refinement & Tweaks
+                    AI paper refinement and tweaks
                   </h3>
                   <p className="text-xs text-graphite">
                     Instruct the agents to update the paper (e.g. &quot;change Section A questions to be more focused on algorithms&quot;).
@@ -1393,7 +1393,7 @@ ${JSON.stringify(paper, null, 2)}
                   className="inline-flex items-center gap-2 bg-fixed-ink text-white font-semibold text-sm px-5 py-3.5 rounded-xl hover:opacity-90 transition-opacity shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
                 >
                   <Sparkles className="w-4 h-4" />
-                  Apply Tweaks
+                  Apply tweaks
                 </button>
               </div>
             </div>

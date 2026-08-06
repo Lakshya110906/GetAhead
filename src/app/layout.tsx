@@ -78,7 +78,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${inter.variable} ${fraunces.variable} ${plexMono.variable}`}>
+    <html lang="en" className={`${inter.variable} ${fraunces.variable} ${plexMono.variable}`} data-scroll-behavior="smooth" suppressHydrationWarning>
       <head>
         {/* Blocking, runs before first paint — applies the saved (or
             system-preferred, on a first visit) theme synchronously so there's
