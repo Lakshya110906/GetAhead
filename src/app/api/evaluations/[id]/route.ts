@@ -4,6 +4,8 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { processSpecificJob } from "@/lib/evaluationWorker";
+import { reportApiError } from "@/lib/apiError";
+import { logger } from "@/lib/logger";
 
 export const maxDuration = 60;
 
@@ -17,12 +19,13 @@ export async function GET(
   _req: NextRequest,
   ctx: RouteContext<"/api/evaluations/[id]">
 ) {
+  let userId: string | undefined;
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-    const userId = (session.user as { id: string }).id;
+    userId = (session.user as { id: string }).id;
     const { id } = await ctx.params;
 
     const job = await getOwnedJob(id, userId);
@@ -102,8 +105,7 @@ export async function GET(
       },
     });
   } catch (error) {
-    console.error("Evaluation status fetch error:", error);
-    return NextResponse.json({ error: "Couldn't check that evaluation's status. Try again." }, { status: 500 });
+    return reportApiError({ code: "EVAL_STATUS_FAILED", error, route: "GET /api/evaluations/[id]", userId });
   }
 }
 
@@ -111,12 +113,13 @@ export async function PATCH(
   request: NextRequest,
   ctx: RouteContext<"/api/evaluations/[id]">
 ) {
+  let userId: string | undefined;
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-    const userId = (session.user as { id: string }).id;
+    userId = (session.user as { id: string }).id;
     const { id } = await ctx.params;
 
     const job = await getOwnedJob(id, userId);
@@ -161,7 +164,12 @@ export async function PATCH(
         try {
           await processSpecificJob(updated.id);
         } catch (err) {
-          console.error(`Background worker trigger failed on retry for job ${updated.id}:`, err);
+          logger.error(`Background worker trigger failed on retry for job ${updated.id}`, {
+            route: "PATCH /api/evaluations/[id]",
+            jobId: updated.id,
+            message: err instanceof Error ? err.message : String(err),
+            stack: err instanceof Error ? err.stack : undefined,
+          });
         }
       });
       return NextResponse.json({ status: updated.status });
@@ -169,7 +177,6 @@ export async function PATCH(
 
     return NextResponse.json({ error: "Unknown action" }, { status: 400 });
   } catch (error) {
-    console.error("Evaluation action error:", error);
-    return NextResponse.json({ error: "Couldn't update that evaluation. Try again." }, { status: 500 });
+    return reportApiError({ code: "EVAL_STATUS_FAILED", error, route: "PATCH /api/evaluations/[id]", userId });
   }
 }

@@ -2,11 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { reportApiError } from "@/lib/apiError";
 
 export async function GET(
   _req: NextRequest,
   ctx: RouteContext<"/api/reports/[id]">
 ) {
+  let userId: string | undefined;
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) {
@@ -14,7 +16,7 @@ export async function GET(
     }
 
     const { id } = await ctx.params;
-    const userId = (session.user as { id: string }).id;
+    userId = (session.user as { id: string }).id;
 
     const evaluation = await prisma.evaluation.findFirst({
       where: { id, userId },
@@ -52,10 +54,6 @@ export async function GET(
         : [],
     });
   } catch (error) {
-    console.error("Report fetch error:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch report" },
-      { status: 500 }
-    );
+    return reportApiError({ code: "REPORT_FETCH_FAILED", error, route: "GET /api/reports/[id]", userId });
   }
 }

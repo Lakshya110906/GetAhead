@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { reportApiError } from "@/lib/apiError";
 
 export async function POST(request: NextRequest) {
   const session = await getServerSession(authOptions);
@@ -40,8 +41,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: true, saved: true });
     }
   } catch (error) {
-    console.error("Save report error:", error);
-    return NextResponse.json({ error: "Failed to toggle save state" }, { status: 500 });
+    return reportApiError({ code: "REPORT_FETCH_FAILED", error, route: "POST /api/reports/save", userId: (session.user as { id: string }).id });
   }
 }
 
@@ -86,7 +86,6 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ success: true, savedReports: trustworthy });
   } catch (error) {
-    console.error("Get saved reports error:", error);
-    return NextResponse.json({ error: "Failed to fetch saved reports" }, { status: 500 });
+    return reportApiError({ code: "REPORT_FETCH_FAILED", error, route: "GET /api/reports/save" });
   }
 }

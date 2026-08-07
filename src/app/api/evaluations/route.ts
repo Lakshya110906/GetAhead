@@ -12,6 +12,7 @@ import { assertSpendGateOpen, SpendLimitReachedError } from "@/lib/spendControl"
 import { assertDeclaredTypeMatches } from "@/lib/fileSignature";
 import { logger } from "@/lib/logger";
 import { captureException } from "@/lib/errorTracking";
+import { reportApiError } from "@/lib/apiError";
 
 // after() keeps the worker call running past the point the response is
 // sent, so this stays fast for the client while the real work (which can
@@ -33,12 +34,13 @@ const enqueueSchema = z.object({
 });
 
 export async function POST(request: NextRequest) {
+  let userId: string | undefined;
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-    const userId = (session.user as { id: string }).id;
+    userId = (session.user as { id: string }).id;
 
     const parsed = enqueueSchema.safeParse(await request.json());
     if (!parsed.success) {
@@ -143,11 +145,6 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ jobId: job.id }, { status: 202 });
   } catch (error) {
-    logger.error("Enqueue evaluation error", { stage: "enqueue", error: String(error) });
-    captureException(error, { stage: "enqueue" });
-    return NextResponse.json(
-      { error: "Couldn't queue your evaluation due to a server error. Try again in a moment." },
-      { status: 500 }
-    );
+    return reportApiError({ code: "EVAL_ENQUEUE_FAILED", error, route: "POST /api/evaluations", userId });
   }
 }

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { handleUpload, type HandleUploadBody } from "@vercel/blob/client";
 import { authOptions } from "@/lib/auth";
+import { reportApiError } from "@/lib/apiError";
 
 // Real scanned answer sheets can be large; this is the ceiling enforced both
 // here (before the client is handed an upload token) and again server-side
@@ -45,9 +46,6 @@ export async function POST(request: Request): Promise<NextResponse> {
 
     return NextResponse.json(jsonResponse);
   } catch (error) {
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Couldn't authorize the upload. Try again." },
-      { status: 400 }
-    );
+    return reportApiError({ code: "UPLOAD_AUTH_FAILED", error, route: "POST /api/uploads", userId, status: 400 });
   }
 }
