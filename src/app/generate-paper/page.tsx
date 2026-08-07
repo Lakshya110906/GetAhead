@@ -476,39 +476,56 @@ export default function GeneratePaperPage() {
         }),
       });
 
-      const body = await res.json().catch(() => ({}));
+      // A platform-level failure (e.g. a function timeout) returns a body
+      // that isn't our JSON at all — that parse failure is itself
+      // meaningful (it means something killed the request before our code
+      // could even respond), not something to silently paper over.
+      let body: Record<string, unknown> = {};
+      let bodyParseFailed = false;
+      try {
+        body = await res.json();
+      } catch {
+        bodyParseFailed = true;
+      }
 
       if (!res.ok) {
         if (res.status === 409 && body.conflict) {
           // Your instructions disagree with the structured fields — never
           // silently pick one. Surface the conflict and let the user choose.
           setConflictInfo({
-            message: body.message,
-            impliedTotal: body.impliedTotal,
-            fieldTotal: body.fieldTotal,
-            typeConflict: body.typeConflict,
-            impliedQuestionTypes: body.impliedQuestionTypes,
-            fieldQuestionTypes: body.fieldQuestionTypes,
+            message: body.message as string,
+            impliedTotal: body.impliedTotal as number | null,
+            fieldTotal: body.fieldTotal as number,
+            typeConflict: body.typeConflict as boolean,
+            impliedQuestionTypes: body.impliedQuestionTypes as string[] | null,
+            fieldQuestionTypes: body.fieldQuestionTypes as string[],
           });
           setStatus("idle");
           return;
         }
         if (body.quotaExceeded) {
-          setQuotaResetsAt(body.resetsAt || null);
+          setQuotaResetsAt((body.resetsAt as string) || null);
           setStatus("quota_exceeded");
-          setError(body.error || "Daily limit reached.");
+          setError((body.error as string) || "Daily limit reached.");
           return;
         }
         if (body.maintenance) {
           setStatus("maintenance");
-          setError(body.error || "Question generation is temporarily unavailable.");
+          setError((body.error as string) || "Question generation is temporarily unavailable.");
           return;
         }
-        throw new Error(body.error || "Failed to start generation.");
+        if (bodyParseFailed) {
+          throw new Error(
+            `[HTTP_${res.status}] The server didn't respond in time to start generation (status ${res.status}). This usually means the request was still starting up when it got cut off — try again.`
+          );
+        }
+        const code = body.code ? ` [${body.code}]` : "";
+        const devDetail = body.devMessage ? ` — ${body.devMessage}` : "";
+        throw new Error(`${(body.error as string) || "Failed to start generation."}${code}${devDetail}`);
       }
 
-      setJobId(body.jobId);
-      pollJob(body.jobId);
+      setJobId(body.jobId as string);
+      pollJob(body.jobId as string);
     } catch (err) {
       console.error(err);
       const msg = err instanceof Error ? err.message : "Could not start generation. Check your connection and try again.";

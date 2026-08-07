@@ -19,6 +19,8 @@ import {
 } from "@/lib/question-agents";
 import { validatePaper, assignSectionLetters } from "@/lib/paperValidation";
 import { parseCustomInstructions } from "@/lib/paperConstraintParser";
+import { logger } from "@/lib/logger";
+import { captureException } from "@/lib/errorTracking";
 import type { PlannerPlan, GeneratedPaperShape } from "@/lib/questionPaperSchema";
 
 // ─── Why a job model instead of one long-lived request ─────────────────────
@@ -268,6 +270,13 @@ export async function processJobStep(jobId: string): Promise<void> {
     }
   } catch (err) {
     if (err instanceof DailyQuotaExhaustedError) {
+      logger.error(`Paper generation job ${jobId} hit daily quota exhaustion at step "${job.step}"`, {
+        route: "processJobStep",
+        jobId,
+        userId: job.userId,
+        step: job.step,
+        message: err.message,
+      });
       await prisma.paperGenerationJob.update({
         where: { id: jobId },
         data: {
@@ -284,6 +293,17 @@ export async function processJobStep(jobId: string): Promise<void> {
 
     const message = err instanceof Error ? err.message : String(err);
     const newAttemptCount = job.attemptCount + 1;
+    logger.error(`Paper generation job ${jobId} failed at step "${job.step}" (attempt ${newAttemptCount}/${MAX_STEP_ATTEMPTS})`, {
+      route: "processJobStep",
+      jobId,
+      userId: job.userId,
+      step: job.step,
+      attempt: newAttemptCount,
+      message,
+      stack: err instanceof Error ? err.stack : undefined,
+    });
+    captureException(err, { route: "processJobStep", jobId, step: job.step, attempt: newAttemptCount });
+
     if (newAttemptCount >= MAX_STEP_ATTEMPTS) {
       await prisma.paperGenerationJob.update({
         where: { id: jobId },

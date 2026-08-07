@@ -5,6 +5,8 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { buildTutorSystemPrompt, buildConversationHistory } from "@/lib/tutor-context";
 import { consumeQuota, QuotaExceededError } from "@/lib/quota";
+import { logger } from "@/lib/logger";
+import { captureException } from "@/lib/errorTracking";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
 export const maxDuration = 120;
@@ -214,12 +216,31 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
 
         send({ type: "done", id: savedAssistantMsg.id });
       } catch (err) {
-        console.error("Gemini stream error:", err);
         const msg = err instanceof Error ? err.message : "AI response failed";
         const isRateLimit = msg.toLowerCase().includes("quota") || msg.toLowerCase().includes("429");
         const isTimeout = msg.toLowerCase().includes("timeout");
+        const code = isRateLimit ? "TUTOR_RATE_LIMITED" : isTimeout ? "TUTOR_TIMEOUT" : "TUTOR_STREAM_FAILED";
+
+        logger.error(`[${code}] Tutor stream failed for evaluation ${evaluationId}`, {
+          route: "POST /api/tutor/[evaluationId]/stream",
+          code,
+          evaluationId,
+          userId,
+          message: msg,
+          stack: err instanceof Error ? err.stack : undefined,
+        });
+        captureException(err, { code, route: "POST /api/tutor/[evaluationId]/stream", evaluationId, userId });
+        try {
+          await prisma.errorLog.create({
+            data: { type: code, message: `tutor stream (evaluation ${evaluationId}): ${msg}`, stack: err instanceof Error ? err.stack || null : null, path: "POST /api/tutor/[evaluationId]/stream" },
+          });
+        } catch {
+          // best-effort — already logged above
+        }
+
         send({
           type: "error",
+          code,
           message: isRateLimit
             ? "AI rate limit reached. Please wait a moment and try again."
             : isTimeout
