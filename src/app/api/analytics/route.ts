@@ -18,8 +18,12 @@ export async function GET() {
       take: 20,
     });
 
-    // Calculate analytics
-    const completed = evaluations.filter((e) => e.status === "SUCCEEDED");
+    // Calculate analytics. The modelId check is defense in depth against the
+    // exact shape of stale row this database had until it was purged: status
+    // "SUCCEEDED" but modelId null, left by a client-side mock deleted from
+    // source months ago — evaluationWorker.ts always sets both together for
+    // a real grading call, so a SUCCEEDED row without one is untrustworthy.
+    const completed = evaluations.filter((e) => e.status === "SUCCEEDED" && e.modelId);
     const avgPercentage =
       completed.length > 0
         ? completed.reduce((sum: number, e) => sum + (e.percentage || 0), 0) / completed.length

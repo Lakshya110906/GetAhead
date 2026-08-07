@@ -45,16 +45,42 @@ export async function GET(
       return NextResponse.json(base);
     }
 
-    // questionWise (per-question marks, answer summary, and feedback) lives
-    // inside the full model response — it's already computed by the AI and
-    // used server-side to total up marks, but wasn't being surfaced to the
-    // report UI, which only showed the topic-level rollup.
-    let questionWise = null;
+    // Defense in depth: a row genuinely graded by evaluateAnswerSheetFromFile()
+    // always has modelId (and promptVersion, rubricVersion) set in the same
+    // write that sets status to SUCCEEDED (see evaluationWorker.ts) — there is
+    // no code path that produces one without the other. A SUCCEEDED row
+    // missing that audit trail cannot have come from a real grading call, so
+    // it must never be rendered as a report, regardless of what its
+    // totalMarks/obtainedMarks fields say. (This is exactly the shape of a
+    // set of stale rows found and purged from this database: status
+    // "SUCCEEDED"/"COMPLETED" with modelId null, left over from a client-side
+    // mock deleted from source over a month before this check was added.)
+    if (!job.modelId || !job.promptVersion) {
+      return NextResponse.json(
+        { ...base, status: "FAILED", lastError: "This evaluation is missing its grading audit trail and cannot be displayed as a result. Please re-run the evaluation." },
+        { status: 200 }
+      );
+    }
+
+    // The full GradedAnswerSheet (per-question marks, correct/incorrect
+    // points, groundingQuote, errorType, topic tags, mismatch flags) lives in
+    // aiResponse — surfaced in full so the report can show grounding quotes
+    // and the tutor's context (built elsewhere from the same row) can cite
+    // the same data the report displays, never a separate summary that could
+    // drift from it.
+    let questionGrades = null;
+    let unreadableQuestions: number[] = [];
+    let subjectMismatch = null;
+    let gradeMismatch = null;
     if (job.aiResponse) {
       try {
-        questionWise = JSON.parse(job.aiResponse).questionWise ?? null;
+        const parsed = JSON.parse(job.aiResponse);
+        questionGrades = parsed.questionGrades ?? null;
+        unreadableQuestions = parsed.unreadableQuestions ?? [];
+        subjectMismatch = parsed.subjectMismatch ?? null;
+        gradeMismatch = parsed.gradeMismatch ?? null;
       } catch {
-        questionWise = null;
+        questionGrades = null;
       }
     }
 
@@ -66,7 +92,10 @@ export async function GET(
         percentage: job.percentage,
         aiFeedback: job.aiFeedback,
         marksBreakdown: job.marksBreakdown ? JSON.parse(job.marksBreakdown) : null,
-        questionWise,
+        questionGrades,
+        unreadableQuestions,
+        subjectMismatch,
+        gradeMismatch,
         strengths: job.strengths ? JSON.parse(job.strengths) : [],
         weaknesses: job.weaknesses ? JSON.parse(job.weaknesses) : [],
         recommendations: job.recommendations ? JSON.parse(job.recommendations) : [],

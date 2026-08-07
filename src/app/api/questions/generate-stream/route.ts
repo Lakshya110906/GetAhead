@@ -7,7 +7,23 @@ import { consumeQuota, refundQuota, QuotaExceededError } from "@/lib/quota";
 import { assertSpendGateOpen, SpendLimitReachedError } from "@/lib/spendControl";
 import { parseCustomInstructions, checkForConflict } from "@/lib/paperConstraintParser";
 
-export const maxDuration = 120; // 2 minutes for long AI calls
+// STOPGAP, not the fix — this route holds one serverless invocation open for
+// the entire Planner->Generator->Reviewer(->repair) pipeline, which is
+// exactly what produced a live, confirmed production failure: "Vercel
+// Runtime Timeout Error: Task timed out after 120 seconds" while this route
+// was mid-stream. Three sequential Gemini calls plus any repair-loop
+// iteration can exceed 120s (planner alone measured at 9s live; generator/
+// reviewer are 2-4x larger prompts). Raising this to 300 — the Hobby plan's
+// documented maxDuration ceiling with Fluid Compute — buys more headroom for
+// this legacy route today, but does not fix the architecture: a paper
+// needing two repair passes can still exceed even 300s, and this route still
+// gives the client nothing if it's killed mid-stream (no client-side timeout
+// existed before this pass — see generate-paper/page.tsx). The real fix is
+// the job-based /api/papers + /api/papers/[id] + processJobStep() pipeline
+// (src/lib/paperJob.ts), which the frontend now uses instead of this route.
+// This route is kept only for the non-streaming dead-code path's parity
+// (see generate/route.ts) and is not called by the current UI.
+export const maxDuration = 300;
 
 export async function POST(request: NextRequest) {
   const session = await getServerSession(authOptions);

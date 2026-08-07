@@ -49,17 +49,21 @@ interface EvaluationData {
     obtainedMarks: number;
     totalMarks: number;
     percentage: number;
-    feedback: string;
   }> | null;
-  questionWise: Array<{
+  questionGrades: Array<{
     questionNumber: number;
-    question: string;
-    studentAnswer: string;
     marksAwarded: number;
-    totalMarks: number;
-    isCorrect: boolean;
+    marksAvailable: number;
+    topic?: string;
+    correctPoints: string[];
+    incorrectPoints: string[];
+    errorType: "correct" | "method_error" | "arithmetic_slip" | "unreadable" | "blank";
+    groundingQuote: string;
     feedback: string;
   }> | null;
+  unreadableQuestions: number[];
+  subjectMismatch: { declared: string; detected: string } | null;
+  gradeMismatch: { declared: string; detected: string } | null;
   createdAt: string;
 }
 
@@ -105,7 +109,10 @@ export default function EvaluationPage() {
             weaknesses: d.weaknesses || [],
             recommendations: d.recommendations || [],
             marksBreakdown: d.marksBreakdown || [],
-            questionWise: d.aiResponse?.questionWise || null,
+            questionGrades: d.questionGrades || null,
+            unreadableQuestions: d.unreadableQuestions || [],
+            subjectMismatch: d.subjectMismatch || null,
+            gradeMismatch: d.gradeMismatch || null,
           });
         }
       })
@@ -426,7 +433,6 @@ export default function EvaluationPage() {
                   <th className="text-left text-xs font-semibold text-graphite pb-3">Topic</th>
                   <th className="text-center text-xs font-semibold text-graphite pb-3">Marks</th>
                   <th className="text-center text-xs font-semibold text-graphite pb-3">Score</th>
-                  <th className="text-left text-xs font-semibold text-graphite pb-3 pl-4">Feedback</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-rule">
@@ -473,7 +479,6 @@ export default function EvaluationPage() {
                           </span>
                         </div>
                       </td>
-                      <td className="py-3 text-xs text-graphite dark:text-graphite pl-4">{item.feedback}</td>
                     </tr>
                   );
                 })}
@@ -483,51 +488,100 @@ export default function EvaluationPage() {
         </div>
       )}
 
+      {/* Subject/grade mismatch — surfaced prominently rather than silently
+          graded against a rubric the paper itself doesn't seem to match. */}
+      {(data.subjectMismatch || data.gradeMismatch) && (
+        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-start gap-3">
+          <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+          <div className="text-sm text-amber-800">
+            {data.subjectMismatch && (
+              <p>This paper looks like <strong>{data.subjectMismatch.detected}</strong>, but the evaluation was requested as <strong>{data.subjectMismatch.declared}</strong>.</p>
+            )}
+            {data.gradeMismatch && (
+              <p>This paper looks like grade/level <strong>{data.gradeMismatch.detected}</strong>, but <strong>{data.gradeMismatch.declared}</strong> was selected.</p>
+            )}
+            <p className="mt-1">Grading proceeded using the rubric for what was selected — double-check the result matches what you intended to submit.</p>
+          </div>
+        </div>
+      )}
+
+      {/* Unreadable questions — excluded from the total, said so prominently. */}
+      {data.unreadableQuestions && data.unreadableQuestions.length > 0 && (
+        <div className="bg-red-50 border border-red-200 rounded-2xl p-4 flex items-start gap-3">
+          <AlertTriangle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+          <p className="text-sm text-red-800">
+            Question{data.unreadableQuestions.length > 1 ? "s" : ""} {data.unreadableQuestions.join(", ")} could not be read clearly enough to grade, and {data.unreadableQuestions.length > 1 ? "were" : "was"} excluded from both the marks awarded and the total available above.
+          </p>
+        </div>
+      )}
+
       {/* Question-by-question breakdown — the topic table above is a rollup;
           this is the actual per-question marks and reasoning the AI produced,
-          each one attached to its own question rather than merged into a
-          single topic-level blob. */}
-      {data.questionWise && data.questionWise.length > 0 && (
+          each one attached to its own question, grounded in a verbatim quote
+          from what the student actually wrote — not a summary. */}
+      {data.questionGrades && data.questionGrades.length > 0 && (
         <div className="bg-surface rounded-2xl border border-rule card-shadow-md p-6">
           <h2 className="text-lg font-bold text-ink mb-5" style={{ fontFamily: "var(--font-display)" }}>
             Question-by-question breakdown
           </h2>
           <div className="space-y-3">
-            {data.questionWise.map((q) => (
-              <div
-                key={q.questionNumber}
-                className={`rounded-xl border p-4 ${
-                  q.isCorrect ? "border-green-100 bg-green-50/40" : "border-amber-100 bg-amber-50/40"
-                }`}
-              >
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex items-start gap-2.5 min-w-0">
-                    {q.isCorrect ? (
-                      <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
-                    ) : (
-                      <AlertTriangle className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
-                    )}
-                    <div className="min-w-0">
-                      <p className="text-xs font-semibold text-graphite">Question {q.questionNumber}</p>
-                      <p className="text-sm font-medium text-ink mt-0.5">{q.question}</p>
+            {data.questionGrades.map((q) => {
+              const isCorrect = q.errorType === "correct";
+              const errorLabel =
+                q.errorType === "method_error" ? "Method error" :
+                q.errorType === "arithmetic_slip" ? "Arithmetic slip" :
+                q.errorType === "unreadable" ? "Unreadable" :
+                q.errorType === "blank" ? "Blank" : "Correct";
+              return (
+                <div
+                  key={q.questionNumber}
+                  className={`rounded-xl border p-4 ${
+                    isCorrect ? "border-green-100 bg-green-50/40" : "border-amber-100 bg-amber-50/40"
+                  }`}
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex items-start gap-2.5 min-w-0">
+                      {isCorrect ? (
+                        <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
+                      ) : (
+                        <AlertTriangle className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
+                      )}
+                      <div className="min-w-0">
+                        <p className="text-xs font-semibold text-graphite">
+                          Question {q.questionNumber}{q.topic ? ` • ${q.topic}` : ""} • <span className={isCorrect ? "text-green-600" : "text-amber-600"}>{errorLabel}</span>
+                        </p>
+                      </div>
                     </div>
+                    <p className={`text-sm font-bold font-mono flex-shrink-0 ${isCorrect ? "text-green-600" : "text-amber-600"}`}>
+                      {q.marksAwarded}/{q.marksAvailable}
+                    </p>
                   </div>
-                  <p className={`text-sm font-bold font-mono flex-shrink-0 ${q.isCorrect ? "text-green-600" : "text-amber-600"}`}>
-                    {q.marksAwarded}/{q.totalMarks}
-                  </p>
+                  <div className="mt-3 pl-6 space-y-2">
+                    {q.groundingQuote && (
+                      <p className="text-xs text-graphite italic border-l-2 border-rule pl-2">
+                        &ldquo;{q.groundingQuote}&rdquo;
+                      </p>
+                    )}
+                    {q.correctPoints.length > 0 && (
+                      <p className="text-xs text-green-700">
+                        <span className="font-semibold">Correct: </span>
+                        {q.correctPoints.join("; ")}
+                      </p>
+                    )}
+                    {q.incorrectPoints.length > 0 && (
+                      <p className="text-xs text-red-700">
+                        <span className="font-semibold">Incorrect: </span>
+                        {q.incorrectPoints.join("; ")}
+                      </p>
+                    )}
+                    <p className="text-xs text-ink">
+                      <span className="font-semibold text-graphite">Feedback: </span>
+                      {q.feedback}
+                    </p>
+                  </div>
                 </div>
-                <div className="mt-3 pl-6 space-y-2">
-                  <p className="text-xs text-graphite">
-                    <span className="font-semibold text-graphite">Answer given: </span>
-                    {q.studentAnswer}
-                  </p>
-                  <p className="text-xs text-ink">
-                    <span className="font-semibold text-graphite">Feedback: </span>
-                    {q.feedback}
-                  </p>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}

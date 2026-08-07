@@ -14,6 +14,15 @@ import { parseCustomInstructions, type ParsedConstraints } from "./paperConstrai
 const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY || process.env.GEMINI_API_KEY;
 const MODEL_ID = "gemini-2.5-flash";
 
+export function isGeminiConfigured(): boolean {
+  return !!apiKey && apiKey !== "your-gemini-api-key-here" && !apiKey.startsWith("your-gemini");
+}
+
+export function getGenAI(): GoogleGenerativeAI {
+  if (!isGeminiConfigured()) throw new Error("Gemini API key not configured");
+  return new GoogleGenerativeAI(apiKey!);
+}
+
 // Gemini's free-tier rate limit is the single most common reason an agent
 // call fails — a bare try/catch that gave up after one attempt turned a
 // transient 429 into a permanently degraded (or fully generic mock) paper.
@@ -67,11 +76,14 @@ export interface RepairAttemptLog {
   violations: string[];
 }
 
-async function withRetry<T>(fn: () => Promise<T>, label: string, attempts = 3): Promise<T> {
+export async function withRetry<T>(fn: () => Promise<T>, label: string, attempts = 3): Promise<T> {
   let lastError: unknown;
   for (let i = 0; i < attempts; i++) {
     try {
-      return await fn();
+      const __t0 = Date.now();
+      const __result = await fn();
+      console.log(`[TIMING] ${label} attempt ${i + 1}: ${((Date.now() - __t0) / 1000).toFixed(2)}s`);
+      return __result;
     } catch (err) {
       lastError = err;
       const message = err instanceof Error ? err.message : String(err);
@@ -167,7 +179,7 @@ export interface GeneratedPaper {
 // validation) — that conflation is exactly what produced the reported bug.
 // See generateQuestionPaperStreamed()'s catch blocks: a configured-but-failing
 // pipeline now throws a specific, honest error instead of falling back here.
-function getMockQuestionPaper(config: PaperConfig): GeneratedPaper {
+export function getMockQuestionPaper(config: PaperConfig): GeneratedPaper {
   const sections: PaperSection[] = [];
   let questionCounter = 1;
 
@@ -308,22 +320,119 @@ function round2(n: number): number {
  * conflict-resolved target (see PaperConfig's doc comment) — there is no
  * separate "let the custom prompt silently override the field" branch here
  * any more; that ambiguity is resolved once, up front, by the caller.
+ *
+ * PREVIOUS BUG (found live: planner log claimed "30 marks" allocated a plan
+ * that actually summed to 29): the old fallback branch, when no section's
+ * marksPerQuestion evenly divided the remainder, computed a new per-question
+ * mark value by rounding to 2 decimals and then clamping it with
+ * Math.max(1, ...) — if the exact value needed was below 1, that clamp
+ * silently ate the remainder and the total quietly stopped matching the
+ * target. Worse, the caller logged "marks verified to sum exactly to the
+ * target" unconditionally, with no actual check. Fixed here by construction:
+ * every branch below only ever changes questionCount or marksPerQuestion by
+ * a WHOLE number, so the result is always an exact integer match — never a
+ * rounded approximation — and the caller now actually re-derives the total
+ * from the returned plan and logs the truth (see callers below).
  */
-function correctPlanMarks(plan: PlannerPlan, targetTotal: number): PlannerPlan {
-  const sections = plan.sections.map((s) => ({ ...s }));
-  const currentTotal = sections.reduce((sum, s) => sum + s.marksPerQuestion * s.questionCount, 0);
-  const diff = round2(targetTotal - currentTotal);
-  if (diff === 0) return { sections };
+export function correctPlanMarks(plan: PlannerPlan, targetTotal: number): PlannerPlan {
+  let sections = plan.sections.map((s) => ({ ...s }));
 
-  const last = sections[sections.length - 1];
-  const extraQuestions = diff / last.marksPerQuestion;
-  if (Number.isInteger(extraQuestions) && last.questionCount + extraQuestions >= 1) {
-    last.questionCount += extraQuestions;
-  } else {
-    const newMarksPerQuestion = round2((last.marksPerQuestion * last.questionCount + diff) / last.questionCount);
-    last.marksPerQuestion = Math.max(1, newMarksPerQuestion);
+  // Iterate rather than a single pass: removing a section (the last-resort
+  // branch below) changes the total again, so the search may need another
+  // round to fully converge. Bounded to sections.length+1 iterations, which
+  // is always enough — each iteration either finishes or permanently
+  // shrinks the section list.
+  for (let guard = 0; guard <= sections.length + 1; guard++) {
+    const currentTotal = sections.reduce((sum, s) => sum + s.marksPerQuestion * s.questionCount, 0);
+    const diff = Math.round(targetTotal - currentTotal); // marks are integers — no fractional carry
+    if (diff === 0) return { sections };
+
+    // 1. Try every section (last first, since it's the most recently
+    // model-authored) for a WHOLE-number questionCount adjustment at that
+    // section's existing marksPerQuestion. Covers the common case exactly,
+    // in both directions (diff positive or negative).
+    let absorbed = false;
+    for (let i = sections.length - 1; i >= 0; i--) {
+      const s = sections[i];
+      if (s.marksPerQuestion > 0 && diff % s.marksPerQuestion === 0) {
+        const extraQuestions = diff / s.marksPerQuestion;
+        if (s.questionCount + extraQuestions >= 1) {
+          s.questionCount += extraQuestions;
+          absorbed = true;
+          break;
+        }
+      }
+    }
+    if (absorbed) continue; // re-verify from the top rather than assume
+
+    if (diff > 0) {
+      // No section's marksPerQuestion evenly divides the shortfall — append
+      // a single extra question worth exactly `diff` marks. A 1-question
+      // top-up can carry any integer remainder exactly, so this always
+      // converges without ever touching an existing question's marks.
+      const last = sections[sections.length - 1];
+      sections.push({
+        title: last.title,
+        description: "Additional question added to reach the exact requested total.",
+        questionType: last.questionType,
+        marksPerQuestion: diff,
+        questionCount: 1,
+        topicsCovered: last.topicsCovered,
+      });
+      return { sections };
+    }
+
+    // diff < 0 and no section could absorb it via questionCount: reduce the
+    // last section's marksPerQuestion by a whole amount instead (a coherent,
+    // real per-question value — e.g. 10 -> 8 marks each — never a rounded
+    // fraction). If that would take it below 1, drop that section entirely
+    // and let the next loop iteration re-solve against what's left.
+    const last = sections[sections.length - 1];
+    const reduced = last.marksPerQuestion + diff / last.questionCount;
+    if (Number.isInteger(reduced) && reduced >= 1) {
+      last.marksPerQuestion = reduced;
+      return { sections };
+    }
+    if (sections.length > 1) {
+      sections = sections.slice(0, -1);
+      continue;
+    }
+    // Single section left and it still can't absorb the reduction exactly —
+    // extremely unlikely (would require a target smaller than the minimum
+    // possible single-question paper) — fall through and report honestly
+    // rather than loop forever.
+    break;
   }
   return { sections };
+}
+
+export function planTotal(plan: PlannerPlan): number {
+  return Math.round(plan.sections.reduce((sum, s) => sum + s.marksPerQuestion * s.questionCount, 0));
+}
+
+const SCHEMA_TYPE_TO_LABEL: Record<string, string> = { MCQ: "MCQ", Short: "Short Answer", Long: "Long Answer" };
+
+/**
+ * The planner prompt tells the model which question types are allowed, but a
+ * prompt instruction is not enforcement — confirmed live: a request for
+ * "Short Answer only" still came back with the planner allocating MCQ and
+ * Long Answer sections too. Rather than hope the model restricts itself,
+ * drop any section whose type isn't in the requested set, in code, every
+ * time. If dropping sections changes the total, correctPlanMarks() (called
+ * right after this) re-converges on the target using only the remaining,
+ * allowed sections.
+ */
+export function filterPlanToRequestedTypes(plan: PlannerPlan, allowedTypes: string[]): PlannerPlan {
+  const allowedSchemaTypes = new Set(
+    allowedTypes.map((t) => (t === "Short Answer" ? "Short" : t === "Long Answer" ? "Long" : t))
+  );
+  const filtered = plan.sections.filter((s) => allowedSchemaTypes.has(s.questionType));
+  if (filtered.length > 0) return { sections: filtered };
+  // Model didn't produce a single section in the allowed set at all — fall
+  // back to relabeling every section to the first allowed type rather than
+  // handing downstream agents an empty plan.
+  const fallbackType = (allowedTypes[0] === "Short Answer" ? "Short" : allowedTypes[0] === "Long Answer" ? "Long" : allowedTypes[0]) as PlannerPlan["sections"][number]["questionType"];
+  return { sections: plan.sections.map((s) => ({ ...s, questionType: fallbackType })) };
 }
 
 /**
@@ -332,7 +441,7 @@ function correctPlanMarks(plan: PlannerPlan, targetTotal: number): PlannerPlan {
  * to — recompute it from the actual per-question marks, assign section
  * letters deterministically, and attach the derived time-allowed value.
  */
-function finalizePaper(paper: GeneratedPaperShape, targetTotal: number): GeneratedPaper {
+export function finalizePaper(paper: GeneratedPaperShape, targetTotal: number): GeneratedPaper {
   const sections = assignSectionLetters(paper.sections) as PaperSection[];
   const computedTotal = round2(sections.reduce((sum, s) => sum + s.questions.reduce((qSum, q) => qSum + q.marks, 0), 0));
   const reviewNotes = [...(paper.reviewNotes ?? [])];
@@ -372,7 +481,7 @@ function syllabusContext(config: PaperConfig): string {
 }
 
 // 1. Planner Agent
-async function runPlannerAgent(genAI: GoogleGenerativeAI, config: PaperConfig): Promise<PlannerPlan> {
+export async function runPlannerAgent(genAI: GoogleGenerativeAI, config: PaperConfig): Promise<PlannerPlan> {
   const model = genAI.getGenerativeModel({
     model: MODEL_ID,
     generationConfig: {
@@ -406,7 +515,7 @@ The sum of (marksPerQuestion × questionCount) across all sections must equal ex
 }
 
 // 2. Generator Agent
-async function runGeneratorAgent(genAI: GoogleGenerativeAI, config: PaperConfig, plan: PlannerPlan): Promise<GeneratedPaperShape> {
+export async function runGeneratorAgent(genAI: GoogleGenerativeAI, config: PaperConfig, plan: PlannerPlan): Promise<GeneratedPaperShape> {
   const model = genAI.getGenerativeModel({
     model: MODEL_ID,
     generationConfig: {
@@ -446,7 +555,7 @@ Write plain text only — no LaTeX, no markdown, no dollar signs; spell out form
 }
 
 // 3. Reviewer Agent
-async function runReviewerAgent(
+export async function runReviewerAgent(
   genAI: GoogleGenerativeAI,
   config: PaperConfig,
   plan: PlannerPlan,
@@ -500,7 +609,7 @@ Output the final polished question paper, with reviewNotes listing what you impr
 // "please fix this" — the whole point of the repair loop is giving the
 // model an unambiguous, checkable list of what's wrong instead of hoping a
 // second attempt happens to do better.
-async function runRepairAgent(
+export async function runRepairAgent(
   genAI: GoogleGenerativeAI,
   config: PaperConfig,
   plan: PlannerPlan,
@@ -537,7 +646,7 @@ Output the complete corrected paper (all sections and questions, not just the fi
   return generatedPaperSchema.parse(parsed);
 }
 
-function buildValidationContext(config: PaperConfig, parsedConstraints: ParsedConstraints): ValidationContext {
+export function buildValidationContext(config: PaperConfig, parsedConstraints: ParsedConstraints): ValidationContext {
   return {
     targetTotalMarks: config.totalMarks,
     allowedQuestionTypes: config.questionTypes,
@@ -562,8 +671,24 @@ async function generateValidatedPaper(
   const parsedConstraints = parseCustomInstructions(config.customPrompt);
   const ctx = buildValidationContext(config, parsedConstraints);
 
-  let current = await withRetry(() => runGeneratorAgent(genAI, config, plan), "Generator Agent");
-  current = await withRetry(() => runReviewerAgent(genAI, config, plan, current), "Reviewer Agent");
+  // Sequencing bug fix: the caller used to emit "reviewer running / auditing
+  // draft" immediately after "generator running", both before either's real
+  // Gemini call had even been dispatched — confirmed live, both status
+  // events landed back-to-back with no draft yet in existence. The two
+  // calls below were ALWAYS genuinely sequential (this is the display-bug
+  // case, not real parallelism) — what was wrong was purely when the status
+  // events fired. Each agent's "start"/"done" now brackets its own actual
+  // await, so only one agent is ever "running" at a time and a downstream
+  // agent is never marked running before its input exists.
+  const current0 = await withRetry(() => runGeneratorAgent(genAI, config, plan), "Generator Agent");
+  if (emit) emit("agent_done", { agent: "generator", message: "Generator complete. Draft paper ready." });
+
+  if (emit) {
+    emit("agent_start", { agent: "reviewer", message: "Quality Reviewer Agent activated. Auditing draft..." });
+    emit("agent_log", { agent: "reviewer", message: "Checking difficulty calibration, grammar, and answer accuracy..." });
+  }
+  let current = await withRetry(() => runReviewerAgent(genAI, config, plan, current0), "Reviewer Agent");
+  if (emit) emit("agent_done", { agent: "reviewer", message: "Review complete." });
 
   const attemptLogs: RepairAttemptLog[] = [];
   for (let attempt = 1; attempt <= 3; attempt++) {
@@ -613,7 +738,7 @@ export async function generateQuestionPaper(config: PaperConfig): Promise<{
 
   const genAI = new GoogleGenerativeAI(apiKey);
   const rawPlan = await withRetry(() => runPlannerAgent(genAI, config), "Planner Agent");
-  const plannerPlan = correctPlanMarks(rawPlan, config.totalMarks);
+  const plannerPlan = correctPlanMarks(filterPlanToRequestedTypes(rawPlan, config.questionTypes), config.totalMarks);
   const { paper: validated, attemptLogs } = await generateValidatedPaper(genAI, config, plannerPlan);
   const paper = finalizePaper(validated, config.totalMarks);
   paper.repairAttempts = attemptLogs;
@@ -698,24 +823,36 @@ export async function generateQuestionPaperStreamed(
   emit("agent_log", { agent: "planner", message: `Allocating ${config.totalMarks} marks across: ${config.questionTypes.join(", ")}` });
 
   const rawPlan = await withRetry(() => runPlannerAgent(genAI, config), "Planner Agent");
-  const plannerPlan = correctPlanMarks(rawPlan, config.totalMarks);
-  emit("agent_log", { agent: "planner", message: "Blueprint structured successfully — marks verified to sum exactly to the target." });
+  const plannerPlan = correctPlanMarks(filterPlanToRequestedTypes(rawPlan, config.questionTypes), config.totalMarks);
+  // Actually check, rather than claim: the previous version of this log line
+  // was a hardcoded string printed unconditionally, regardless of whether
+  // correction had succeeded — confirmed live to have printed "verified"
+  // over a plan that actually summed to 29/30. This compares the corrected
+  // plan's real total against the ORIGINAL requested total, not against
+  // whatever the plan itself says.
+  const verifiedTotal = planTotal(plannerPlan);
+  emit("agent_log", {
+    agent: "planner",
+    message:
+      verifiedTotal === config.totalMarks
+        ? `Blueprint structured successfully — marks verified to sum exactly to ${config.totalMarks}.`
+        : `[Warning] Blueprint totals ${verifiedTotal}, not the requested ${config.totalMarks} — this will be re-checked and repaired after generation.`,
+  });
   emit("agent_done", { agent: "planner", message: "Planner complete." });
 
   // --- Generator ---
+  // agent_start fires here (before dispatch) but agent_done and every
+  // reviewer event now fire from inside generateValidatedPaper(), bracketing
+  // the REAL await for each call — this is the fix for the sequencing bug:
+  // previously "reviewer running / auditing draft" fired here too, before
+  // the generator's Gemini call had even been sent.
   emit("agent_start", { agent: "generator", message: "Generator Agent activated. Drafting questions..." });
   emit("agent_log", { agent: "generator", message: "Writing questions, model answers, and mark schemes from the structure plan..." });
   if (config.customPrompt) {
     emit("agent_log", { agent: "generator", message: "Applying custom style and constraint instructions..." });
   }
 
-  // --- Reviewer / validation / repair ---
-  emit("agent_start", { agent: "reviewer", message: "Quality Reviewer Agent activated. Auditing draft..." });
-  emit("agent_log", { agent: "reviewer", message: "Checking difficulty calibration, grammar, and answer accuracy..." });
-
   const { paper: validated, attemptLogs } = await generateValidatedPaper(genAI, config, plannerPlan, emit);
-  emit("agent_done", { agent: "generator", message: "Generator complete. Draft paper ready." });
-  emit("agent_done", { agent: "reviewer", message: "Review complete. Paper validated against your request." });
 
   const finalPaper = finalizePaper(validated, config.totalMarks);
   finalPaper.repairAttempts = attemptLogs;

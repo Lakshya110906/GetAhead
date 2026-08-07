@@ -1,12 +1,17 @@
 import { prisma } from "@/lib/prisma";
 
-export type QuotaKind = "EVALUATION" | "PAPER_GENERATION";
+export type QuotaKind = "EVALUATION" | "PAPER_GENERATION" | "TUTOR";
 
 // Matches the "Free plan includes 10 credits" copy already shown in the
 // upload UI — enforced here for the first time rather than just displayed.
+// TUTOR is a message-level daily cap on top of the existing 30-per-60s rate
+// limit in the tutor stream route — the rate limit stops bursts, this stops
+// one user's tutor conversation from consuming unbounded model spend across
+// a whole day, same as every other Gemini-calling feature.
 export const DAILY_QUOTA: Record<QuotaKind, number> = {
   EVALUATION: 10,
   PAPER_GENERATION: 10,
+  TUTOR: 50,
 };
 
 export class QuotaExceededError extends Error {
