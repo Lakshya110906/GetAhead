@@ -38,7 +38,7 @@ const grades = [
 ];
 
 // ─── Types ───────────────────────────────────────────────────────────────────
-type GenerationStatus = "idle" | "generating" | "complete" | "error" | "quota_exceeded" | "maintenance";
+type GenerationStatus = "idle" | "generating" | "complete" | "error" | "quota_exceeded" | "maintenance" | "stuck";
 type AgentStatus = "idle" | "active" | "done" | "error";
 
 interface ConflictInfo {
@@ -218,6 +218,18 @@ export default function GeneratePaperPage() {
   const [quotaRefunded, setQuotaRefunded] = useState(false);
   const [retryWorthwhile, setRetryWorthwhile] = useState(true);
   const [repairAttemptLogs, setRepairAttemptLogs] = useState<RepairAttemptLog[] | null>(null);
+  // Job-based generation state — generation now runs as a durable, pollable
+  // job (see /api/papers) instead of holding one long-lived streamed
+  // connection open, which is what got killed by Vercel's function timeout
+  // in production ("Task timed out after 120 seconds"). jobId lets Cancel
+  // and the poll loop address the same row; pollTimer/noProgressSince back
+  // the client-side stuck-job timeout, which previously did not exist at
+  // all (a dead server-side stream just spun the UI forever).
+  const [jobId, setJobId] = useState<string | null>(null);
+  const pollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastProgressRef = useRef<number>(Date.now());
+  const lastStepRef = useRef<string | null>(null);
+  const [cancelling, setCancelling] = useState(false);
 
   // Custom Paper Style & Study Material Upload
   const [customPrompt, setCustomPrompt] = useState("");
@@ -327,6 +339,112 @@ export default function GeneratePaperPage() {
     else setReviewerLogs(p => [...p, full]);
   };
 
+  // Generation runs as a durable job (POST creates it, GET polls and drives
+  // it forward) rather than one held-open streamed connection — that
+  // connection is exactly what got killed in production ("Task timed out
+  // after 120 seconds") with three sequential Gemini calls plus a repair
+  // loop inside it. Polling also gets us a real client-side timeout for
+  // free: a streamed connection that silently dies gives the client nothing
+  // to react to, which is why the UI used to spin forever.
+  const NO_PROGRESS_TIMEOUT_MS = 90_000;
+  const POLL_INTERVAL_MS = 2000;
+
+  const agentRunState = (s: string | undefined): AgentStatus =>
+    s === "running" ? "active" : s === "done" ? "done" : s === "failed" ? "error" : "idle";
+
+  const stopPolling = () => {
+    if (pollTimerRef.current) {
+      clearTimeout(pollTimerRef.current);
+      pollTimerRef.current = null;
+    }
+  };
+
+  // Synthesizes the same per-agent log lines the old SSE stream produced,
+  // from the job's persisted step transitions — the agent cards' shape and
+  // meaning are unchanged, only their source of truth is.
+  const STEP_LOG: Record<string, { agent: "planner" | "generator" | "reviewer" | "repair"; message: string }> = {
+    planner: { agent: "planner", message: "Planner Agent activated. Structuring the paper..." },
+    generator: { agent: "generator", message: "Generator Agent activated. Drafting questions, answers, and mark schemes..." },
+    reviewer: { agent: "reviewer", message: "Quality Reviewer Agent activated. Auditing the draft..." },
+    validate: { agent: "repair", message: "Validating the paper against your exact request..." },
+    repair: { agent: "repair", message: "Validation found issues — re-prompting to fix them specifically..." },
+    done: { agent: "repair", message: "Done." },
+  };
+
+  const pollJob = async (id: string) => {
+    try {
+      const res = await fetch(`/api/papers/${id}`);
+      if (!res.ok) {
+        if (res.status === 404) {
+          setError("This generation job could not be found — it may have expired.");
+          setStatus("error");
+          return;
+        }
+        throw new Error(`Poll failed with status ${res.status}`);
+      }
+      const view = await res.json();
+
+      // Step transitions drive both the log stream and the stuck-job timer.
+      if (view.step !== lastStepRef.current) {
+        lastStepRef.current = view.step;
+        lastProgressRef.current = Date.now();
+        const entry = STEP_LOG[view.step as string];
+        if (entry) addLog(entry.agent, { type: "log", message: entry.message });
+      }
+
+      setPlannerStatus(agentRunState(view.agentStates?.planner?.status));
+      setGeneratorStatus(agentRunState(view.agentStates?.generator?.status));
+      setReviewerStatus(agentRunState(view.agentStates?.reviewer?.status));
+
+      if (view.status === "succeeded") {
+        stopPolling();
+        setPlannerStatus("done"); setGeneratorStatus("done"); setReviewerStatus("done");
+        addLog("repair", { type: "done", message: "Review complete. Paper validated against your request." });
+        setPaper(view.paper);
+        setPaperDbId(view.savedPaperId);
+        setRepairAttemptLogs(view.repairAttempts || null);
+        setStatus("complete");
+        return;
+      }
+
+      if (view.status === "failed") {
+        stopPolling();
+        if (view.quotaRefunded) setQuotaRefunded(true);
+        if (view.retryWorthwhile === false) setRetryWorthwhile(false);
+        if (view.repairAttempts) setRepairAttemptLogs(view.repairAttempts);
+        setError(view.error || "Generation failed.");
+        setStatus("error");
+        return;
+      }
+
+      if (view.status === "cancelled") {
+        stopPolling();
+        setStatus("idle");
+        return;
+      }
+
+      // Still queued/running — client-side timeout: if nothing has actually
+      // moved forward (no step change, no status change) in a while, this
+      // is exactly the "stuck generation" case that used to be a dead end.
+      // Tell the user instead of spinning forever.
+      if (Date.now() - lastProgressRef.current > NO_PROGRESS_TIMEOUT_MS) {
+        stopPolling();
+        setError(
+          "This is taking much longer than expected and doesn't seem to be making progress. It may still finish in the background — you can wait and refresh, or cancel and try again."
+        );
+        setStatus("stuck");
+        return;
+      }
+
+      pollTimerRef.current = setTimeout(() => pollJob(id), POLL_INTERVAL_MS);
+    } catch (err) {
+      console.error(err);
+      stopPolling();
+      setError(err instanceof Error ? err.message : "Lost connection while checking generation progress.");
+      setStatus("error");
+    }
+  };
+
   const handleGenerate = async (e: React.FormEvent, conflictResolution?: "useImplied" | "useField") => {
     e.preventDefault();
     if (!subject || !grade || !topic || questionTypes.length === 0) {
@@ -341,23 +459,26 @@ export default function GeneratePaperPage() {
     setRepairAttemptLogs(null);
     setStatus("generating");
     setPaper(null);
+    setJobId(null);
+    lastStepRef.current = null;
+    lastProgressRef.current = Date.now();
     setPlannerStatus("idle"); setGeneratorStatus("idle"); setReviewerStatus("idle");
     setPlannerLogs([]); setGeneratorLogs([]); setReviewerLogs([]);
 
     try {
-      const res = await fetch("/api/questions/generate-stream", {
+      const res = await fetch("/api/papers", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           subject, grade, topic, difficulty, totalMarks, questionTypes,
-          institutionName, courseCode, timeAllowed, instructions,
           customPrompt, studyMaterialText,
           ...(conflictResolution ? { conflictResolution } : {}),
         }),
       });
 
+      const body = await res.json().catch(() => ({}));
+
       if (!res.ok) {
-        const body = await res.json().catch(() => ({}));
         if (res.status === 409 && body.conflict) {
           // Your instructions disagree with the structured fields — never
           // silently pick one. Surface the conflict and let the user choose.
@@ -383,72 +504,45 @@ export default function GeneratePaperPage() {
           setError(body.error || "Question generation is temporarily unavailable.");
           return;
         }
-        if (body.quotaRefunded) setQuotaRefunded(true);
-        if (body.retryWorthwhile === false) setRetryWorthwhile(false);
-        if (body.attemptLogs) setRepairAttemptLogs(body.attemptLogs);
-        throw new Error(body.error || "Failed to connect to generation service.");
+        throw new Error(body.error || "Failed to start generation.");
       }
-      if (!res.body) throw new Error("No response stream.");
 
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
-      let buffer = "";
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split("\n\n");
-        buffer = lines.pop() || "";
-        for (const line of lines) {
-          if (!line.startsWith("data: ")) continue;
-          try {
-            const payload = JSON.parse(line.slice(6));
-            const { event, agent, message, query } = payload;
-
-            if (event === "agent_start") {
-              if (agent === "planner") setPlannerStatus("active");
-              else if (agent === "generator") setGeneratorStatus("active");
-              else if (agent === "reviewer") setReviewerStatus("active");
-              if (message) addLog(agent, { type: "log", message });
-            } else if (event === "agent_log") {
-              if (message) addLog(agent, { type: "log", message });
-            } else if (event === "agent_tool_call") {
-              if (query) addLog(agent, { type: "tool_call", message: `Searching: "${query}"`, query });
-            } else if (event === "agent_tool_result") {
-              if (message) addLog(agent, { type: "tool_result", message });
-            } else if (event === "agent_done") {
-              if (agent === "planner") setPlannerStatus("done");
-              else if (agent === "generator") setGeneratorStatus("done");
-              else if (agent === "reviewer") setReviewerStatus("done");
-              if (message) addLog(agent, { type: "done", message });
-            } else if (event === "complete") {
-              const dbPaper = payload.paper;
-              setPaperDbId(dbPaper.id);
-              const results = JSON.parse(dbPaper.content);
-              setPaper(results.paper);
-              setPlannerPlan(results.plannerPlan);
-              setGeneratorDraft(results.generatorDraft);
-              setStatus("complete");
-            } else if (event === "error") {
-              if (payload.quotaRefunded) setQuotaRefunded(true);
-              if (payload.retryWorthwhile === false) setRetryWorthwhile(false);
-              if (payload.attemptLogs) setRepairAttemptLogs(payload.attemptLogs);
-              throw new Error(payload.message || "Generation failed.");
-            }
-          } catch (parseErr) {
-            if (parseErr instanceof SyntaxError) continue;
-            throw parseErr;
-          }
-        }
-      }
+      setJobId(body.jobId);
+      pollJob(body.jobId);
     } catch (err) {
       console.error(err);
-      const msg = err instanceof Error ? err.message : "The paper didn't finish generating. Check your connection and try again.";
+      const msg = err instanceof Error ? err.message : "Could not start generation. Check your connection and try again.";
       setError(msg);
       setStatus("error");
     }
   };
+
+  const handleCancelJob = async () => {
+    if (!jobId) return;
+    setCancelling(true);
+    try {
+      await fetch(`/api/papers/${jobId}`, { method: "DELETE" });
+    } catch {
+      // Best-effort — the job row is the source of truth either way; if this
+      // request fails the job stays running server-side but the user is
+      // already back at the form and can simply start a new one.
+    } finally {
+      stopPolling();
+      setCancelling(false);
+      setStatus("idle");
+    }
+  };
+
+  // If the user navigates away mid-poll (or this component unmounts for any
+  // other reason), stop the timer — but the job itself keeps running
+  // server-side. Coming back to this page and generating again starts a
+  // fresh job; re-attaching to an in-flight job on navigation-return isn't
+  // wired into this form (there's no "resume" UI), but the underlying job
+  // row itself is unaffected — see proof test 6 in the report, which
+  // verifies this at the API level.
+  useEffect(() => {
+    return () => stopPolling();
+  }, []);
 
   const savePaperEdits = async (updatedPaper: GeneratedPaper) => {
     if (!paperDbId) return;
@@ -1012,16 +1106,25 @@ ${JSON.stringify(paper, null, 2)}
         <div className="space-y-4 no-print">
           {/* Header */}
           <div className="bg-fixed-ink rounded-2xl p-6 text-white shadow-lg">
-            <div className="flex items-center gap-3 mb-2">
-              <div className="w-9 h-9 bg-white/20 rounded-xl flex items-center justify-center">
-                <Loader2 className="w-5 h-5 animate-spin" />
+            <div className="flex items-center justify-between gap-3 mb-2">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 bg-white/20 rounded-xl flex items-center justify-center">
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-bold" style={{ fontFamily: "var(--font-display)" }}>
+                    AI Agent Pipeline Running
+                  </h2>
+                  <p className="text-white/70 text-xs">Planner, Generator, and Reviewer agents building your exam paper</p>
+                </div>
               </div>
-              <div>
-                <h2 className="text-lg font-bold" style={{ fontFamily: "var(--font-display)" }}>
-                  AI Agent Pipeline Running
-                </h2>
-                <p className="text-white/70 text-xs">3 specialized agents collaborating to build your exam paper</p>
-              </div>
+              <button
+                onClick={handleCancelJob}
+                disabled={cancelling}
+                className="flex-shrink-0 text-xs font-semibold px-3 py-2 rounded-lg bg-white/10 hover:bg-white/20 transition-colors disabled:opacity-50"
+              >
+                {cancelling ? "Cancelling..." : "Cancel"}
+              </button>
             </div>
             {/* Agent pipeline progress dots */}
             <div className="flex items-center gap-3 mt-4">
@@ -1110,6 +1213,36 @@ ${JSON.stringify(paper, null, 2)}
           {!retryWorthwhile && (
             <p className="text-graphite text-xs mt-2">Retrying right now won&apos;t help — see the message above for why.</p>
           )}
+        </div>
+      )}
+
+      {/* Stuck State — no progress within the client-side timeout window.
+          The job may still finish server-side (the poll loop stopped, the
+          job itself did not) — this is the "get out" the old spinner-
+          forever state never gave the user. */}
+      {status === "stuck" && (
+        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-10 max-w-lg mx-auto text-center no-print">
+          <Clock className="w-12 h-12 text-amber-500 mx-auto mb-4" />
+          <h2 className="text-xl font-bold text-amber-800">This is taking longer than expected</h2>
+          <p className="text-amber-700 text-sm mt-1">{error}</p>
+          <div className="flex gap-3 justify-center mt-6">
+            <button
+              onClick={() => {
+                setStatus("generating");
+                lastProgressRef.current = Date.now();
+                if (jobId) pollJob(jobId);
+              }}
+              className="px-6 py-3 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-sm shadow-md transition-colors"
+            >
+              Keep waiting
+            </button>
+            <button
+              onClick={handleCancelJob}
+              className="px-6 py-3 rounded-xl bg-white border border-amber-300 hover:bg-amber-100 text-amber-900 font-bold text-sm transition-colors"
+            >
+              Cancel and start over
+            </button>
+          </div>
         </div>
       )}
 

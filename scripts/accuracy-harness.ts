@@ -1,4 +1,4 @@
-// Runs the full production evaluation pipeline (the same evaluateAnswerSheetFromFile
+// Runs the full production evaluation pipeline (the same gradeAnswerSheetFromFile
 // call the worker makes) over the golden set and reports how close the AI's marks
 // land to the teacher's. This is the only thing standing between a prompt/rubric/
 // model tweak and a blind guess about whether it made grading better or worse.
@@ -6,7 +6,7 @@ import { writeFileSync, existsSync, readFileSync, mkdirSync } from "fs";
 import { join } from "path";
 import { loadGoldenSet } from "./lib/goldenSet";
 import { computeAccuracyReport, checkRegression, CaseResult, AccuracyReport } from "./lib/accuracyMetrics";
-import { evaluateAnswerSheetFromFile, MODEL_ID, PROMPT_VERSION, RUBRIC_VERSION } from "../src/lib/gemini";
+import { gradeAnswerSheetFromFile, MODEL_ID, EXTRACTION_PROMPT_VERSION, GRADE_PROMPT_VERSION } from "../src/lib/answerSheetGrading";
 
 const RESULTS_DIR = join(process.cwd(), "accuracy-results");
 const LATEST_PATH = join(RESULTS_DIR, "latest.json");
@@ -15,7 +15,7 @@ const DEFAULT_THRESHOLD_MARKS = 0.5;
 
 async function scoreCase(c: Awaited<ReturnType<typeof loadGoldenSet>>[number]): Promise<CaseResult> {
   try {
-    const graded = await evaluateAnswerSheetFromFile(c.subject, c.grade, c.examType, c.fileBytes, c.mimeType);
+    const graded = await gradeAnswerSheetFromFile(c.fileBytes, c.mimeType, { subject: c.subject, grade: c.grade, examType: c.examType });
     const aiMarks = graded.result.obtainedMarks;
     return {
       id: c.id,
@@ -43,7 +43,7 @@ async function scoreCase(c: Awaited<ReturnType<typeof loadGoldenSet>>[number]): 
 
 function printMarkdown(report: AccuracyReport) {
   console.log(`\n# Accuracy report (${report.generatedAt})`);
-  console.log(`Model: ${MODEL_ID} | Prompt: ${PROMPT_VERSION.slice(0, 12)} | Rubric: ${RUBRIC_VERSION}\n`);
+  console.log(`Model: ${MODEL_ID} | Extraction prompt: ${EXTRACTION_PROMPT_VERSION.slice(0, 12)} | Grade prompt: ${GRADE_PROMPT_VERSION.slice(0, 12)}\n`);
   console.log(`| Metric | Value |`);
   console.log(`|---|---|`);
   console.log(`| Cases scored | ${report.scoredCases} / ${report.totalCases} |`);

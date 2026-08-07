@@ -7,10 +7,15 @@ import { consumeQuota, refundQuota, QuotaExceededError } from "@/lib/quota";
 import { assertSpendGateOpen, SpendLimitReachedError } from "@/lib/spendControl";
 import { parseCustomInstructions, checkForConflict } from "@/lib/paperConstraintParser";
 
-// Dead code from the frontend's perspective (only generate-stream/route.ts is
-// called by /generate-paper), but kept working and consistent with that
-// route rather than left to rot with its own, different set of bugs —
-// same conflict gate, resolved defaults, and refund-on-hard-failure behavior.
+// Dead code from the frontend's perspective (only /api/papers is called by
+// /generate-paper now), but kept working and consistent — same conflict
+// gate, resolved defaults, and refund-on-hard-failure behavior. Also runs
+// the full synchronous pipeline in one invocation, so it needs the same
+// stopgap maxDuration as generate-stream/route.ts for the same reason
+// (three sequential Gemini calls plus any repair loop can exceed a short
+// default timeout) — see that file's comment for the full explanation.
+export const maxDuration = 300;
+
 export async function POST(request: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session?.user) {

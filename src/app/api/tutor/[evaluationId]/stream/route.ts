@@ -4,6 +4,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { buildTutorSystemPrompt, buildConversationHistory } from "@/lib/tutor-context";
+import { consumeQuota, QuotaExceededError } from "@/lib/quota";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
 export const maxDuration = 120;
@@ -51,13 +52,28 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
     return new Response(JSON.stringify({ error: "Invalid request body" }), { status: 400 });
   }
 
-  // Rate limit check
+  // Rate limit (bursts) and daily quota (total spend), same as every other
+  // Gemini-calling feature — the rate limit alone stops a burst, not a day
+  // of steady-paced messages.
   const allowed = await checkRateLimit(userId);
   if (!allowed) {
     return new Response(JSON.stringify({ error: "Rate limit exceeded. Please wait a moment." }), { status: 429 });
   }
+  try {
+    await consumeQuota(userId, "TUTOR");
+  } catch (err) {
+    if (err instanceof QuotaExceededError) {
+      return new Response(
+        JSON.stringify({ error: err.message, quotaExceeded: true, limit: err.limit, resetsAt: err.resetsAt.toISOString() }),
+        { status: 429 }
+      );
+    }
+    throw err;
+  }
 
-  // Verify ownership and load full evaluation context
+  // Verify ownership and load full evaluation context. findFirst scoped to
+  // { id, userId } together means another user's evaluationId 404s here —
+  // this is the ownership boundary section 7 test 17 checks.
   const evaluation = await prisma.evaluation.findFirst({
     where: { id: evaluationId, userId },
   });
@@ -65,8 +81,21 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
     return new Response(JSON.stringify({ error: "Evaluation not found" }), { status: 404 });
   }
 
-  // Parse stored JSON fields
-  const marksBreakdown = evaluation.marksBreakdown ? (() => { try { return JSON.parse(evaluation.marksBreakdown!); } catch { return null; } })() : null;
+  // Same guard as the report routes: a real grading call always sets
+  // modelId/promptVersion alongside status SUCCEEDED. The tutor must not be
+  // built from — and cannot honestly discuss — a row that isn't a real,
+  // complete, validated grade.
+  if (evaluation.status !== "SUCCEEDED" || !evaluation.modelId || !evaluation.promptVersion) {
+    return new Response(JSON.stringify({ error: "This evaluation has no completed, valid report to tutor on yet." }), { status: 409 });
+  }
+
+  // Parse stored JSON fields. questionGrades — real per-question marks,
+  // grounding quotes, and error types — is what makes "what did I get wrong
+  // in Q3?" answerable; the previous version only had the topic-level
+  // rollup, mislabeled Q1/Q2/Q3 by array index rather than real question
+  // numbers.
+  const parsedAiResponse = evaluation.aiResponse ? (() => { try { return JSON.parse(evaluation.aiResponse!); } catch { return null; } })() : null;
+  const questionGrades = parsedAiResponse?.questionGrades ?? null;
   const strengths = evaluation.strengths ? (() => { try { return JSON.parse(evaluation.strengths!); } catch { return []; } })() : [];
   const weaknesses = evaluation.weaknesses ? (() => { try { return JSON.parse(evaluation.weaknesses!); } catch { return []; } })() : [];
   const recommendations = evaluation.recommendations ? (() => { try { return JSON.parse(evaluation.recommendations!); } catch { return []; } })() : [];
@@ -81,7 +110,7 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
     percentage: evaluation.percentage,
     ocrText: evaluation.ocrText,
     aiFeedback: evaluation.aiFeedback,
-    marksBreakdown,
+    questionGrades,
     strengths,
     weaknesses,
     recommendations,
@@ -139,83 +168,12 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
 
       try {
         if (isPlaceholder) {
-          // Stream a contextual, encouraging placeholder response for demo/development environments
-          send({ type: "user_message_id", id: savedUserMsg.id });
-
-          const mockReplies: Record<string, string> = {
-            "why did i lose marks?": `Based on your evaluation for **${evaluation.subject}**, you scored **${evaluation.obtainedMarks}/${evaluation.totalMarks}** (${evaluation.percentage?.toFixed(1)}%).
-
-Here is a summary of where marks were deducted:
-${marksBreakdown?.filter((b: any) => b.percentage < 90).map((b: any) => `* **${b.topic}**: Scored ${b.obtainedMarks}/${b.totalMarks} — *${b.feedback}*`).join("\n") || "* Calculation details and procedural accuracy."}
-
-For improvement:
-${recommendations.map((r: string) => `* ${r}`).join("\n") || "* Focus on formulas and step-by-step proofs."}
-
-Let me know which question you'd like to work through together!`,
-            "explain like i'm 10": `Imagine your **${evaluation.subject}** paper is like a video game level. You scored **${evaluation.obtainedMarks}** points out of **${evaluation.totalMarks}**! 
-
-* You did super well on: ${strengths.slice(0, 2).join(", ") || "the early questions"}.
-* You got a bit stuck on: ${weaknesses.slice(0, 1).join(", ") || "some calculation puzzles"}.
-
-Don't worry! Let's practice one of the tricky levels again together. Ask me a question and I'll explain it using simple examples!`,
-            default: `Hello! I am your GetAhead AI Tutor. I have reviewed your **${evaluation.subject}** answer sheet, where you scored **${evaluation.obtainedMarks}/${evaluation.totalMarks}** (${evaluation.percentage?.toFixed(1)}%).
-
-Here are some insights from your report:
-* **Key Strength**: ${strengths[0] || "Methodical working"}
-* **Top Improvement Area**: ${weaknesses[0] || "Review of calculus/algebra steps"}
-
-You can ask me questions like:
-1. *"Why did I lose marks?"*
-2. *"Explain Question 1"*
-3. *"Give me a quiz on my weak topics"*
-
-What topic would you like to explore first?`
-          };
-
-          const userQueryClean = userMessage.toLowerCase().trim();
-          let responseText = mockReplies[userQueryClean];
-          if (!responseText) {
-            // Check if user is asking to explain a specific question number
-            const qMatch = userQueryClean.match(/explain\s+question\s+(\d+)/i);
-            if (qMatch && marksBreakdown) {
-              const qIndex = parseInt(qMatch[1]) - 1;
-              const topicInfo = marksBreakdown[qIndex];
-              if (topicInfo) {
-                responseText = `Question ${qMatch[1]} covers **${topicInfo.topic}**. 
-                
-You scored **${topicInfo.obtainedMarks}/${topicInfo.totalMarks}** (${topicInfo.percentage.toFixed(0)}%) on this topic.
-* **Evaluator Feedback**: *${topicInfo.feedback}*
-
-Let's break down the concepts behind ${topicInfo.topic}. Would you like me to walk you through a step-by-step example or create a quick flashcard for it?`;
-              }
-            }
-          }
-          if (!responseText) {
-            responseText = mockReplies.default;
-          }
-
-          const words = responseText.split(" ");
-          for (let i = 0; i < words.length; i++) {
-            const word = words[i] + (i === words.length - 1 ? "" : " ");
-            assistantContent += word;
-            send({ type: "delta", text: word });
-            await new Promise(r => setTimeout(r, 30)); // simulated streaming speed
-          }
-
-          const savedAssistantMsg = await prisma.tutorMessage.create({
-            data: {
-              conversationId: conversation!.id,
-              role: "assistant",
-              content: assistantContent,
-            },
-          });
-
-          await prisma.tutorConversation.update({
-            where: { id: conversation!.id },
-            data: { updatedAt: new Date() },
-          });
-
-          send({ type: "done", id: savedAssistantMsg.id });
+          // No fallback content, ever — a templated reply here is exactly
+          // the class of bug this whole rebuild removes elsewhere: a
+          // student could not tell it apart from a real, grounded answer.
+          // If the API key isn't configured, that's a real error to surface,
+          // not a reason to fabricate a plausible-sounding response.
+          send({ type: "error", message: "The AI tutor isn't configured in this environment (no valid model API key). This is a setup problem, not something retrying will fix." });
           return;
         }
 

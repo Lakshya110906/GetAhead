@@ -6,7 +6,13 @@ export async function GET() {
     const totalUsers = await prisma.user.count();
     
     const completedEvaluations = await prisma.evaluation.findMany({
-      where: { status: "SUCCEEDED" },
+      // modelId: { not: null } is defense in depth — a real grading call
+      // always sets it alongside status SUCCEEDED (evaluationWorker.ts).
+      // This database had stale rows shaped exactly like a SUCCEEDED
+      // evaluation with modelId null, left by a client-side mock deleted
+      // from source months ago; this public, unauthenticated figure must
+      // never be able to include rows like that again.
+      where: { status: "SUCCEEDED", modelId: { not: null } },
       select: { createdAt: true, updatedAt: true, startedAt: true, finishedAt: true, percentage: true }
     });
 

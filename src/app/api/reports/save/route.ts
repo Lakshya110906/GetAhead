@@ -74,7 +74,17 @@ export async function GET(request: NextRequest) {
       }
     });
 
-    return NextResponse.json({ success: true, savedReports });
+    // Same guard as GET /api/evaluations/[id]: a SUCCEEDED evaluation with no
+    // modelId never came from a real grading call (evaluationWorker.ts always
+    // sets both together) — found and purged exactly this shape of stale row
+    // from the database (leftover from a client-side mock deleted from
+    // source months before this check existed). Filtering here too, not just
+    // at the single-report endpoint, since this list renders scores directly.
+    const trustworthy = savedReports.filter(
+      (r) => r.evaluation && r.evaluation.status === "SUCCEEDED" && r.evaluation.modelId
+    );
+
+    return NextResponse.json({ success: true, savedReports: trustworthy });
   } catch (error) {
     console.error("Get saved reports error:", error);
     return NextResponse.json({ error: "Failed to fetch saved reports" }, { status: 500 });

@@ -1,5 +1,12 @@
 import { prisma } from "@/lib/prisma";
-import { evaluateAnswerSheetFromFile } from "@/lib/gemini";
+import {
+  gradeAnswerSheetFromFile,
+  MODEL_ID,
+  EXTRACTION_PROMPT_VERSION,
+  GRADE_PROMPT_VERSION,
+  NotAnAnswerSheetError,
+  GradingValidationFailedError,
+} from "@/lib/answerSheetGrading";
 import { logger } from "@/lib/logger";
 import { captureException } from "@/lib/errorTracking";
 
@@ -75,50 +82,68 @@ async function runJob(id: string): Promise<void> {
     const fileBytes = Buffer.from(await fileRes.arrayBuffer());
     const mimeType = job.fileType || "application/pdf";
 
-    logger.info("Sending to Gemini for transcription + grading", { jobId: id, stage: "transcribe", subject: job.subject });
-    const graded = await evaluateAnswerSheetFromFile(
-      job.subject,
-      job.grade || "12th",
-      job.examType,
-      fileBytes,
-      mimeType
-    );
-    const { result } = graded;
+    logger.info("Sending to Gemini: extraction, then one grading call per question", { jobId: id, stage: "transcribe", subject: job.subject });
+    const graded = await gradeAnswerSheetFromFile(fileBytes, mimeType, {
+      subject: job.subject,
+      grade: job.grade || "12th",
+      examType: job.examType,
+    });
+    const { result, extraction, usage } = graded;
     logger.info("Grading complete", {
       jobId: id,
       stage: "grade",
       obtainedMarks: result.obtainedMarks,
       totalMarks: result.totalMarks,
-      totalTokens: graded.totalTokens,
+      totalTokens: usage.totalTokens,
     });
+
+    // strengths/weaknesses/recommendations are derived here, in code, from
+    // the actual per-question grades — never a separate model call asked to
+    // "summarize strengths," which is exactly the kind of ungrounded text
+    // generation this rebuild removes. Every string traces back to a real,
+    // validated question grade.
+    const strengths = result.questionGrades
+      .filter((g) => g.errorType === "correct")
+      .map((g) => `Q${g.questionNumber}: ${g.feedback}`);
+    const weaknesses = result.questionGrades
+      .filter((g) => g.errorType === "method_error" || g.errorType === "arithmetic_slip")
+      .map((g) => `Q${g.questionNumber} (${g.errorType === "method_error" ? "method error" : "arithmetic slip"}): ${g.feedback}`);
+    const recommendations = result.questionGrades
+      .filter((g) => g.errorType === "method_error" || g.errorType === "arithmetic_slip")
+      .map((g) => `Revisit ${g.topic || `Q${g.questionNumber}`}: ${g.incorrectPoints[0] || g.feedback}`);
 
     await prisma.evaluation.update({
       where: { id },
       data: {
         status: "SUCCEEDED",
         finishedAt: new Date(),
-        // Marks below are exactly what recomputeFromQuestionMarks() in
-        // lib/gemini.ts computed from the per-question breakdown in code —
-        // never the model's own totalMarks/obtainedMarks/percentage.
+        // Total is always the sum of the questions actually graded — never a
+        // fixed or externally-declared denominator (see answerSheetGrading.ts).
         totalMarks: result.totalMarks,
         obtainedMarks: result.obtainedMarks,
         percentage: result.percentage,
+        // aiResponse now holds the full GradedAnswerSheet: per-question
+        // marks, correct/incorrect points, groundingQuote, errorType
+        // (method_error vs arithmetic_slip vs correct vs unreadable/blank),
+        // topic tags, and mismatch flags — not a topic-only rollup.
         aiResponse: JSON.stringify(result),
-        marksBreakdown: JSON.stringify(result.subjectBreakdown),
+        marksBreakdown: result.topicBreakdown ? JSON.stringify(result.topicBreakdown) : null,
         aiFeedback: result.overallFeedback,
-        strengths: JSON.stringify(result.strengths),
-        weaknesses: JSON.stringify(result.weaknesses),
-        recommendations: JSON.stringify(result.recommendations),
-        ocrText: graded.extractedText,
-        // Audit trail: what model, what exact prompt (by hash), what
-        // rubric version, and the model's raw response before parsing.
-        modelId: graded.modelId,
-        promptVersion: graded.promptVersion,
-        rubricVersion: graded.rubricVersion,
-        rawModelResponse: graded.rawModelResponse,
-        promptTokens: graded.promptTokens,
-        completionTokens: graded.completionTokens,
-        totalTokens: graded.totalTokens,
+        strengths: JSON.stringify(strengths),
+        weaknesses: JSON.stringify(weaknesses),
+        recommendations: JSON.stringify(recommendations),
+        // The structured extraction (every question + the student's full
+        // transcribed working), not raw OCR prose — this is what the tutor
+        // (section 6) and any future audit need to ground answers in what
+        // was actually written, not just a topic summary.
+        ocrText: JSON.stringify(extraction),
+        modelId: MODEL_ID,
+        promptVersion: `${EXTRACTION_PROMPT_VERSION}.${GRADE_PROMPT_VERSION}`,
+        rubricVersion: "answer-sheet-rebuild-2026-08-v1",
+        rawModelResponse: JSON.stringify({ extraction, questionGrades: result.questionGrades }),
+        promptTokens: usage.promptTokens,
+        completionTokens: usage.completionTokens,
+        totalTokens: usage.totalTokens,
       },
     });
     logger.info("Job persisted", { jobId: id, stage: "persist", status: "SUCCEEDED" });
@@ -127,7 +152,14 @@ async function runJob(id: string): Promise<void> {
     logger.error("Evaluation job failed", { jobId: id, stage: "persist", attempt: job.attempts, error: message });
     captureException(error, { jobId: id, stage: "persist", attempt: job.attempts, subject: job.subject });
 
-    if (job.attempts >= MAX_ATTEMPTS) {
+    // NotAnAnswerSheetError and GradingValidationFailedError are not
+    // transient — retrying the exact same file won't produce questions that
+    // aren't there, or fix a grounding-quote failure the repair loop already
+    // tried 3 times. Fail immediately rather than burn 2 more retries and a
+    // backoff window on something retrying cannot fix.
+    const isPermanent = error instanceof NotAnAnswerSheetError || error instanceof GradingValidationFailedError;
+
+    if (isPermanent || job.attempts >= MAX_ATTEMPTS) {
       await prisma.evaluation.update({
         where: { id },
         data: {

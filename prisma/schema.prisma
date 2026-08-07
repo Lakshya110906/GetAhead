@@ -33,6 +33,7 @@ model User {
   accounts       Account[]
   sessions       Session[]
   questionPapers QuestionPaper[]
+  paperGenerationJobs PaperGenerationJob[]
   tutorConversations TutorConversation[]
   supportTickets SupportTicket[]
   assignedTickets SupportTicket[] @relation("AssignedTickets")
@@ -213,6 +214,54 @@ model QuestionPaper {
 
   @@index([userId])
   @@index([createdAt])
+}
+
+// Durable source of truth for paper generation — replaces holding a single
+// serverless invocation open for the entire Planner->Generator->Reviewer
+// pipeline (which is what timed out: see generate-stream/route.ts's old
+// maxDuration=120 hitting a real "Task timed out after 120 seconds" kill in
+// production). Each worker invocation processes exactly ONE step and
+// persists state here before returning, so no single invocation needs to
+// stay alive for the whole pipeline, and killing a worker mid-job leaves a
+// row that is inspectable and retryable rather than a lost request.
+model PaperGenerationJob {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  status String @default("queued") // queued | running | succeeded | failed | cancelled
+  step   String @default("planner") // planner | generator | reviewer | validate | done
+
+  config String @db.LongText // JSON: PaperConfig, already conflict-resolved before the job is created
+
+  plannerPlan String? @db.LongText // JSON
+  draftPaper  String? @db.LongText // JSON (post generator/reviewer, pre-final-validation)
+  finalPaper  String? @db.LongText // JSON: the finished GeneratedPaper, once status = succeeded
+
+  // Per-agent status for the progress UI to poll against — { planner: {status,startedAt,finishedAt,error}, generator: {...}, reviewer: {...} }
+  agentStates String @db.LongText
+
+  repairAttempts String? @db.LongText // JSON: RepairAttemptLog[]
+  attemptCount   Int     @default(0) // retries of the CURRENT step
+  validationAttempt Int  @default(0) // which repair-loop attempt we're on (1-3)
+
+  error         String? @db.Text
+  quotaRefunded Boolean @default(false)
+  retryWorthwhile Boolean @default(true)
+
+  // Set when a worker claims the job; used to detect a worker that died
+  // mid-step (stale lock) so the job can be recovered instead of stuck
+  // forever in "running".
+  lockedAt DateTime?
+
+  savedPaperId String? // set once saved to QuestionPaper, for the frontend to redirect to the normal paper view
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([status])
+  @@index([lockedAt])
 }
 
 model AuditLog {
