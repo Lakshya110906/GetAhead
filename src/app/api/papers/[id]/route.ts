@@ -2,20 +2,22 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { getJobView, processJobStep } from "@/lib/paperJob";
+import { getJobView } from "@/lib/paperJob";
 import { reportApiError } from "@/lib/apiError";
-import { logger } from "@/lib/logger";
 
+// PREVIOUS BUG (confirmed live in production — "[TIMING] Planner Agent
+// attempt 1: 8.40s" immediately followed by "Task timed out after 15
+// seconds", 504, on this exact route): this GET handler used to call
+// processJobStep() inline ("doubles as the driver, not just a read"). That
+// meant every poll was a real, awaited Gemini call racing this route's own
+// maxDuration — the identical mistake already fixed once on POST
+// /api/papers, just relocated here. Fixed by making this a pure read: it
+// never advances the job itself. Advancement now happens in
+// POST /api/papers/[id]/advance (its own, more generous maxDuration),
+// triggered by the client as a separate, not-blocking-the-UI request
+// alongside each read poll — see generate-paper/page.tsx.
 export const maxDuration = 15;
 
-// GET doubles as the driver, not just a read — this is what lets a job
-// recover from a killed worker without a separate always-on process: every
-// poll first nudges the job forward by (at most) one step if it's due
-// (queued, or "running" with a lock old enough to mean the previous worker
-// died mid-step), then returns the current row. A user who never comes back
-// leaves the job for the daily cron sweep instead (see
-// /api/cron/sweep-paper-jobs) — a weaker but real safety net given the
-// Hobby plan's cron-frequency ceiling.
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const route = "GET /api/papers/[id]";
   let userId: string | undefined;
@@ -26,27 +28,6 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     userId = (session.user as { id: string }).id;
     ({ id } = await params);
-
-    const existing = await prisma.paperGenerationJob.findFirst({ where: { id, userId } });
-    if (!existing) return NextResponse.json({ error: "Job not found" }, { status: 404 });
-
-    if (existing.status === "queued" || existing.status === "running") {
-      try {
-        await processJobStep(id);
-      } catch (err) {
-        // Not fatal to this request — the job row's own error/status fields
-        // are authoritative and the next poll retries. But it must still be
-        // logged: previously this was a bare swallow with zero trace, which
-        // is exactly the visibility problem this pass fixes.
-        logger.error(`processJobStep threw during poll-driven advance for job ${id}`, {
-          route,
-          jobId: id,
-          userId,
-          stack: err instanceof Error ? err.stack : undefined,
-          message: err instanceof Error ? err.message : String(err),
-        });
-      }
-    }
 
     const view = await getJobView(id, userId);
     if (!view) return NextResponse.json({ error: "Job not found" }, { status: 404 });

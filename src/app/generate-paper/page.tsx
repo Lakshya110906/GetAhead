@@ -38,7 +38,7 @@ const grades = [
 ];
 
 // ─── Types ───────────────────────────────────────────────────────────────────
-type GenerationStatus = "idle" | "generating" | "complete" | "error" | "quota_exceeded" | "maintenance" | "stuck";
+type GenerationStatus = "idle" | "generating" | "complete" | "error" | "quota_exceeded" | "maintenance" | "stuck" | "connection_lost";
 type AgentStatus = "idle" | "active" | "done" | "error";
 
 interface ConflictInfo {
@@ -230,6 +230,14 @@ export default function GeneratePaperPage() {
   const lastProgressRef = useRef<number>(Date.now());
   const lastStepRef = useRef<string | null>(null);
   const [cancelling, setCancelling] = useState(false);
+  // Backoff + ceiling state for the poll loop (section 3/4 of the connection
+  // fix): consecutive network/gateway failures grow the delay before the
+  // next attempt and, past a ceiling, stop and tell the user honestly rather
+  // than silently retrying forever OR immediately declaring the job dead —
+  // a 504 on the poll means "couldn't reach the server that moment," not
+  // "the job failed." The job itself may still be running fine.
+  const consecutivePollFailuresRef = useRef(0);
+  const pollAttemptCountRef = useRef(0);
 
   // Custom Paper Style & Study Material Upload
   const [customPrompt, setCustomPrompt] = useState("");
@@ -348,6 +356,9 @@ export default function GeneratePaperPage() {
   // to react to, which is why the UI used to spin forever.
   const NO_PROGRESS_TIMEOUT_MS = 90_000;
   const POLL_INTERVAL_MS = 2000;
+  const POLL_INTERVAL_MAX_MS = 8000;
+  const MAX_CONSECUTIVE_POLL_FAILURES = 5; // ~1+2+4+8+8s of backoff before giving up
+  const MAX_POLL_ATTEMPTS = 300; // hard ceiling — at ~2-8s/poll this is comfortably longer than NO_PROGRESS_TIMEOUT_MS would ever allow anyway, but never poll literally forever
 
   const agentRunState = (s: string | undefined): AgentStatus =>
     s === "running" ? "active" : s === "done" ? "done" : s === "failed" ? "error" : "idle";
@@ -371,7 +382,39 @@ export default function GeneratePaperPage() {
     done: { agent: "repair", message: "Done." },
   };
 
+  // Nudges the job forward — a real Gemini call may live behind this
+  // request, so it is NEVER awaited by anything the UI depends on to
+  // update. Fire-and-forget: if it's slow, times out, or the network drops
+  // it, the next read poll just sees whatever state existed before it,
+  // which is correct (not stale-in-a-harmful-way) rather than blocking.
+  const triggerAdvance = (id: string) => {
+    fetch(`/api/papers/${id}/advance`, { method: "POST" }).catch(() => {
+      // Deliberately silent — this is a nudge, not a read the UI depends on.
+      // If it fails, the row simply doesn't move this cycle; the next poll
+      // (or another tab, or the daily cron) tries again.
+    });
+  };
+
   const pollJob = async (id: string) => {
+    // Don't poll a hidden tab — a fixed-interval poll from a background tab
+    // the user isn't looking at is pure waste against a free-tier database
+    // and a shared Gemini quota. Resumes automatically on visibilitychange
+    // (see the effect below) rather than losing the loop entirely.
+    if (typeof document !== "undefined" && document.hidden) {
+      pollTimerRef.current = setTimeout(() => pollJob(id), POLL_INTERVAL_MS);
+      return;
+    }
+
+    pollAttemptCountRef.current += 1;
+    if (pollAttemptCountRef.current > MAX_POLL_ATTEMPTS) {
+      stopPolling();
+      setError("This generation has been running for an unusually long time. It may still finish in the background — check back later, or start a new one.");
+      setStatus("stuck");
+      return;
+    }
+
+    triggerAdvance(id);
+
     try {
       const res = await fetch(`/api/papers/${id}`);
       if (!res.ok) {
@@ -380,8 +423,15 @@ export default function GeneratePaperPage() {
           setStatus("error");
           return;
         }
-        throw new Error(`Poll failed with status ${res.status}`);
+        // A 504/502/etc. here means "couldn't reach the server that
+        // moment" — it does NOT mean the job failed. The job keeps running
+        // server-side regardless of whether this particular poll landed.
+        // Treated as a transient network condition: back off and retry:
+        // only surface a distinct "connection lost" state (never
+        // "Generation Failed") after several consecutive misses.
+        throw new Error(`poll_http_${res.status}`);
       }
+      consecutivePollFailuresRef.current = 0;
       const view = await res.json();
 
       // Step transitions drive both the log stream and the stuck-job timer.
@@ -438,10 +488,24 @@ export default function GeneratePaperPage() {
 
       pollTimerRef.current = setTimeout(() => pollJob(id), POLL_INTERVAL_MS);
     } catch (err) {
-      console.error(err);
-      stopPolling();
-      setError(err instanceof Error ? err.message : "Lost connection while checking generation progress.");
-      setStatus("error");
+      // Network failure or a non-JSON/gateway error response — distinct
+      // from a job that actually failed. Back off exponentially and keep
+      // trying; only give up (with a state that says "connection," never
+      // "Generation Failed") after several consecutive misses in a row.
+      consecutivePollFailuresRef.current += 1;
+      console.error("Poll attempt failed:", err);
+
+      if (consecutivePollFailuresRef.current >= MAX_CONSECUTIVE_POLL_FAILURES) {
+        stopPolling();
+        setError(
+          "Lost connection while checking on your generation. The job itself may still be running fine server-side — reconnecting will show its real state, not restart it."
+        );
+        setStatus("connection_lost");
+        return;
+      }
+
+      const backoff = Math.min(POLL_INTERVAL_MAX_MS, POLL_INTERVAL_MS * Math.pow(2, consecutivePollFailuresRef.current));
+      pollTimerRef.current = setTimeout(() => pollJob(id), backoff);
     }
   };
 
@@ -462,6 +526,8 @@ export default function GeneratePaperPage() {
     setJobId(null);
     lastStepRef.current = null;
     lastProgressRef.current = Date.now();
+    consecutivePollFailuresRef.current = 0;
+    pollAttemptCountRef.current = 0;
     setPlannerStatus("idle"); setGeneratorStatus("idle"); setReviewerStatus("idle");
     setPlannerLogs([]); setGeneratorLogs([]); setReviewerLogs([]);
 
@@ -560,6 +626,22 @@ export default function GeneratePaperPage() {
   useEffect(() => {
     return () => stopPolling();
   }, []);
+
+  // Resume promptly the moment the tab becomes visible again, rather than
+  // waiting up to POLL_INTERVAL_MS for the next scheduled tick — pollJob()
+  // itself already refuses to do work while document.hidden, this just
+  // makes the resume feel immediate instead of laggy.
+  useEffect(() => {
+    const onVisibilityChange = () => {
+      if (!document.hidden && jobId && (status === "generating" || status === "stuck")) {
+        stopPolling(); // avoid double-scheduling against the timer already pending
+        pollJob(jobId);
+      }
+    };
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    return () => document.removeEventListener("visibilitychange", onVisibilityChange);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [jobId, status]);
 
   const savePaperEdits = async (updatedPaper: GeneratedPaper) => {
     if (!paperDbId) return;
@@ -1247,6 +1329,7 @@ ${JSON.stringify(paper, null, 2)}
               onClick={() => {
                 setStatus("generating");
                 lastProgressRef.current = Date.now();
+                pollAttemptCountRef.current = 0;
                 if (jobId) pollJob(jobId);
               }}
               className="px-6 py-3 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-sm shadow-md transition-colors"
@@ -1256,6 +1339,38 @@ ${JSON.stringify(paper, null, 2)}
             <button
               onClick={handleCancelJob}
               className="px-6 py-3 rounded-xl bg-white border border-amber-300 hover:bg-amber-100 text-amber-900 font-bold text-sm transition-colors"
+            >
+              Cancel and start over
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Connection Lost State — deliberately distinct from "error"/Generation
+          Failed. A 504/network failure on the poll means this browser
+          couldn't reach the server for a few tries in a row; it says
+          nothing about whether the job itself failed. Reconnecting re-reads
+          real state rather than restarting anything. */}
+      {status === "connection_lost" && (
+        <div className="bg-blue-50 border border-blue-200 rounded-2xl p-10 max-w-lg mx-auto text-center no-print">
+          <AlertTriangle className="w-12 h-12 text-blue-500 mx-auto mb-4" />
+          <h2 className="text-xl font-bold text-blue-900">Connection lost</h2>
+          <p className="text-blue-800 text-sm mt-1">{error}</p>
+          <div className="flex gap-3 justify-center mt-6">
+            <button
+              onClick={() => {
+                setStatus("generating");
+                consecutivePollFailuresRef.current = 0;
+                lastProgressRef.current = Date.now();
+                if (jobId) pollJob(jobId);
+              }}
+              className="px-6 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm shadow-md transition-colors"
+            >
+              Reconnect
+            </button>
+            <button
+              onClick={handleCancelJob}
+              className="px-6 py-3 rounded-xl bg-white border border-blue-300 hover:bg-blue-100 text-blue-900 font-bold text-sm transition-colors"
             >
               Cancel and start over
             </button>
