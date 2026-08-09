@@ -10,6 +10,7 @@ import {
 import { validatePaper, assignSectionLetters, type ValidationContext } from "./paperValidation";
 import { computeTimeAllowed } from "./timeAllowed";
 import { parseCustomInstructions, type ParsedConstraints } from "./paperConstraintParser";
+import { timedGeminiCall } from "./geminiCallLog";
 
 const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY || process.env.GEMINI_API_KEY;
 const MODEL_ID = "gemini-2.5-flash";
@@ -30,8 +31,8 @@ export function getGenAI(): GoogleGenerativeAI {
 // fixes the common case instead of silently producing garbage.
 //
 // Critically, a 429 is NOT always transient. Gemini returns 429 for two
-// completely different situations, distinguishable only by the quotaId in
-// the error body:
+// completely different situations, distinguishable by the quotaId in the
+// error body:
 //   - GenerateRequestsPerMinute... — a short-lived rate limit. Backing off a
 //     few seconds and retrying is exactly the right move.
 //   - GenerateRequestsPerDay... — the daily quota is exhausted. It will not
@@ -47,13 +48,52 @@ export function getGenAI(): GoogleGenerativeAI {
 //   This is fixed here, not by removing retries, but by refusing to retry
 //   the day-scoped case and failing immediately with a distinguishable error
 //   the caller can surface honestly instead of pretending nothing went wrong.
-const DAILY_QUOTA_PATTERN = /GenerateRequestsPerDay|exceeded your current quota/i;
-const RETRYABLE_ERROR_PATTERN = /429|rate.?limit|quota|RESOURCE_EXHAUSTED|503|overloaded|ECONNRESET|ETIMEDOUT|fetch failed/i;
+//
+// The two are matched on their SPECIFIC quotaId markers ("PerDay" / "PerMinute"),
+// never on the generic "exceeded your current quota" phrasing Google's error
+// body uses for BOTH — that phrase alone previously matched daily-quota errors
+// only by accident, and would just as easily have matched a per-minute rate
+// limit message and misclassified it as unrecoverable for the rest of the day.
+export const DAILY_QUOTA_PATTERN = /GenerateRequestsPerDay|PerDayPerProject|QuotaFailure.*[Dd]ay/i;
+export const PER_MINUTE_QUOTA_PATTERN = /GenerateRequestsPerMinute|PerMinutePerProject/i;
+export const AUTH_ERROR_PATTERN = /API key not valid|invalid.?api.?key|UNAUTHENTICATED|PERMISSION_DENIED|401 /i;
+export const INVALID_ARGUMENT_PATTERN = /INVALID_ARGUMENT|400 Bad Request/i;
+// Only messages that positively identify as a transient condition are
+// retried. A bare, unqualified "quota"/"429" with neither a Day nor a Minute
+// marker is treated as NOT retryable — the whole point of this pattern is to
+// never retry something a retry can't fix, so an ambiguous quota message
+// defaults to the safe (non-retrying) side rather than assuming it's transient.
+export const RETRYABLE_ERROR_PATTERN = /GenerateRequestsPerMinute|PerMinutePerProject|503|overloaded|ECONNRESET|ETIMEDOUT|fetch failed|network.*(timeout|error)/i;
 
 export class DailyQuotaExhaustedError extends Error {
   constructor(label: string) {
-    super(`${label}: the Gemini API's daily request quota is exhausted for this project.`);
+    super(
+      `${label}: the Gemini API's daily request quota (RPD) is exhausted for this project. ` +
+        `This is a daily limit, not a per-minute one — it will not clear within seconds or by retrying now. ` +
+        `It resets at midnight Pacific Time, per Google's documented reset window for Gemini API daily quotas.`
+    );
     this.name = "DailyQuotaExhaustedError";
+  }
+}
+
+export class GeminiRateLimitError extends Error {
+  constructor(label: string) {
+    super(`${label}: the Gemini API's per-minute rate limit (RPM) was hit. This clears within seconds — retrying shortly is the right move.`);
+    this.name = "GeminiRateLimitError";
+  }
+}
+
+export class GeminiAuthError extends Error {
+  constructor(label: string) {
+    super(`${label}: authentication with the Gemini API failed (invalid or missing API key). This is a configuration problem — retrying will not help.`);
+    this.name = "GeminiAuthError";
+  }
+}
+
+export class GeminiInvalidArgumentError extends Error {
+  constructor(label: string) {
+    super(`${label}: the request to the Gemini API was malformed (invalid argument). Retrying the identical request will fail identically.`);
+    this.name = "GeminiInvalidArgumentError";
   }
 }
 
@@ -87,9 +127,27 @@ export async function withRetry<T>(fn: () => Promise<T>, label: string, attempts
     } catch (err) {
       lastError = err;
       const message = err instanceof Error ? err.message : String(err);
+      // Order matters: check the DAILY marker first (most specific and most
+      // costly to get wrong), then the other definitively-non-retryable
+      // classes, before ever asking "does this look retryable at all."
       if (DAILY_QUOTA_PATTERN.test(message)) {
-        console.error(`${label} failed: daily Gemini quota exhausted — not retrying.`);
+        console.error(`${label} failed: daily Gemini quota (RPD) exhausted — not retrying.`);
         throw new DailyQuotaExhaustedError(label);
+      }
+      if (AUTH_ERROR_PATTERN.test(message)) {
+        console.error(`${label} failed: Gemini auth error — not retrying.`);
+        throw new GeminiAuthError(label);
+      }
+      if (INVALID_ARGUMENT_PATTERN.test(message)) {
+        console.error(`${label} failed: Gemini invalid-argument error — not retrying.`);
+        throw new GeminiInvalidArgumentError(label);
+      }
+      if (PER_MINUTE_QUOTA_PATTERN.test(message)) {
+        if (i === attempts - 1) throw new GeminiRateLimitError(label);
+        const backoffMs = 1000 * Math.pow(2, i);
+        console.warn(`${label} failed: per-minute Gemini rate limit (RPM) — retrying in ${backoffMs}ms (attempt ${i + 1}/${attempts}).`);
+        await new Promise((resolve) => setTimeout(resolve, backoffMs));
+        continue;
       }
       if (i === attempts - 1 || !RETRYABLE_ERROR_PATTERN.test(message)) throw err;
       const backoffMs = 1000 * Math.pow(2, i); // 1s, 2s
@@ -509,8 +567,15 @@ Determine the number of sections, the question type of each section, the marks p
 
 The sum of (marksPerQuestion × questionCount) across all sections must equal exactly ${config.totalMarks} — this is a hard requirement, not a target to approximate. Number sections in your own head as Section A, Section B, Section C... in order (the first section is always A; never start at B or later) — the exact final label is reassigned deterministically downstream, but your section order must be contiguous starting from the first section.`;
 
-  const result = await model.generateContent(prompt);
-  const parsed = JSON.parse(result.response.text());
+  const parsed = await timedGeminiCall({ operation: "paper_planner", model: MODEL_ID }, async () => {
+    const result = await model.generateContent(prompt);
+    return {
+      value: JSON.parse(result.response.text()),
+      promptTokens: result.response.usageMetadata?.promptTokenCount,
+      completionTokens: result.response.usageMetadata?.candidatesTokenCount,
+      totalTokens: result.response.usageMetadata?.totalTokenCount,
+    };
+  });
   return plannerPlanSchema.parse(parsed);
 }
 
@@ -549,8 +614,15 @@ For every question, provide BOTH:
 
 Write plain text only — no LaTeX, no markdown, no dollar signs; spell out formulas in words or plain characters (e.g. "H2O", "x^2" as "x squared" or "x^2").`;
 
-  const result = await model.generateContent(prompt);
-  const parsed = JSON.parse(result.response.text());
+  const parsed = await timedGeminiCall({ operation: "paper_generator", model: MODEL_ID }, async () => {
+    const result = await model.generateContent(prompt);
+    return {
+      value: JSON.parse(result.response.text()),
+      promptTokens: result.response.usageMetadata?.promptTokenCount,
+      completionTokens: result.response.usageMetadata?.candidatesTokenCount,
+      totalTokens: result.response.usageMetadata?.totalTokenCount,
+    };
+  });
   return generatedPaperSchema.parse(parsed);
 }
 
@@ -599,8 +671,15 @@ Auditing instructions:
 
 Output the final polished question paper, with reviewNotes listing what you improved (or an empty array if nothing needed changing).`;
 
-  const result = await model.generateContent(prompt);
-  const parsed = JSON.parse(result.response.text());
+  const parsed = await timedGeminiCall({ operation: "paper_reviewer", model: MODEL_ID }, async () => {
+    const result = await model.generateContent(prompt);
+    return {
+      value: JSON.parse(result.response.text()),
+      promptTokens: result.response.usageMetadata?.promptTokenCount,
+      completionTokens: result.response.usageMetadata?.candidatesTokenCount,
+      totalTokens: result.response.usageMetadata?.totalTokenCount,
+    };
+  });
   return generatedPaperSchema.parse(parsed);
 }
 
@@ -641,8 +720,15 @@ ${JSON.stringify(draft, null, 2)}
 
 Output the complete corrected paper (all sections and questions, not just the fixed ones), with reviewNotes describing what you changed to fix each violation.`;
 
-  const result = await model.generateContent(prompt);
-  const parsed = JSON.parse(result.response.text());
+  const parsed = await timedGeminiCall({ operation: "paper_repair", model: MODEL_ID }, async () => {
+    const result = await model.generateContent(prompt);
+    return {
+      value: JSON.parse(result.response.text()),
+      promptTokens: result.response.usageMetadata?.promptTokenCount,
+      completionTokens: result.response.usageMetadata?.candidatesTokenCount,
+      totalTokens: result.response.usageMetadata?.totalTokenCount,
+    };
+  });
   return generatedPaperSchema.parse(parsed);
 }
 
