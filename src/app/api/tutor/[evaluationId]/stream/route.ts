@@ -8,6 +8,7 @@ import { consumeQuota, QuotaExceededError } from "@/lib/quota";
 import { logger } from "@/lib/logger";
 import { captureException } from "@/lib/errorTracking";
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import { timedGeminiCall } from "@/lib/geminiCallLog";
 
 export const maxDuration = 120;
 
@@ -186,18 +187,31 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
           systemInstruction: systemPrompt,
         });
 
-        const chat = model.startChat({ history });
-        const result = await chat.sendMessageStream(userMessage);
+        await timedGeminiCall(
+          { operation: "tutor_chat", model: "gemini-2.5-flash", correlationId: evaluationId, userId },
+          async () => {
+            const chat = model.startChat({ history });
+            const result = await chat.sendMessageStream(userMessage);
 
-        send({ type: "user_message_id", id: savedUserMsg.id });
+            send({ type: "user_message_id", id: savedUserMsg.id });
 
-        for await (const chunk of result.stream) {
-          const text = chunk.text();
-          if (text) {
-            assistantContent += text;
-            send({ type: "delta", text });
+            for await (const chunk of result.stream) {
+              const text = chunk.text();
+              if (text) {
+                assistantContent += text;
+                send({ type: "delta", text });
+              }
+            }
+
+            const finalResponse = await result.response;
+            return {
+              value: undefined,
+              promptTokens: finalResponse.usageMetadata?.promptTokenCount,
+              completionTokens: finalResponse.usageMetadata?.candidatesTokenCount,
+              totalTokens: finalResponse.usageMetadata?.totalTokenCount,
+            };
           }
-        }
+        );
 
         // Save assistant response to DB
         const savedAssistantMsg = await prisma.tutorMessage.create({

@@ -289,6 +289,33 @@ model SystemSetting {
   updatedAt DateTime @updatedAt
 }
 
+// Every single Gemini request, logged before this pass had no way to answer
+// "how many requests does one operation actually cost" except by reading
+// code and hoping the loop bounds were understood correctly. This is the
+// ground truth: one row per model.generateContent() call, real or replayed.
+model GeminiCallLog {
+  id               String   @id @default(cuid())
+  operation        String   // e.g. "paper_planner", "eval_grade_question", "tutor_chat"
+  model            String   // e.g. "gemini-2.5-flash"
+  agent            String?  // finer-grained than operation where relevant (e.g. question number for grading)
+  promptTokens     Int?
+  completionTokens Int?
+  totalTokens      Int?
+  isRetry          Boolean  @default(false)
+  attemptNumber    Int      @default(1)
+  success          Boolean
+  errorType        String?  // "daily_quota" | "rate_limit" | "validation_failed" | "other" | null
+  durationMs       Int?
+  replayed         Boolean  @default(false) // true when served from the record/replay cache, not a real call
+  correlationId    String?  // jobId / evaluationId, for tracing one operation's full call sequence
+  userId           String?
+  createdAt        DateTime @default(now())
+
+  @@index([operation])
+  @@index([correlationId])
+  @@index([createdAt])
+}
+
 // Per-user, per-day, per-feature counter enforcing the daily quota — DB-
 // backed on purpose (not in-memory) so it's correct across every
 // serverless invocation and survives restarts. "date" is a plain

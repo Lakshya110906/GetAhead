@@ -5,22 +5,31 @@ import {
   EXTRACTION_PROMPT_VERSION,
   GRADE_PROMPT_VERSION,
   NotAnAnswerSheetError,
-  GradingValidationFailedError,
 } from "@/lib/answerSheetGrading";
+import { refundQuota } from "@/lib/quota";
 import { logger } from "@/lib/logger";
 import { captureException } from "@/lib/errorTracking";
 
 // If a job has been sitting in PROCESSING longer than this, the worker that
 // claimed it is presumed dead (function crashed, was killed mid-run, etc.) —
-// it becomes eligible to be re-claimed rather than being lost forever.
+// it becomes eligible to be re-claimed rather than being lost forever. This
+// is a dead-worker reclaim, not an error-driven retry.
 const STALE_PROCESSING_MS = 4 * 60 * 1000;
 
-const BACKOFF_BASE_MS = 30 * 1000; // 30s, 2min, 8min for attempts 1, 2, 3
-const MAX_ATTEMPTS = 3;
-
-function backoffDelayMs(attemptsSoFar: number): number {
-  return BACKOFF_BASE_MS * Math.pow(4, Math.max(0, attemptsSoFar - 1));
-}
+// There is deliberately only ONE retry layer in this pipeline: the
+// per-question validation-repair loop inside gradeQuestionWithRepair
+// (answerSheetGrading.ts), which re-prompts a single question up to 3 times
+// when the MODEL'S OUTPUT fails validation. A job that fails for any other
+// reason — quota, auth, a malformed request, an unrecognized crash, or even
+// a genuinely transient network blip — is terminal on its first attempt.
+// This pipeline has no per-step checkpointing (unlike paperJob.ts's step
+// machine), so a job-level "retry" here can only mean restarting extraction
+// plus every question's grading from scratch. Automatically doing that up to
+// 3 times turned one failure into up to 3x its real cost for no benefit on
+// anything that wasn't going to succeed anyway — see the call-count
+// breakdown that motivated this fix. A user can still explicitly resubmit a
+// FAILED evaluation (PATCH .../retry), which is a deliberate, one-shot,
+// user-initiated action, not a silent automatic loop.
 
 /**
  * Atomically claims the next job that's actually due: a fresh QUEUED row,
@@ -83,11 +92,16 @@ async function runJob(id: string): Promise<void> {
     const mimeType = job.fileType || "application/pdf";
 
     logger.info("Sending to Gemini: extraction, then one grading call per question", { jobId: id, stage: "transcribe", subject: job.subject });
-    const graded = await gradeAnswerSheetFromFile(fileBytes, mimeType, {
-      subject: job.subject,
-      grade: job.grade || "12th",
-      examType: job.examType,
-    });
+    const graded = await gradeAnswerSheetFromFile(
+      fileBytes,
+      mimeType,
+      {
+        subject: job.subject,
+        grade: job.grade || "12th",
+        examType: job.examType,
+      },
+      { correlationId: id, userId: job.userId ?? undefined }
+    );
     const { result, extraction, usage } = graded;
     logger.info("Grading complete", {
       jobId: id,
@@ -152,31 +166,22 @@ async function runJob(id: string): Promise<void> {
     logger.error("Evaluation job failed", { jobId: id, stage: "persist", attempt: job.attempts, error: message });
     captureException(error, { jobId: id, stage: "persist", attempt: job.attempts, subject: job.subject });
 
-    // NotAnAnswerSheetError and GradingValidationFailedError are not
-    // transient — retrying the exact same file won't produce questions that
-    // aren't there, or fix a grounding-quote failure the repair loop already
-    // tried 3 times. Fail immediately rather than burn 2 more retries and a
-    // backoff window on something retrying cannot fix.
-    const isPermanent = error instanceof NotAnAnswerSheetError || error instanceof GradingValidationFailedError;
+    await prisma.evaluation.update({
+      where: { id },
+      data: { status: "FAILED", finishedAt: new Date(), lastError: message },
+    });
 
-    if (isPermanent || job.attempts >= MAX_ATTEMPTS) {
-      await prisma.evaluation.update({
-        where: { id },
-        data: {
-          status: "FAILED",
-          finishedAt: new Date(),
-          lastError: message,
-        },
-      });
-    } else {
-      await prisma.evaluation.update({
-        where: { id },
-        data: {
-          status: "QUEUED",
-          lastError: message,
-          nextAttemptAt: new Date(Date.now() + backoffDelayMs(job.attempts)),
-        },
-      });
+    // Refund every terminal failure except NotAnAnswerSheetError — that one
+    // means the user uploaded a file that isn't a gradable answer sheet,
+    // which is a problem with their input, not the pipeline. Everything
+    // else (daily quota exhausted, grading validation exhausted, auth,
+    // malformed responses, an unrecognized crash) is not the user's fault
+    // and shouldn't cost them a daily evaluation — matching paperJob.ts's
+    // refund behavior on its own terminal failure paths, and specifically
+    // fixing quota parity: DailyQuotaExhaustedError now fails immediately
+    // and refunds here, the same as it already does for paper generation.
+    if (!(error instanceof NotAnAnswerSheetError)) {
+      await refundQuota(job.userId, "EVALUATION");
     }
   }
 }

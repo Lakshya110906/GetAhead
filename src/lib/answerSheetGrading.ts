@@ -11,6 +11,8 @@ import {
   type GradedAnswerSheet,
   type TopicBreakdown,
 } from "@/lib/answerSheetSchema";
+import { timedGeminiCall } from "@/lib/geminiCallLog";
+import { withRetry } from "@/lib/question-agents";
 
 const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY || process.env.GEMINI_API_KEY;
 export const MODEL_ID = "gemini-2.5-flash";
@@ -117,8 +119,16 @@ export class UsageAccumulator {
   }
 }
 
+// Threaded through every call in one evaluation's pipeline so the
+// GeminiCallLog rows for extraction + all N grading calls can be traced back
+// to the single evaluation they belong to.
+export interface CallMeta {
+  correlationId?: string;
+  userId?: string;
+}
+
 // ─── Stage 1: EXTRACT ────────────────────────────────────────────────────────
-export async function extractAnswerSheet(fileBytes: Buffer, mimeType: string, usage?: UsageAccumulator): Promise<ExtractionResult> {
+export async function extractAnswerSheet(fileBytes: Buffer, mimeType: string, usage?: UsageAccumulator, meta?: CallMeta): Promise<ExtractionResult> {
   if (!apiKey) throw new Error("Gemini API key is not configured.");
   const genAI = new GoogleGenerativeAI(apiKey);
   const model = genAI.getGenerativeModel({
@@ -130,10 +140,30 @@ export async function extractAnswerSheet(fileBytes: Buffer, mimeType: string, us
     },
   });
 
-  const result = await model.generateContent([
-    { text: EXTRACTION_PROMPT },
-    { inlineData: { mimeType, data: fileBytes.toString("base64") } },
-  ]);
+  // withRetry(..., attempts=1) does no internal retrying here — its job is
+  // solely to convert a daily-quota error into DailyQuotaExhaustedError so
+  // the caller (evaluationWorker.ts) can classify it as permanent instead of
+  // blindly requeuing a call that will fail identically for the rest of the day.
+  const result = await withRetry(
+    () =>
+      timedGeminiCall(
+        { operation: "eval_extraction", model: MODEL_ID, correlationId: meta?.correlationId, userId: meta?.userId },
+        async () => {
+          const result = await model.generateContent([
+            { text: EXTRACTION_PROMPT },
+            { inlineData: { mimeType, data: fileBytes.toString("base64") } },
+          ]);
+          return {
+            value: result,
+            promptTokens: result.response.usageMetadata?.promptTokenCount,
+            completionTokens: result.response.usageMetadata?.candidatesTokenCount,
+            totalTokens: result.response.usageMetadata?.totalTokenCount,
+          };
+        }
+      ),
+    "Answer sheet extraction",
+    1
+  );
   usage?.add(result.response.usageMetadata);
 
   const text = result.response.text();
@@ -157,7 +187,9 @@ async function gradeQuestionOnce(
   examType: string,
   question: ExtractedQuestion,
   violations?: string[],
-  usage?: UsageAccumulator
+  usage?: UsageAccumulator,
+  meta?: CallMeta,
+  attemptNumber = 1
 ): Promise<QuestionGrade> {
   const genAI = new GoogleGenerativeAI(apiKey!);
   const model = genAI.getGenerativeModel({
@@ -170,7 +202,31 @@ async function gradeQuestionOnce(
   });
 
   const prompt = GRADE_QUESTION_PROMPT({ subject, grade, examType, question, violations });
-  const result = await model.generateContent(prompt);
+  const result = await withRetry(
+    () =>
+      timedGeminiCall(
+        {
+          operation: "eval_grade_question",
+          model: MODEL_ID,
+          agent: `Q${question.questionNumber}`,
+          isRetry: attemptNumber > 1,
+          attemptNumber,
+          correlationId: meta?.correlationId,
+          userId: meta?.userId,
+        },
+        async () => {
+          const result = await model.generateContent(prompt);
+          return {
+            value: result,
+            promptTokens: result.response.usageMetadata?.promptTokenCount,
+            completionTokens: result.response.usageMetadata?.candidatesTokenCount,
+            totalTokens: result.response.usageMetadata?.totalTokenCount,
+          };
+        }
+      ),
+    `Question ${question.questionNumber} grading`,
+    1
+  );
   usage?.add(result.response.usageMetadata);
   const text = result.response.text();
   let parsed: unknown;
@@ -235,11 +291,12 @@ async function gradeQuestionWithRepair(
   grade: string,
   examType: string,
   question: ExtractedQuestion,
-  usage?: UsageAccumulator
+  usage?: UsageAccumulator,
+  meta?: CallMeta
 ): Promise<QuestionGrade> {
   let violations: string[] | undefined;
   for (let attempt = 1; attempt <= 3; attempt++) {
-    const candidate = await gradeQuestionOnce(subject, grade, examType, question, violations, usage);
+    const candidate = await gradeQuestionOnce(subject, grade, examType, question, violations, usage, meta, attempt);
     const newViolations = validateQuestionGrade(candidate, question);
     if (newViolations.length === 0) return candidate;
     if (attempt === 3) throw new GradingValidationFailedError(question.questionNumber, newViolations);
@@ -295,14 +352,15 @@ export interface GradingContext {
 export async function gradeAnswerSheetFromFile(
   fileBytes: Buffer,
   mimeType: string,
-  ctx: GradingContext
+  ctx: GradingContext,
+  meta?: CallMeta
 ): Promise<{ extraction: ExtractionResult; result: GradedAnswerSheet; usage: UsageAccumulator }> {
   if (!apiKey || apiKey === "your-gemini-api-key-here") {
     throw new Error("Gemini API key is not configured.");
   }
   const usage = new UsageAccumulator();
 
-  const extraction = await extractAnswerSheet(fileBytes, mimeType, usage);
+  const extraction = await extractAnswerSheet(fileBytes, mimeType, usage, meta);
 
   if (extraction.questions.length === 0) {
     throw new NotAnAnswerSheetError();
@@ -337,7 +395,7 @@ export async function gradeAnswerSheetFromFile(
     // grounding quote can be checked against exactly that question's own
     // extracted answer, and so no question's grading can be contaminated by
     // context from another question.
-    const graded = await gradeQuestionWithRepair(ctx.subject, ctx.grade, ctx.examType, q, usage);
+    const graded = await gradeQuestionWithRepair(ctx.subject, ctx.grade, ctx.examType, q, usage, meta);
     questionGrades.push(graded);
   }
 
