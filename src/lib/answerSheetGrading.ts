@@ -13,6 +13,7 @@ import {
 } from "@/lib/answerSheetSchema";
 import { timedGeminiCall } from "@/lib/geminiCallLog";
 import { withRetry } from "@/lib/question-agents";
+import { hashOf, readReplay, writeReplay, type ReplayOptions } from "@/lib/geminiFixtureCache";
 
 const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY || process.env.GEMINI_API_KEY;
 export const MODEL_ID = "gemini-2.5-flash";
@@ -128,7 +129,22 @@ export interface CallMeta {
 }
 
 // ─── Stage 1: EXTRACT ────────────────────────────────────────────────────────
-export async function extractAnswerSheet(fileBytes: Buffer, mimeType: string, usage?: UsageAccumulator, meta?: CallMeta): Promise<ExtractionResult> {
+export async function extractAnswerSheet(
+  fileBytes: Buffer,
+  mimeType: string,
+  usage?: UsageAccumulator,
+  meta?: CallMeta,
+  replay?: ReplayOptions
+): Promise<ExtractionResult> {
+  // Content-addressed by the exact file bytes + prompt version — a test
+  // harness that opts in (passes `replay`) gets a zero-Gemini-call hit for
+  // any file it's already recorded a response for, forever, until the file
+  // or the extraction prompt actually changes. Production calls never pass
+  // `replay`, so this is a complete no-op for real user evaluations.
+  const cacheKey = hashOf(fileBytes, mimeType, EXTRACTION_PROMPT_VERSION);
+  const cached = readReplay<ExtractionResult>("extraction", cacheKey, replay);
+  if (cached) return cached;
+
   if (!apiKey) throw new Error("Gemini API key is not configured.");
   const genAI = new GoogleGenerativeAI(apiKey);
   const model = genAI.getGenerativeModel({
@@ -164,6 +180,7 @@ export async function extractAnswerSheet(fileBytes: Buffer, mimeType: string, us
     "Answer sheet extraction",
     1
   );
+  replay?.onRealCall?.("extraction");
   usage?.add(result.response.usageMetadata);
 
   const text = result.response.text();
@@ -177,6 +194,7 @@ export async function extractAnswerSheet(fileBytes: Buffer, mimeType: string, us
   if (!validated.success) {
     throw new Error(`Extraction response failed schema validation: ${validated.error.message}`);
   }
+  if (replay) writeReplay("extraction", cacheKey, validated.data);
   return validated.data;
 }
 
@@ -189,8 +207,19 @@ async function gradeQuestionOnce(
   violations?: string[],
   usage?: UsageAccumulator,
   meta?: CallMeta,
-  attemptNumber = 1
+  attemptNumber = 1,
+  replay?: ReplayOptions
 ): Promise<QuestionGrade> {
+  const prompt = GRADE_QUESTION_PROMPT({ subject, grade, examType, question, violations });
+  // Keyed on the fully-rendered prompt text (which already bakes in subject,
+  // grade, examType, the question, and any prior-attempt violations) plus
+  // the prompt version — so a different repair attempt (different
+  // violations text) is correctly a different cache entry, and a rubric
+  // change invalidates every recording built from the old wording.
+  const cacheKey = hashOf(prompt, GRADE_PROMPT_VERSION);
+  const cached = readReplay<QuestionGrade>("grading", cacheKey, replay);
+  if (cached) return cached;
+
   const genAI = new GoogleGenerativeAI(apiKey!);
   const model = genAI.getGenerativeModel({
     model: MODEL_ID,
@@ -201,7 +230,6 @@ async function gradeQuestionOnce(
     },
   });
 
-  const prompt = GRADE_QUESTION_PROMPT({ subject, grade, examType, question, violations });
   const result = await withRetry(
     () =>
       timedGeminiCall(
@@ -227,6 +255,7 @@ async function gradeQuestionOnce(
     `Question ${question.questionNumber} grading`,
     1
   );
+  replay?.onRealCall?.(`grading Q${question.questionNumber}`);
   usage?.add(result.response.usageMetadata);
   const text = result.response.text();
   let parsed: unknown;
@@ -247,7 +276,9 @@ async function gradeQuestionOnce(
   // arbitrary number, which the old validation then rejected as a
   // "mismatch" against a value the model was never given a chance to get
   // right in the first place.
-  return { ...validated.data, questionNumber: question.questionNumber };
+  const graded = { ...validated.data, questionNumber: question.questionNumber };
+  if (replay) writeReplay("grading", cacheKey, graded);
+  return graded;
 }
 
 export function normalizeForQuoteMatch(s: string): string {
@@ -292,11 +323,12 @@ async function gradeQuestionWithRepair(
   examType: string,
   question: ExtractedQuestion,
   usage?: UsageAccumulator,
-  meta?: CallMeta
+  meta?: CallMeta,
+  replay?: ReplayOptions
 ): Promise<QuestionGrade> {
   let violations: string[] | undefined;
   for (let attempt = 1; attempt <= 3; attempt++) {
-    const candidate = await gradeQuestionOnce(subject, grade, examType, question, violations, usage, meta, attempt);
+    const candidate = await gradeQuestionOnce(subject, grade, examType, question, violations, usage, meta, attempt, replay);
     const newViolations = validateQuestionGrade(candidate, question);
     if (newViolations.length === 0) return candidate;
     if (attempt === 3) throw new GradingValidationFailedError(question.questionNumber, newViolations);
@@ -353,14 +385,15 @@ export async function gradeAnswerSheetFromFile(
   fileBytes: Buffer,
   mimeType: string,
   ctx: GradingContext,
-  meta?: CallMeta
+  meta?: CallMeta,
+  replay?: ReplayOptions
 ): Promise<{ extraction: ExtractionResult; result: GradedAnswerSheet; usage: UsageAccumulator }> {
   if (!apiKey || apiKey === "your-gemini-api-key-here") {
     throw new Error("Gemini API key is not configured.");
   }
   const usage = new UsageAccumulator();
 
-  const extraction = await extractAnswerSheet(fileBytes, mimeType, usage, meta);
+  const extraction = await extractAnswerSheet(fileBytes, mimeType, usage, meta, replay);
 
   if (extraction.questions.length === 0) {
     throw new NotAnAnswerSheetError();
@@ -395,7 +428,7 @@ export async function gradeAnswerSheetFromFile(
     // grounding quote can be checked against exactly that question's own
     // extracted answer, and so no question's grading can be contaminated by
     // context from another question.
-    const graded = await gradeQuestionWithRepair(ctx.subject, ctx.grade, ctx.examType, q, usage, meta);
+    const graded = await gradeQuestionWithRepair(ctx.subject, ctx.grade, ctx.examType, q, usage, meta, replay);
     questionGrades.push(graded);
   }
 

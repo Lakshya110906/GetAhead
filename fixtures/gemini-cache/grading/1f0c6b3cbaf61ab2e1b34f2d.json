@@ -1,0 +1,15 @@
+{
+  "questionNumber": 1,
+  "marksAwarded": 5,
+  "marksAvailable": 5,
+  "topic": "Balancing Chemical Equations",
+  "correctPoints": [
+    "The chemical equation N2 + 3H2 -> 2NH3 is correctly balanced.",
+    "The student correctly identified that there are 2 nitrogen atoms on both sides.",
+    "The student correctly identified that there are 6 hydrogen atoms on both sides."
+  ],
+  "incorrectPoints": [],
+  "errorType": "correct",
+  "groundingQuote": "N2 + 3H2 -> 2NH3",
+  "feedback": "Excellent work! You have correctly balanced the chemical equation by ensuring that the number of nitrogen and hydrogen atoms is equal on both the reactant and product sides."
+}
