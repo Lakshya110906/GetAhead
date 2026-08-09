@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
+import { DAILY_QUOTA_PATTERN, PER_MINUTE_QUOTA_PATTERN } from "@/lib/geminiErrorPatterns";
 
 // Ground truth for "how many requests does one operation actually cost" —
 // before this, the only way to answer that was reading code and hoping the
@@ -97,9 +98,11 @@ export async function timedGeminiCall<T>(
     return value;
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    const errorType: GeminiErrorType = /GenerateRequestsPerDay|exceeded your current quota/i.test(message)
+    // Same patterns question-agents.ts uses to decide whether to retry — the
+    // logged errorType and the actual retry decision must never disagree.
+    const errorType: GeminiErrorType = DAILY_QUOTA_PATTERN.test(message)
       ? "daily_quota"
-      : /GenerateRequestsPerMinute|429|RESOURCE_EXHAUSTED/i.test(message)
+      : PER_MINUTE_QUOTA_PATTERN.test(message)
       ? "rate_limit"
       : "other";
     logGeminiCall({ ...meta, success: false, durationMs: Date.now() - start, errorType });

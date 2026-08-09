@@ -1,0 +1,16 @@
+{
+  "questionNumber": 1,
+  "marksAwarded": 2,
+  "marksAvailable": 4,
+  "topic": "Algebra: Solving Linear Equations",
+  "correctPoints": [
+    "Recognized the need to isolate the term containing x by performing an operation on the constant term.",
+    "Correctly performed the division operation based on their intermediate result."
+  ],
+  "incorrectPoints": [
+    "Made an arithmetic error when subtracting the constant term from both sides of the equation."
+  ],
+  "errorType": "arithmetic_slip",
+  "groundingQuote": "so 2x = 20",
+  "feedback": "You correctly identified the general method for solving the equation, which involves isolating the term with x and then dividing by its coefficient. However, you made an arithmetic slip in the first step: when moving the constant term, you added 6 to 14 instead of subtracting 6 from 14. This led to 2x = 20 instead of the correct 2x = 8. Your subsequent division of 20 by 2 to get x = 10 was correct based on your previous (incorrect) step."
+}

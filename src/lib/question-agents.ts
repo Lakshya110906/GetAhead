@@ -28,42 +28,24 @@ export function getGenAI(): GoogleGenerativeAI {
 // call fails — a bare try/catch that gave up after one attempt turned a
 // transient 429 into a permanently degraded (or fully generic mock) paper.
 // Retrying with backoff on exactly the errors that are actually transient
-// fixes the common case instead of silently producing garbage.
-//
-// Critically, a 429 is NOT always transient. Gemini returns 429 for two
-// completely different situations, distinguishable by the quotaId in the
-// error body:
-//   - GenerateRequestsPerMinute... — a short-lived rate limit. Backing off a
-//     few seconds and retrying is exactly the right move.
-//   - GenerateRequestsPerDay... — the daily quota is exhausted. It will not
-//     recover in the next few seconds, or the next 3 attempts, or probably
-//     the next hour. Retrying it 3 times per agent call (up to 9 times across
-//     a 3-agent pipeline) doesn't help a single one of those attempts
-//     succeed, burns time the user is sitting on a spinner for, and — if
-//     retries against an exhausted quota count against it at all — makes the
-//     exhaustion worse for every other user for no benefit. Confirmed live:
-//     this exact pattern is what produced the reported bug (every agent 429s,
-//     every retry 429s, the whole request still returns 200 with a silently
-//     substituted mock paper 12+ seconds later).
-//   This is fixed here, not by removing retries, but by refusing to retry
-//   the day-scoped case and failing immediately with a distinguishable error
-//   the caller can surface honestly instead of pretending nothing went wrong.
-//
-// The two are matched on their SPECIFIC quotaId markers ("PerDay" / "PerMinute"),
-// never on the generic "exceeded your current quota" phrasing Google's error
-// body uses for BOTH — that phrase alone previously matched daily-quota errors
-// only by accident, and would just as easily have matched a per-minute rate
-// limit message and misclassified it as unrecoverable for the rest of the day.
-export const DAILY_QUOTA_PATTERN = /GenerateRequestsPerDay|PerDayPerProject|QuotaFailure.*[Dd]ay/i;
-export const PER_MINUTE_QUOTA_PATTERN = /GenerateRequestsPerMinute|PerMinutePerProject/i;
-export const AUTH_ERROR_PATTERN = /API key not valid|invalid.?api.?key|UNAUTHENTICATED|PERMISSION_DENIED|401 /i;
-export const INVALID_ARGUMENT_PATTERN = /INVALID_ARGUMENT|400 Bad Request/i;
-// Only messages that positively identify as a transient condition are
-// retried. A bare, unqualified "quota"/"429" with neither a Day nor a Minute
-// marker is treated as NOT retryable — the whole point of this pattern is to
-// never retry something a retry can't fix, so an ambiguous quota message
-// defaults to the safe (non-retrying) side rather than assuming it's transient.
-export const RETRYABLE_ERROR_PATTERN = /GenerateRequestsPerMinute|PerMinutePerProject|503|overloaded|ECONNRESET|ETIMEDOUT|fetch failed|network.*(timeout|error)/i;
+// fixes the common case instead of silently producing garbage. Classification
+// patterns live in geminiErrorPatterns.ts (shared with geminiCallLog.ts, so
+// the retry decision and the logged errorType are never allowed to drift
+// apart), re-exported here since callers already import them from this module.
+export {
+  DAILY_QUOTA_PATTERN,
+  PER_MINUTE_QUOTA_PATTERN,
+  AUTH_ERROR_PATTERN,
+  INVALID_ARGUMENT_PATTERN,
+  RETRYABLE_ERROR_PATTERN,
+} from "./geminiErrorPatterns";
+import {
+  DAILY_QUOTA_PATTERN,
+  PER_MINUTE_QUOTA_PATTERN,
+  AUTH_ERROR_PATTERN,
+  INVALID_ARGUMENT_PATTERN,
+  RETRYABLE_ERROR_PATTERN,
+} from "./geminiErrorPatterns";
 
 export class DailyQuotaExhaustedError extends Error {
   constructor(label: string) {
