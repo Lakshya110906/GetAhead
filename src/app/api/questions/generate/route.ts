@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { generateQuestionPaper, DailyQuotaExhaustedError, PaperValidationFailedError } from "@/lib/question-agents";
+import { buildUserFacingValidationMessage } from "@/lib/paperUserMessages";
 import { consumeQuota, refundQuota, QuotaExceededError } from "@/lib/quota";
 import { assertSpendGateOpen, SpendLimitReachedError } from "@/lib/spendControl";
 import { parseCustomInstructions, checkForConflict } from "@/lib/paperConstraintParser";
@@ -134,11 +135,14 @@ export async function POST(request: NextRequest) {
     }
     if (error instanceof PaperValidationFailedError) {
       await refundQuota(userId, "PAPER_GENERATION");
+      const lastTwo = error.attemptLogs.slice(-2);
+      const identicalLastTwo =
+        lastTwo.length === 2 && [...lastTwo[0].violations].sort().join("|") === [...lastTwo[1].violations].sort().join("|");
       return NextResponse.json(
         {
-          error: `We couldn't generate a paper that satisfies your request after ${error.attemptLogs.length} attempts. Remaining issue(s): ${error.finalViolations.join("; ")}. Your generation credit has been refunded — try adjusting your total marks, question count, or custom instructions so they don't conflict, then try again.`,
+          error: buildUserFacingValidationMessage(error.finalViolations, topic),
           quotaRefunded: true,
-          retryWorthwhile: true,
+          retryWorthwhile: !identicalLastTwo,
           attemptLogs: error.attemptLogs,
         },
         { status: 422 }

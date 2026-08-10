@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { generateQuestionPaperStreamed, DailyQuotaExhaustedError, PaperValidationFailedError } from "@/lib/question-agents";
+import { buildUserFacingValidationMessage } from "@/lib/paperUserMessages";
 import { consumeQuota, refundQuota, QuotaExceededError } from "@/lib/quota";
 import { assertSpendGateOpen, SpendLimitReachedError } from "@/lib/spendControl";
 import { assertQuotaHeadroom, QuotaHeadroomError } from "@/lib/geminiQuotaState";
@@ -193,10 +194,16 @@ export async function POST(request: NextRequest) {
           });
         } else if (err instanceof PaperValidationFailedError) {
           await refundQuota(sessionUserId, "PAPER_GENERATION");
+          // Deterministic unless the last two attempts' violations genuinely
+          // differed (some chance a fresh attempt lands differently) — same
+          // classification as the job-based path (paperJob.ts).
+          const lastTwo = err.attemptLogs.slice(-2);
+          const identicalLastTwo =
+            lastTwo.length === 2 && [...lastTwo[0].violations].sort().join("|") === [...lastTwo[1].violations].sort().join("|");
           emit("error", {
-            message: `We couldn't generate a paper that satisfies your request after ${err.attemptLogs.length} attempts. Remaining issue(s): ${err.finalViolations.join("; ")}. Your generation credit has been refunded — try adjusting your total marks, question count, or custom instructions so they don't conflict, then try again.`,
+            message: buildUserFacingValidationMessage(err.finalViolations, topic),
             quotaRefunded: true,
-            retryWorthwhile: true,
+            retryWorthwhile: !identicalLastTwo,
             attemptLogs: err.attemptLogs,
           });
         } else {

@@ -1,0 +1,17 @@
+{
+  "questionNumber": 2,
+  "marksAwarded": 2,
+  "marksAvailable": 4,
+  "topic": "Balancing Chemical Equations",
+  "correctPoints": [
+    "Correctly identified the coefficient for N2 as 1.",
+    "Correctly identified the coefficient for NH3 as 2 to balance nitrogen atoms."
+  ],
+  "incorrectPoints": [
+    "Incorrectly identified the coefficient for H2 as 2 instead of 3.",
+    "Failed to balance the hydrogen atoms, resulting in 4 H atoms on the left and 6 H atoms on the right."
+  ],
+  "errorType": "method_error",
+  "groundingQuote": "N2 + 2H2 -> 2NH3.",
+  "feedback": "You have correctly balanced the nitrogen atoms by using 1 molecule of N2 and forming 2 molecules of NH3. However, the hydrogen atoms are not balanced. With 2H2 on the left, you have 4 hydrogen atoms, but 2NH3 on the right requires 6 hydrogen atoms. You need to adjust the coefficient for H2 to ensure all atoms are balanced. This is a method error as you did not fully apply the balancing method to all elements."
+}

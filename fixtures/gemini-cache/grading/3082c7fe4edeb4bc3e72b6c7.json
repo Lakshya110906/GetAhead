@@ -1,0 +1,14 @@
+{
+  "questionNumber": 1,
+  "marksAwarded": 5,
+  "marksAvailable": 5,
+  "topic": "Balancing Chemical Equations",
+  "correctPoints": [
+    "The chemical equation is correctly balanced.",
+    "The student correctly identified the number of hydrogen and oxygen atoms on both sides of the equation."
+  ],
+  "incorrectPoints": [],
+  "errorType": "correct",
+  "groundingQuote": "2H2 + O2 -> 2H2O",
+  "feedback": "Excellent work! You have correctly balanced the chemical equation and clearly explained how the atoms are conserved on both sides. Full marks awarded."
+}

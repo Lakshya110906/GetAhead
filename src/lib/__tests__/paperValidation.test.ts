@@ -12,6 +12,7 @@ function q(overrides: Partial<GeneratedPaperShape["sections"][number]["questions
     answer: "Full model answer.",
     markScheme: [{ point: "Explains traversal", marks: 3 }],
     marks: 3,
+    topicAddressed: "linked list traversal",
     ...overrides,
   };
 }
@@ -156,6 +157,9 @@ describe("validatePaper", () => {
   });
 
   // Test case 18: prompt-injection robustness — off-topic drift must be caught.
+  // Checked against topicAddressed now, not question prose — a genuinely
+  // off-topic question also self-reports an off-topic topicAddressed
+  // (nothing here asks the model to lie about what it wrote).
   it("flags gross off-topic drift (prompt-injection redirect to an unrelated subject)", () => {
     const offTopic = paper({
       sections: [
@@ -163,15 +167,15 @@ describe("validatePaper", () => {
           title: "Section A: Short Answer",
           description: "desc",
           questions: [
-            q({ number: 1, question: "Describe how to bake a chocolate cake.", marks: 15, markScheme: [{ point: "p", marks: 15 }] }),
-            q({ number: 2, question: "What temperature should an oven be preheated to?", marks: 15, markScheme: [{ point: "p", marks: 15 }] }),
+            q({ number: 1, question: "Describe how to bake a chocolate cake.", topicAddressed: "baking", marks: 15, markScheme: [{ point: "p", marks: 15 }] }),
+            q({ number: 2, question: "What temperature should an oven be preheated to?", topicAddressed: "cooking temperatures", marks: 15, markScheme: [{ point: "p", marks: 15 }] }),
           ],
         },
       ],
     });
     const result = validatePaper(offTopic, baseCtx);
     expect(result.valid).toBe(false);
-    expect(result.violations.some((v) => v.includes("don't reference the requested topic"))).toBe(true);
+    expect(result.violations.some((v) => v.includes("don't address the requested topic"))).toBe(true);
   });
 
   it("does not flag on-topic questions even with only partial keyword overlap per question", () => {
@@ -181,14 +185,55 @@ describe("validatePaper", () => {
           title: "Section A: Short Answer",
           description: "desc",
           questions: [
-            q({ number: 1, question: "Explain how a linked list stores elements in memory.", marks: 15, markScheme: [{ point: "p", marks: 15 }] }),
-            q({ number: 2, question: "Describe the time complexity of array insertion.", marks: 15, markScheme: [{ point: "p", marks: 15 }] }),
+            q({ number: 1, question: "Explain how a linked list stores elements in memory.", topicAddressed: "linked lists", marks: 15, markScheme: [{ point: "p", marks: 15 }] }),
+            q({ number: 2, question: "Describe the time complexity of array insertion.", topicAddressed: "array time complexity", marks: 15, markScheme: [{ point: "p", marks: 15 }] }),
           ],
         },
       ],
     });
     const result = validatePaper(onTopic, baseCtx);
-    expect(result.violations.some((v) => v.includes("don't reference the requested topic"))).toBe(false);
+    expect(result.violations.some((v) => v.includes("don't address the requested topic"))).toBe(false);
+  });
+
+  // Regression test for the real, confirmed-live incident this fix was for:
+  // topic "trignometry and geometry" (typo — missing the "o"), 15 genuinely
+  // correct trigonometry/geometry questions, rejected on all 3 attempts
+  // because none of them contained the literal misspelled substring. Must
+  // now pass: topicAddressed is checked, and the keyword set includes the
+  // spellcheck-corrected "trigonometry" even though the raw topic wasn't changed.
+  it("does not reject genuinely on-topic questions because the user's topic input has a typo", () => {
+    const trigCtx = {
+      targetTotalMarks: 30,
+      allowedQuestionTypes: ["Short Answer"],
+      topic: "trignometry and geometry",
+      parsedConstraints: parseCustomInstructions(""),
+    };
+    const trigPaper = paper({
+      sections: [
+        {
+          title: "Section A: Short Answer",
+          description: "desc",
+          questions: [
+            q({
+              number: 1,
+              question: "What is the value of sin 30 degrees + cos 60 degrees?",
+              topicAddressed: "trigonometric ratios",
+              marks: 15,
+              markScheme: [{ point: "p", marks: 15 }],
+            }),
+            q({
+              number: 2,
+              question: "From an external point Q, a tangent QT is drawn to a circle with centre O...",
+              topicAddressed: "circle geometry — tangents",
+              marks: 15,
+              markScheme: [{ point: "p", marks: 15 }],
+            }),
+          ],
+        },
+      ],
+    });
+    const result = validatePaper(trigPaper, trigCtx);
+    expect(result.violations.some((v) => v.includes("don't address the requested topic"))).toBe(false);
   });
 });
 

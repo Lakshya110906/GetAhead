@@ -1,0 +1,15 @@
+{
+  "questionNumber": 3,
+  "marksAwarded": 1,
+  "marksAvailable": 5,
+  "topic": "Exothermic and Endothermic Reactions",
+  "correctPoints": [
+    "Correctly identified the reaction as exothermic."
+  ],
+  "incorrectPoints": [
+    "Incorrectly stated that energy is absorbed from the surroundings during an exothermic reaction."
+  ],
+  "errorType": "method_error",
+  "groundingQuote": "During an exothermic reaction, energy is absorbed from the surroundings",
+  "feedback": "You correctly identified the reaction as exothermic. However, your explanation for an exothermic reaction is incorrect. Exothermic reactions *release* energy to the surroundings, they do not absorb it. The release of energy is what causes heat to be given off."
+}

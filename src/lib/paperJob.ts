@@ -21,6 +21,7 @@ import {
 } from "@/lib/question-agents";
 import { validatePaper, assignSectionLetters } from "@/lib/paperValidation";
 import { parseCustomInstructions } from "@/lib/paperConstraintParser";
+import { buildUserFacingValidationMessage } from "@/lib/paperUserMessages";
 import { logger } from "@/lib/logger";
 import { captureException } from "@/lib/errorTracking";
 import type { PlannerPlan, GeneratedPaperShape } from "@/lib/questionPaperSchema";
@@ -199,7 +200,17 @@ export async function processJobStep(jobId: string): Promise<void> {
 
       const attemptLogs: RepairAttemptLog[] = job.repairAttempts ? JSON.parse(job.repairAttempts) : [];
       const attemptNumber = job.validationAttempt + 1;
-      attemptLogs.push({ attempt: attemptNumber, violations: validation.violations });
+      const previousAttempt = attemptLogs[attemptLogs.length - 1];
+      const violationsKey = (v: string[]) => [...v].sort().join("|");
+      const outputChanged = !previousAttempt || violationsKey(previousAttempt.violations) !== violationsKey(validation.violations);
+      attemptLogs.push({ attempt: attemptNumber, violations: validation.violations, outputChanged });
+      logger.info(`Paper generation job ${jobId} validate attempt ${attemptNumber}: ${validation.valid ? "PASSED" : "FAILED"}${previousAttempt ? `, outputChanged=${outputChanged}` : ""}`, {
+        route: "processJobStep",
+        jobId,
+        step: "validate",
+        attempt: attemptNumber,
+        outputChanged,
+      });
 
       if (validation.valid) {
         const finalPaper = finalizePaper(candidate, config.totalMarks);
@@ -219,12 +230,47 @@ export async function processJobStep(jobId: string): Promise<void> {
         return;
       }
 
+      // Two consecutive attempts with the IDENTICAL violation means the
+      // repair step changed nothing that mattered — at temperature 0, an
+      // unchanged violation fed back into an unchanged repair prompt
+      // produces the same output again. A third attempt would not either;
+      // aborting here instead of running one more repair+validate cycle is
+      // the fix for a real, confirmed-live incident (topic "trignometry and
+      // geometry": all 3 attempts failed with byte-identical violation
+      // text, burning 5 calls to learn nothing after the 2nd would have
+      // already shown it).
+      if (previousAttempt && !outputChanged) {
+        const message = `Paper failed validation: attempts ${previousAttempt.attempt} and ${attemptNumber} failed with the identical violation — repair had no effect, further attempts would not either: ${validation.violations.join("; ")}`;
+        logger.warn(`Paper generation job ${jobId} aborting after identical consecutive validation failure`, {
+          route: "processJobStep",
+          jobId,
+          step: "validate",
+          attempt: attemptNumber,
+          violations: validation.violations,
+        });
+        await prisma.paperGenerationJob.update({
+          where: { id: jobId },
+          data: {
+            status: "failed",
+            error: buildUserFacingValidationMessage(validation.violations, config.topic),
+            internalError: message,
+            repairAttempts: JSON.stringify(attemptLogs),
+            validationAttempt: attemptNumber,
+            retryWorthwhile: false,
+            lockedAt: null,
+          },
+        });
+        await refundQuota(job.userId, "PAPER_GENERATION");
+        return;
+      }
+
       if (attemptNumber >= MAX_STEP_ATTEMPTS) {
         await prisma.paperGenerationJob.update({
           where: { id: jobId },
           data: {
             status: "failed",
-            error: `Paper failed validation after ${attemptNumber} attempts: ${validation.violations.join("; ")}`,
+            error: buildUserFacingValidationMessage(validation.violations, config.topic),
+            internalError: `Paper failed validation after ${attemptNumber} attempts: ${validation.violations.join("; ")}`,
             repairAttempts: JSON.stringify(attemptLogs),
             validationAttempt: attemptNumber,
             retryWorthwhile: true,

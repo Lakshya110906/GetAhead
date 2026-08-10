@@ -65,6 +65,16 @@ export const questionSchema = z.object({
   // a cross-field check).
   markScheme: z.array(markSchemePointSchema).min(1),
   marks: z.number().positive(),
+  // The model's own short statement of which requested topic/subtopic this
+  // question actually tests — validated against, instead of scanning the
+  // question's prose for a literal keyword substring. Fixes a real bug: a
+  // user typo in the topic ("trignometry") never appears in a correctly-
+  // spelled generated question ("trigonometry"), and plenty of genuinely
+  // on-topic questions never use the topic word at all (a circle-tangent
+  // question is geometry without ever saying "geometry"). This field is
+  // short, model-authored, and purpose-built for exactly this check —
+  // deliberately not reusing the free-form question text.
+  topicAddressed: z.string().min(1),
 });
 
 export const paperSectionSchema = z.object({
@@ -104,8 +114,9 @@ const GEMINI_QUESTION_SCHEMA: Schema = {
     answer: { type: SchemaType.STRING },
     markScheme: { type: SchemaType.ARRAY, items: GEMINI_MARK_SCHEME_POINT_SCHEMA },
     marks: { type: SchemaType.NUMBER },
+    topicAddressed: { type: SchemaType.STRING },
   },
-  required: ["number", "type", "question", "answer", "markScheme", "marks"],
+  required: ["number", "type", "question", "answer", "markScheme", "marks", "topicAddressed"],
 };
 
 export const GEMINI_PAPER_RESPONSE_SCHEMA: Schema = {

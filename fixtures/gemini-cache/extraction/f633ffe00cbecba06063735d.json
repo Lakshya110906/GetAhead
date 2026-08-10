@@ -1,0 +1,41 @@
+{
+  "detectedSubject": "Chemistry",
+  "detectedGrade": "10th",
+  "questions": [
+    {
+      "questionNumber": 1,
+      "questionText": "Balance the following chemical equation: H2 + O2 -> H2O",
+      "marksAvailable": 5,
+      "studentAnswer": "2H2 + O2 -> 2H2O. This is balanced: there are 4 hydrogen atoms and 2 oxygen atoms on both sides.",
+      "readable": true
+    },
+    {
+      "questionNumber": 2,
+      "questionText": "Balance the following chemical equation: N2 + H2 -> NH3",
+      "marksAvailable": 4,
+      "studentAnswer": "N2 + 2H2 -> 2NH3. This is balanced because the nitrogen atoms match on both sides.",
+      "readable": true
+    },
+    {
+      "questionNumber": 3,
+      "questionText": "The reaction CaO + H2O -> Ca(OH)2 releases a large amount of heat. State whether this reaction is exothermic or endothermic, and explain in terms of energy absorbed or released.",
+      "marksAvailable": 5,
+      "studentAnswer": "This reaction is exothermic. During an exothermic reaction, energy is absorbed from the surroundings, which is why heat is given off.",
+      "readable": true
+    },
+    {
+      "questionNumber": 4,
+      "questionText": "Balance the following chemical equation: Zn + HCl -> ZnCl2 + H2",
+      "marksAvailable": 5,
+      "studentAnswer": "Zn + HCl -> ZnCl2 + H2. This equation is already balanced.",
+      "readable": true
+    },
+    {
+      "questionNumber": 5,
+      "questionText": "Magnesium ribbon burns in oxygen to form a white powder. Name the product formed and write the balanced chemical equation for this reaction.",
+      "marksAvailable": 6,
+      "studentAnswer": "The product is magnesium oxide (MgO), a white powder. The balanced equation is: 2Mg + O2 -> 2MgO. Magnesium and oxygen atoms are balanced on both sides (2 Mg and 2 O).",
+      "readable": true
+    }
+  ]
+}

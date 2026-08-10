@@ -8,6 +8,7 @@ import { assertSpendGateOpen, SpendLimitReachedError } from "@/lib/spendControl"
 import { assertQuotaHeadroom, QuotaHeadroomError } from "@/lib/geminiQuotaState";
 import { MODEL_ID as PAPER_MODEL_ID } from "@/lib/question-agents";
 import { parseCustomInstructions, checkForConflict } from "@/lib/paperConstraintParser";
+import { suggestTopicCorrection } from "@/lib/topicSpellcheck";
 import { initialAgentStates, processJobStep } from "@/lib/paperJob";
 import { reportApiError } from "@/lib/apiError";
 import { logger } from "@/lib/logger";
@@ -53,7 +54,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const {
       subject, grade, topic, difficulty, totalMarks, questionTypes,
-      customPrompt, studyMaterialText, conflictResolution,
+      customPrompt, studyMaterialText, conflictResolution, topicResolution,
     } = body;
 
     if (!subject || !grade || !topic || !difficulty || !totalMarks || !questionTypes || !Array.isArray(questionTypes)) {
@@ -63,6 +64,33 @@ export async function POST(request: NextRequest) {
     if (isNaN(parsedTotalMarks)) {
       return NextResponse.json({ error: "Invalid total marks" }, { status: 400 });
     }
+
+    // Catch a likely topic typo BEFORE spending any Gemini calls — this is
+    // the actual fix for a real, confirmed-live incident: "trignometry and
+    // geometry" burned 5 calls across 3 repair attempts because the model
+    // (correctly) spelled it "trigonometry" and the old prose-substring
+    // validator never matched. Only fires on a high-confidence typo against
+    // a known-topic vocabulary; most real topics aren't in that vocabulary
+    // and pass through untouched.
+    let effectiveTopic: string = topic;
+    if (!topicResolution) {
+      const correction = suggestTopicCorrection(topic);
+      if (correction) {
+        return NextResponse.json(
+          {
+            topicSuggestion: true,
+            original: correction.original,
+            suggestion: correction.suggestion,
+          },
+          { status: 409 }
+        );
+      }
+    } else if (topicResolution === "useSuggested" && typeof body.suggestedTopic === "string") {
+      effectiveTopic = body.suggestedTopic;
+    }
+    // topicResolution === "useOriginal" (or anything else): keep the user's
+    // topic exactly as typed — validatePaper() still matches on the
+    // spellcheck-corrected keyword set even if they declined the suggestion.
 
     const parsedConstraints = parseCustomInstructions(customPrompt);
     let effectiveTotalMarks = parsedTotalMarks;
@@ -118,7 +146,7 @@ export async function POST(request: NextRequest) {
     }
 
     const config: PaperConfig = {
-      subject, grade, topic, difficulty,
+      subject, grade, topic: effectiveTopic, difficulty,
       totalMarks: effectiveTotalMarks,
       questionTypes: effectiveQuestionTypes,
       customPrompt: customPrompt || "",

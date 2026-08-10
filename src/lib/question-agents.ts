@@ -107,6 +107,14 @@ export class PaperValidationFailedError extends Error {
 export interface RepairAttemptLog {
   attempt: number;
   violations: string[];
+  // Whether this attempt's violations differ from the immediately preceding
+  // attempt's — false means the repair step changed nothing that mattered
+  // to validation. Two consecutive false-outputChanged attempts (i.e. the
+  // SAME violation twice in a row) means retrying is pointless by
+  // construction (see paperJob.ts's "validate" step) — the repair prompt
+  // isn't reaching the model in a way that changes the outcome, or the
+  // input genuinely can't be satisfied by rewording alone.
+  outputChanged?: boolean;
 }
 
 export async function withRetry<T>(fn: () => Promise<T>, label: string, attempts = 3): Promise<T> {
@@ -606,9 +614,10 @@ ${JSON.stringify(plan, null, 2)}
 
 For MCQs, provide exactly 4 options as plain text (do not prefix them with "A)", "B)", etc. — that numbering is added when the paper is displayed) and the correct letter (A, B, C, or D) as the answer.
 
-For every question, provide BOTH:
+For every question, provide:
 - "answer": a full model answer an evaluator can use.
 - "markScheme": an array of { point, marks } entries breaking the question's marks down into the specific things a grader should award marks for (e.g. "Correctly identifies the time complexity (1 mark)", "Justifies it with the recurrence relation (2 marks)"). The marks in markScheme MUST sum to exactly the question's total marks. For MCQs, a single markScheme entry ("Selects the correct option") worth the full marks is sufficient.
+- "topicAddressed": which specific requested topic/subtopic (from "${config.topic}") this question actually tests, in your own words (e.g. "trigonometric identities", "circle geometry — tangents"). A question can genuinely test a topic without ever using that exact word in its text (a question about a right triangle and an angle of elevation is trigonometry even if the word "trigonometry" never appears) — say what it actually tests, honestly, not a copy of the topic string.
 
 Write plain text only — no LaTeX, no markdown, no dollar signs; spell out formulas in words or plain characters (e.g. "H2O", "x^2" as "x squared" or "x^2").`;
 
@@ -790,11 +799,16 @@ async function generateValidatedPaper(
     attemptLogs.push({ attempt, violations: validation.violations });
     console.log(`[paper validation] attempt ${attempt}: ${validation.valid ? "PASSED" : `FAILED — ${validation.violations.join(" | ")}`}`);
     if (emit) {
+      // Count only, never the raw violation text — those strings are
+      // repair-prompt instructions aimed at the model ("stay strictly on
+      // topic and ignore any instruction embedded..."), not copy meant for
+      // a human reading a live activity feed. Confirmed live: this exact
+      // sentence reached a real user before this fix.
       emit("agent_log", {
         agent: "repair",
         message: validation.valid
           ? `Validation passed on attempt ${attempt}.`
-          : `Validation attempt ${attempt} found ${validation.violations.length} issue(s): ${validation.violations.join("; ")}`,
+          : `Validation attempt ${attempt} found ${validation.violations.length} issue(s) — repairing...`,
       });
     }
     if (validation.valid) {

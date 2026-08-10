@@ -1,0 +1,13 @@
+{
+  "questionNumber": 4,
+  "marksAwarded": 0,
+  "marksAvailable": 5,
+  "topic": "Balancing chemical equations",
+  "correctPoints": [],
+  "incorrectPoints": [
+    "The student incorrectly states that the equation is already balanced."
+  ],
+  "errorType": "method_error",
+  "groundingQuote": "This equation is already balanced.",
+  "feedback": "The equation Zn + HCl -> ZnCl2 + H2 is not balanced. On the reactant side, there is 1 hydrogen atom and 1 chlorine atom, but on the product side, there are 2 hydrogen atoms and 2 chlorine atoms. To balance the equation, you need to place a coefficient of 2 in front of HCl (Zn + 2HCl -> ZnCl2 + H2). This is a method error in assessing the balance of the equation."
+}

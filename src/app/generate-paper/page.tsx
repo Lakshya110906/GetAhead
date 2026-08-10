@@ -25,6 +25,7 @@ import {
 import { GeneratedPaper } from "@/lib/question-agents";
 import { SubjectSelector } from "@/components/SubjectSelector";
 import { computeTimeAllowed } from "@/lib/timeAllowed";
+import { buildUserFacingValidationMessage } from "@/lib/paperUserMessages";
 
 const grades = [
   "8th Grade",
@@ -1298,7 +1299,9 @@ ${JSON.stringify(paper, null, 2)}
               <p className="font-bold uppercase tracking-wide text-[10px] text-gray-500">What each attempt found</p>
               {repairAttemptLogs.map((a) => (
                 <p key={a.attempt}>
-                  Attempt {a.attempt}: {a.violations.length === 0 ? "passed" : a.violations.join("; ")}
+                  {/* Never render a.violations directly — those are repair-prompt
+                      instructions aimed at the model, not user copy. */}
+                  Attempt {a.attempt}: {a.violations.length === 0 ? "passed" : buildUserFacingValidationMessage(a.violations, topic)}
                 </p>
               ))}
             </div>

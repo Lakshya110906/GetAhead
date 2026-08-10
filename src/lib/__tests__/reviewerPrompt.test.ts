@@ -39,6 +39,7 @@ const draft: GeneratedPaperShape = {
           question: "What is Newton's first law?",
           options: ["A", "B", "C", "D"],
           answer: "A",
+          topicAddressed: "Newton's laws of motion",
           markScheme: [{ point: "Selects correct option", marks: 5 }],
           marks: 5,
         },
