@@ -9,6 +9,8 @@ import { processSpecificJob } from "@/lib/evaluationWorker";
 import { MAX_UPLOAD_BYTES } from "@/app/api/uploads/route";
 import { consumeQuota, QuotaExceededError } from "@/lib/quota";
 import { assertSpendGateOpen, SpendLimitReachedError } from "@/lib/spendControl";
+import { assertQuotaHeadroom, QuotaHeadroomError } from "@/lib/geminiQuotaState";
+import { MODEL_ID as EVAL_MODEL_ID } from "@/lib/answerSheetGrading";
 import { assertDeclaredTypeMatches } from "@/lib/fileSignature";
 import { logger } from "@/lib/logger";
 import { captureException } from "@/lib/errorTracking";
@@ -63,6 +65,25 @@ export async function POST(request: NextRequest) {
       if (err instanceof SpendLimitReachedError) {
         return NextResponse.json(
           { error: err.message, maintenance: true },
+          { status: 503 }
+        );
+      }
+      throw err;
+    }
+
+    // Gemini's own daily quota, not the per-user app-level one below: an
+    // evaluation needs at least 2 real requests (extraction + at least one
+    // grading call; the true count depends on how many questions the sheet
+    // turns out to have, which isn't known until extraction runs, so 2 is
+    // the floor, not the full estimate). Failing here means the user never
+    // burns their own daily evaluation credit on an operation that was
+    // already going to run out of Gemini quota partway through.
+    try {
+      await assertQuotaHeadroom(EVAL_MODEL_ID, 2);
+    } catch (err) {
+      if (err instanceof QuotaHeadroomError) {
+        return NextResponse.json(
+          { error: err.message, quotaExceeded: true, remaining: err.usage.remaining, limit: err.usage.limit, resetsAt: err.usage.resetsAt },
           { status: 503 }
         );
       }

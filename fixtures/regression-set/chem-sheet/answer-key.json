@@ -1,0 +1,67 @@
+{
+  "id": "chem-sheet",
+  "totalMarks": 25,
+  "expectedObtainedMarks": 21,
+  "questions": [
+    {
+      "questionNumber": 1,
+      "expectedMarks": 5,
+      "expectedMaxMarks": 5,
+      "errorType": "correct",
+      "plantedError": null,
+      "keywords": []
+    },
+    {
+      "questionNumber": 2,
+      "expectedMarks": 5,
+      "expectedMaxMarks": 5,
+      "errorType": "correct",
+      "plantedError": null,
+      "keywords": []
+    },
+    {
+      "questionNumber": 3,
+      "expectedMarks": 3,
+      "expectedMaxMarks": 5,
+      "errorType": "arithmetic_slip",
+      "plantedError": "Product coefficient should be 2Fe2O3, not 4Fe2O3 — as written, iron atoms don't balance (8 on the left vs 16 on the right).",
+      "keywords": [
+        "2fe2o3",
+        "4fe2o3",
+        "coefficient",
+        "iron",
+        "balance",
+        "16",
+        "8"
+      ]
+    },
+    {
+      "questionNumber": 4,
+      "expectedMarks": 4,
+      "expectedMaxMarks": 5,
+      "errorType": "arithmetic_slip",
+      "plantedError": "Sign error: -log(10^-4) = 4, not -4. The student dropped/mishandled the negative sign.",
+      "keywords": [
+        "sign",
+        "-4",
+        "negative",
+        "should be 4",
+        "pH = 4"
+      ]
+    },
+    {
+      "questionNumber": 5,
+      "expectedMarks": 4,
+      "expectedMaxMarks": 5,
+      "errorType": "method_error",
+      "plantedError": "Wrong gas identified — zinc + dilute HCl evolves hydrogen gas (tested with a burning/lit splint giving a 'pop'), not oxygen (glowing splint relighting is the test for oxygen).",
+      "keywords": [
+        "hydrogen",
+        "oxygen",
+        "wrong gas",
+        "pop",
+        "incorrect gas"
+      ]
+    }
+  ]
+}

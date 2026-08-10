@@ -314,6 +314,7 @@ model GeminiCallLog {
   @@index([operation])
   @@index([correlationId])
   @@index([createdAt])
+  @@index([model, createdAt])
 }
 
 // Per-user, per-day, per-feature counter enforcing the daily quota — DB-

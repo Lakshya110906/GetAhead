@@ -9,6 +9,10 @@ import { logger } from "@/lib/logger";
 import { captureException } from "@/lib/errorTracking";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { timedGeminiCall } from "@/lib/geminiCallLog";
+import { DAILY_QUOTA_PATTERN, PER_MINUTE_QUOTA_PATTERN, AUTH_ERROR_PATTERN } from "@/lib/geminiErrorPatterns";
+import { assertQuotaHeadroom, QuotaHeadroomError } from "@/lib/geminiQuotaState";
+
+const TUTOR_MODEL_ID = "gemini-2.5-flash";
 
 export const maxDuration = 120;
 
@@ -62,6 +66,18 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
   if (!allowed) {
     return new Response(JSON.stringify({ error: "Rate limit exceeded. Please wait a moment." }), { status: 429 });
   }
+  try {
+    await assertQuotaHeadroom(TUTOR_MODEL_ID, 1);
+  } catch (err) {
+    if (err instanceof QuotaHeadroomError) {
+      return new Response(
+        JSON.stringify({ error: err.message, quotaExceeded: true, remaining: err.usage.remaining, limit: err.usage.limit, resetsAt: err.usage.resetsAt }),
+        { status: 503 }
+      );
+    }
+    throw err;
+  }
+
   try {
     await consumeQuota(userId, "TUTOR");
   } catch (err) {
@@ -183,12 +199,12 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
         // Real Gemini stream setup
         const genAI = new GoogleGenerativeAI(apiKey);
         const model = genAI.getGenerativeModel({
-          model: "gemini-2.5-flash",
+          model: TUTOR_MODEL_ID,
           systemInstruction: systemPrompt,
         });
 
         await timedGeminiCall(
-          { operation: "tutor_chat", model: "gemini-2.5-flash", correlationId: evaluationId, userId },
+          { operation: "tutor_chat", model: TUTOR_MODEL_ID, correlationId: evaluationId, userId },
           async () => {
             const chat = model.startChat({ history });
             const result = await chat.sendMessageStream(userMessage);
@@ -231,9 +247,25 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
         send({ type: "done", id: savedAssistantMsg.id });
       } catch (err) {
         const msg = err instanceof Error ? err.message : "AI response failed";
-        const isRateLimit = msg.toLowerCase().includes("quota") || msg.toLowerCase().includes("429");
+        // Daily (RPD) and per-minute (RPM) limits are NOT the same failure —
+        // conflating them (as this used to, matching "quota" OR "429" for
+        // both) told a user hitting a daily exhaustion to "wait a moment and
+        // try again," which is false; a daily limit doesn't clear for up to
+        // 24 hours. Classified the same way every other Gemini call site in
+        // this codebase is (geminiErrorPatterns.ts), not a local guess.
+        const isDailyQuota = DAILY_QUOTA_PATTERN.test(msg);
+        const isRateLimit = !isDailyQuota && PER_MINUTE_QUOTA_PATTERN.test(msg);
+        const isAuthError = AUTH_ERROR_PATTERN.test(msg);
         const isTimeout = msg.toLowerCase().includes("timeout");
-        const code = isRateLimit ? "TUTOR_RATE_LIMITED" : isTimeout ? "TUTOR_TIMEOUT" : "TUTOR_STREAM_FAILED";
+        const code = isDailyQuota
+          ? "TUTOR_DAILY_QUOTA_EXHAUSTED"
+          : isRateLimit
+          ? "TUTOR_RATE_LIMITED"
+          : isAuthError
+          ? "TUTOR_AUTH_ERROR"
+          : isTimeout
+          ? "TUTOR_TIMEOUT"
+          : "TUTOR_STREAM_FAILED";
 
         logger.error(`[${code}] Tutor stream failed for evaluation ${evaluationId}`, {
           route: "POST /api/tutor/[evaluationId]/stream",
@@ -255,8 +287,14 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
         send({
           type: "error",
           code,
-          message: isRateLimit
-            ? "AI rate limit reached. Please wait a moment and try again."
+          // Retry-worthiness is now conditional on which limit was actually
+          // hit, not hardcoded to "try again" for every quota-shaped error.
+          message: isDailyQuota
+            ? "The AI tutor has hit its daily usage limit. This won't clear for several hours — retrying now won't help. Please try again tomorrow."
+            : isRateLimit
+            ? "AI rate limit reached. This clears within seconds — please wait a moment and try again."
+            : isAuthError
+            ? "The AI tutor isn't configured correctly in this environment. This is a setup problem, not something retrying will fix."
             : isTimeout
             ? "The AI took too long to respond. Please try again."
             : "The tutor couldn't respond that time. Send your question again.",

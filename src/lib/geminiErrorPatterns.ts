@@ -23,3 +23,30 @@ export const INVALID_ARGUMENT_PATTERN = /INVALID_ARGUMENT|400 Bad Request/i;
 // marker defaults to non-retryable — the point of this pattern is to never
 // retry something a retry can't fix, so ambiguity resolves to the safe side.
 export const RETRYABLE_ERROR_PATTERN = /GenerateRequestsPerMinute|PerMinutePerProject|503|overloaded|ECONNRESET|ETIMEDOUT|fetch failed|network.*(timeout|error)/i;
+
+/**
+ * Real Gemini 429 responses (confirmed live, multiple times this session)
+ * include a `google.rpc.RetryInfo` entry in `errorDetails` with a
+ * `retryDelay` field ("31s", "15.08s", etc.) — Google's own server-computed
+ * answer to "how long until this specific request could succeed." Parsing
+ * this instead of guessing a fixed/exponential backoff means the wait (and
+ * anything told to the user) reflects what Google actually said, not an
+ * assumption. Returns the raw string (e.g. "31s") and the parsed
+ * milliseconds, or null if the error has no such field (e.g. a daily-quota
+ * error, which — confirmed live — does NOT include a RetryInfo entry;
+ * there's nothing to retry).
+ */
+export function extractRetryDelay(err: unknown): { raw: string; ms: number } | null {
+  const details = (err as { errorDetails?: unknown })?.errorDetails;
+  if (!Array.isArray(details)) return null;
+  for (const d of details) {
+    const entry = d as { "@type"?: string; retryDelay?: string };
+    if (entry?.["@type"]?.includes("RetryInfo") && typeof entry.retryDelay === "string") {
+      const match = entry.retryDelay.match(/^([\d.]+)s$/);
+      if (match) {
+        return { raw: entry.retryDelay, ms: Math.round(parseFloat(match[1]) * 1000) };
+      }
+    }
+  }
+  return null;
+}

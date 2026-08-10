@@ -54,6 +54,7 @@ export default function AdminPage() {
   const [stats, setStats] = useState<any>(null);
   const [health, setHealth] = useState<any>(null);
   const [spend, setSpend] = useState<any>(null);
+  const [quota, setQuota] = useState<any>(null);
   const [metrics, setMetrics] = useState<any>(null);
   const [users, setUsers] = useState<any[]>([]);
   const [usersTotal, setUsersTotal] = useState(0);
@@ -117,6 +118,7 @@ export default function AdminPage() {
         // Load secondary states
         fetchHealth();
         fetchSpend();
+        fetchQuota();
         fetchMetrics();
         fetchUsers();
         fetchEvaluations();
@@ -195,6 +197,13 @@ export default function AdminPage() {
     fetch("/api/admin/spend")
       .then((r) => r.json())
       .then(setSpend)
+      .catch(() => {});
+  };
+
+  const fetchQuota = () => {
+    fetch("/api/admin/quota")
+      .then((r) => r.json())
+      .then(setQuota)
       .catch(() => {});
   };
 
@@ -511,6 +520,58 @@ export default function AdminPage() {
                       Kill switch active — new jobs paused
                     </span>
                   )}
+                </div>
+              )}
+
+              {/* Gemini quota, per model — "how much is left today?" at a glance.
+                  warn >=80%, block >=95% (new operations are refused server-side
+                  at that point, not just visually flagged here). */}
+              {quota?.models && (
+                <div className="bg-surface rounded-2xl border border-rule card-shadow-md p-5">
+                  <h2 className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-4 flex items-center gap-2">
+                    <Gauge className="w-4 h-4 text-graphite" />
+                    Gemini quota today
+                  </h2>
+                  <div className="space-y-3">
+                    {quota.models.map((m: any) => (
+                      <div key={m.model} className="flex items-center gap-4">
+                        <div className="w-44 shrink-0">
+                          <p className="text-sm font-semibold text-gray-900">{m.model}</p>
+                          {!m.confirmed && <p className="text-[10px] text-graphite">limit is an estimate</p>}
+                        </div>
+                        <div className="flex-1 h-2.5 bg-gray-100 rounded-full overflow-hidden">
+                          <div
+                            className={`h-full rounded-full ${
+                              m.level === "block" ? "bg-red-500" : m.level === "warn" ? "bg-amber-500" : "bg-green-500"
+                            }`}
+                            style={{ width: `${Math.min(100, Math.round(m.fractionUsed * 100))}%` }}
+                          />
+                        </div>
+                        <div className="w-40 shrink-0 text-right">
+                          <span
+                            className={`text-sm font-bold font-mono ${
+                              m.level === "block" ? "text-red-600" : m.level === "warn" ? "text-amber-600" : "text-gray-900"
+                            }`}
+                          >
+                            {m.used}/{m.limit}
+                          </span>
+                          <span className="text-xs text-graphite ml-1">({m.remaining} left)</span>
+                        </div>
+                        {m.level !== "ok" && (
+                          <span
+                            className={`text-[10px] font-bold px-2 py-1 rounded-full whitespace-nowrap ${
+                              m.level === "block" ? "bg-red-100 text-red-700" : "bg-amber-100 text-amber-700"
+                            }`}
+                          >
+                            {m.level === "block" ? "new ops blocked" : "80%+ used"}
+                          </span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                  <p className="text-xs text-graphite mt-4">
+                    Resets at {quota.models[0] ? new Date(quota.models[0].resetsAt).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" }) : "—"} (midnight Pacific Time).
+                  </p>
                 </div>
               )}
 

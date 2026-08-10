@@ -1,0 +1,156 @@
+import { prisma } from "@/lib/prisma";
+
+// Section 4: quota state must be visible before it's a surprise, and an
+// operation that can't possibly complete should never be allowed to start
+// and fail partway. This module is the single source of truth for "how much
+// Gemini quota is left today, per model" — built on GeminiCallLog (every
+// real call, whether it succeeded or failed, is already logged there).
+
+export interface ModelQuotaLimit {
+  rpd: number;
+  rpm: number;
+  // Whether rpd/rpm below are directly confirmed from a live 429 response
+  // this project has actually received, vs. Google's published free-tier
+  // default applied as a best-available estimate. Surfaced in the UI so
+  // "20" doesn't read as more certain than it is.
+  confirmed: boolean;
+}
+
+// gemini-2.5-flash's RPD=20 is the one number confirmed live this session
+// (from an actual 429 response body: quotaId
+// GenerateRequestsPerDayPerProjectPerModel-FreeTier, quotaValue "20").
+// gemini-2.0-flash and gemini-2.0-flash-lite were confirmed EXHAUSTED
+// (also hit PerDay) on the same day this project's gemini-2.5-flash quota
+// was exhausted, without ever having been called before that — meaning the
+// real constraint on this project may be a shared/aggregate ceiling below
+// what the per-model RPD numbers below suggest, not truly independent
+// per-model buckets. The numbers below are per Google's published free-tier
+// defaults, used as the best available per-model estimate; the actual
+// binding constraint could be lower. Flagged, not hidden.
+export const MODEL_QUOTA_LIMITS: Record<string, ModelQuotaLimit> = {
+  "gemini-2.5-flash": { rpd: 20, rpm: 10, confirmed: true },
+  "gemini-2.0-flash": { rpd: 20, rpm: 15, confirmed: false },
+  "gemini-2.0-flash-lite": { rpd: 20, rpm: 30, confirmed: false },
+};
+
+const DEFAULT_LIMIT: ModelQuotaLimit = { rpd: 20, rpm: 10, confirmed: false };
+
+export function getModelLimit(model: string): ModelQuotaLimit {
+  return MODEL_QUOTA_LIMITS[model] ?? DEFAULT_LIMIT;
+}
+
+function todayRangeUtc() {
+  const now = new Date();
+  const start = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+  const end = new Date(start.getTime() + 24 * 60 * 60 * 1000);
+  return { start, end, dateKey: start.toISOString().slice(0, 10) };
+}
+
+/**
+ * Gemini's actual daily quota reset is midnight Pacific Time (Google's
+ * documented policy for the free tier — the API itself does not return a
+ * reset timestamp in 429 response bodies, confirmed by inspecting real
+ * responses this session, so this is the best available answer, not a
+ * parsed value). Computed relative to now so it's always the NEXT
+ * upcoming Pacific midnight, not a static string.
+ */
+export function nextPacificMidnightUtc(now: Date = new Date()): Date {
+  // Pacific is UTC-7 (PDT) or UTC-8 (PST). Using -7 (PDT, the summer/most
+  // of the year offset) as the approximation — being off by an hour around
+  // the DST boundary is an acceptable error for "roughly when it resets",
+  // not a billing-accurate calculation.
+  const PACIFIC_OFFSET_HOURS = 7;
+  const utcMidnightToday = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+  let pacificMidnightUtc = new Date(utcMidnightToday.getTime() + PACIFIC_OFFSET_HOURS * 60 * 60 * 1000);
+  if (pacificMidnightUtc <= now) {
+    pacificMidnightUtc = new Date(pacificMidnightUtc.getTime() + 24 * 60 * 60 * 1000);
+  }
+  return pacificMidnightUtc;
+}
+
+export interface ModelQuotaUsage {
+  model: string;
+  used: number;
+  limit: number;
+  remaining: number;
+  fractionUsed: number;
+  confirmed: boolean;
+  resetsAt: string;
+  level: "ok" | "warn" | "block";
+}
+
+const WARN_FRACTION = 0.8;
+const BLOCK_FRACTION = 0.95;
+
+function levelFor(fractionUsed: number): "ok" | "warn" | "block" {
+  if (fractionUsed >= BLOCK_FRACTION) return "block";
+  if (fractionUsed >= WARN_FRACTION) return "warn";
+  return "ok";
+}
+
+/**
+ * Today's real (non-replayed) request count for one model, from
+ * GeminiCallLog. Counts every attempt that actually reached the API and
+ * consumed a request slot — successes, and failures for reasons OTHER than
+ * being rejected by rate/quota limiting (a 429 for daily_quota or
+ * rate_limit means Google rejected the request before it counted against
+ * anything; counting those again would double-count the rejection, not
+ * measure real usage).
+ */
+export async function getModelUsageToday(model: string): Promise<ModelQuotaUsage> {
+  const { start, end } = todayRangeUtc();
+  const used = await prisma.geminiCallLog.count({
+    where: {
+      model,
+      replayed: false,
+      createdAt: { gte: start, lt: end },
+      NOT: { errorType: { in: ["daily_quota", "rate_limit"] } },
+    },
+  });
+  const limit = getModelLimit(model);
+  const fractionUsed = limit.rpd > 0 ? used / limit.rpd : 0;
+  return {
+    model,
+    used,
+    limit: limit.rpd,
+    remaining: Math.max(0, limit.rpd - used),
+    fractionUsed,
+    confirmed: limit.confirmed,
+    resetsAt: nextPacificMidnightUtc().toISOString(),
+    level: levelFor(fractionUsed),
+  };
+}
+
+/** Today's usage across every model this project actually calls. */
+export async function getAllModelUsageToday(): Promise<ModelQuotaUsage[]> {
+  const models = Object.keys(MODEL_QUOTA_LIMITS);
+  return Promise.all(models.map((m) => getModelUsageToday(m)));
+}
+
+export class QuotaHeadroomError extends Error {
+  constructor(public readonly usage: ModelQuotaUsage, public readonly requestsNeeded: number) {
+    super(
+      `Not enough ${usage.model} quota left today to safely start this operation: ` +
+        `${usage.remaining} of ${usage.limit} daily requests remain, this operation needs up to ${requestsNeeded}. ` +
+        `Resets at ${usage.resetsAt} (midnight Pacific Time). Try again after it resets, or with a smaller operation.`
+    );
+    this.name = "QuotaHeadroomError";
+  }
+}
+
+/**
+ * Pre-flight gate: call before starting an operation that will make
+ * `requestsNeeded` Gemini requests against `model`. Throws QuotaHeadroomError
+ * — with the specific remaining/needed/reset numbers, not a generic
+ * "quota exceeded" — if today's usage is already past the block threshold
+ * OR there isn't enough remaining headroom for this specific operation,
+ * whichever is the tighter constraint. Never lets an operation start that's
+ * already known to be unable to finish.
+ */
+export async function assertQuotaHeadroom(model: string, requestsNeeded: number): Promise<ModelQuotaUsage> {
+  const usage = await getModelUsageToday(model);
+  if (usage.level === "block" || usage.remaining < requestsNeeded) {
+    throw new QuotaHeadroomError(usage, requestsNeeded);
+  }
+  return usage;
+}

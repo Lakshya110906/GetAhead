@@ -5,6 +5,8 @@ import { prisma } from "@/lib/prisma";
 import { generateQuestionPaperStreamed, DailyQuotaExhaustedError, PaperValidationFailedError } from "@/lib/question-agents";
 import { consumeQuota, refundQuota, QuotaExceededError } from "@/lib/quota";
 import { assertSpendGateOpen, SpendLimitReachedError } from "@/lib/spendControl";
+import { assertQuotaHeadroom, QuotaHeadroomError } from "@/lib/geminiQuotaState";
+import { MODEL_ID as PAPER_MODEL_ID } from "@/lib/question-agents";
 import { parseCustomInstructions, checkForConflict } from "@/lib/paperConstraintParser";
 
 // STOPGAP, not the fix — this route holds one serverless invocation open for
@@ -95,6 +97,18 @@ export async function POST(request: NextRequest) {
   // conflictResolution === "useField" (or no parsed constraints at all): the
   // structured fields already govern, effectiveTotalMarks/effectiveQuestionTypes
   // keep their field-derived defaults set above.
+
+  try {
+    await assertQuotaHeadroom(PAPER_MODEL_ID, 3);
+  } catch (err) {
+    if (err instanceof QuotaHeadroomError) {
+      return new Response(
+        JSON.stringify({ error: err.message, quotaExceeded: true, remaining: err.usage.remaining, limit: err.usage.limit, resetsAt: err.usage.resetsAt }),
+        { status: 503 }
+      );
+    }
+    throw err;
+  }
 
   try {
     await consumeQuota(sessionUserId, "PAPER_GENERATION");

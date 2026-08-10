@@ -97,6 +97,28 @@ export const GEMINI_GRADE_RESPONSE_SCHEMA: Schema = {
   required: ["questionNumber", "marksAwarded", "marksAvailable", "correctPoints", "incorrectPoints", "errorType", "groundingQuote", "feedback"],
 };
 
+// ─── Stage 2 (alternate): GRADE, batched — one call for the whole sheet ────
+// Experimental path (Section 2b): same per-question fields, just requested
+// for every question in a single call instead of one call each. Kept as a
+// distinct schema/type rather than reusing questionGradeSchema's array
+// directly so the two paths can evolve independently if batching needs
+// different constraints later.
+export const gradeBatchSchema = z.object({
+  grades: z.array(questionGradeSchema),
+});
+export type GradeBatch = z.infer<typeof gradeBatchSchema>;
+
+export const GEMINI_GRADE_BATCH_RESPONSE_SCHEMA: Schema = {
+  type: SchemaType.OBJECT,
+  properties: {
+    grades: {
+      type: SchemaType.ARRAY,
+      items: GEMINI_GRADE_RESPONSE_SCHEMA,
+    },
+  },
+  required: ["grades"],
+};
+
 // ─── Final, persisted shape ──────────────────────────────────────────────────
 export interface TopicBreakdown {
   topic: string;

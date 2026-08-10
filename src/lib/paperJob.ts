@@ -14,6 +14,8 @@ import {
   buildValidationContext,
   withRetry,
   DailyQuotaExhaustedError,
+  GeminiAuthError,
+  GeminiInvalidArgumentError,
   type PaperConfig,
   type RepairAttemptLog,
 } from "@/lib/question-agents";
@@ -166,13 +168,12 @@ export async function processJobStep(jobId: string): Promise<void> {
 
     if (job.step === "reviewer") {
       if (!job.plannerPlan || !job.draftPaper) throw new Error("Job reached the reviewer step with no draft persisted");
-      const plan: PlannerPlan = JSON.parse(job.plannerPlan);
       const draft: GeneratedPaperShape = JSON.parse(job.draftPaper);
 
       agentStates.reviewer = { status: "running", startedAt: new Date().toISOString() };
       await prisma.paperGenerationJob.update({ where: { id: jobId }, data: { agentStates: JSON.stringify(agentStates) } });
 
-      const reviewed = await withRetry(() => runReviewerAgent(genAI, config, plan, draft), "Reviewer Agent", 1);
+      const reviewed = await withRetry(() => runReviewerAgent(genAI, config, draft), "Reviewer Agent", 1);
       agentStates.reviewer = { status: "done", startedAt: agentStates.reviewer.startedAt, finishedAt: new Date().toISOString() };
 
       await prisma.paperGenerationJob.update({
@@ -286,6 +287,29 @@ export async function processJobStep(jobId: string): Promise<void> {
           retryWorthwhile: false,
           lockedAt: null,
         },
+      });
+      await refundQuota(job.userId, "PAPER_GENERATION");
+      return;
+    }
+
+    // Auth and invalid-argument errors are exactly as non-retryable as a
+    // daily-quota exhaustion — retrying the identical request against a bad
+    // API key or a malformed request fails identically every time. Without
+    // this, they fell into the generic branch below and were requeued up to
+    // MAX_STEP_ATTEMPTS times for no benefit (audited and fixed per Section
+    // 4(e) — every retry site must agree on this classification).
+    if (err instanceof GeminiAuthError || err instanceof GeminiInvalidArgumentError) {
+      const message = err.message;
+      logger.error(`Paper generation job ${jobId} hit a non-retryable Gemini error at step "${job.step}"`, {
+        route: "processJobStep",
+        jobId,
+        userId: job.userId,
+        step: job.step,
+        message,
+      });
+      await prisma.paperGenerationJob.update({
+        where: { id: jobId },
+        data: { status: "failed", error: message, retryWorthwhile: false, lockedAt: null },
       });
       await refundQuota(job.userId, "PAPER_GENERATION");
       return;

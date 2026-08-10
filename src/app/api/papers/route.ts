@@ -5,6 +5,8 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { consumeQuota, QuotaExceededError } from "@/lib/quota";
 import { assertSpendGateOpen, SpendLimitReachedError } from "@/lib/spendControl";
+import { assertQuotaHeadroom, QuotaHeadroomError } from "@/lib/geminiQuotaState";
+import { MODEL_ID as PAPER_MODEL_ID } from "@/lib/question-agents";
 import { parseCustomInstructions, checkForConflict } from "@/lib/paperConstraintParser";
 import { initialAgentStates, processJobStep } from "@/lib/paperJob";
 import { reportApiError } from "@/lib/apiError";
@@ -85,6 +87,22 @@ export async function POST(request: NextRequest) {
     } else if (conflictResolution === "useImplied") {
       if (parsedConstraints.impliedTotalMarks !== null) effectiveTotalMarks = parsedConstraints.impliedTotalMarks;
       if (parsedConstraints.impliedQuestionTypes !== null) effectiveQuestionTypes = parsedConstraints.impliedQuestionTypes;
+    }
+
+    // Gemini's own daily quota: best-case generation is 3 requests
+    // (planner + generator + reviewer); failing here means the user never
+    // burns their own daily generation credit on a job that was already
+    // going to run out of Gemini quota partway through the step machine.
+    try {
+      await assertQuotaHeadroom(PAPER_MODEL_ID, 3);
+    } catch (err) {
+      if (err instanceof QuotaHeadroomError) {
+        return NextResponse.json(
+          { error: err.message, quotaExceeded: true, remaining: err.usage.remaining, limit: err.usage.limit, resetsAt: err.usage.resetsAt },
+          { status: 503 }
+        );
+      }
+      throw err;
     }
 
     try {

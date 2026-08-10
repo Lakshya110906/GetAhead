@@ -1,0 +1,52 @@
+{
+  "id": "sheet-b-errors",
+  "totalMarks": 15,
+  "expectedObtainedMarks": 4,
+  "questions": [
+    {
+      "questionNumber": 1,
+      "expectedMarks": 2,
+      "expectedMaxMarks": 5,
+      "errorType": "arithmetic_slip",
+      "plantedError": "14 - 6 = 8, not 20. The isolation method is right, the subtraction is wrong, so x = 4, not 10.",
+      "keywords": [
+        "8",
+        "20",
+        "subtract",
+        "arithmetic",
+        "x = 4",
+        "x=4"
+      ]
+    },
+    {
+      "questionNumber": 2,
+      "expectedMarks": 1,
+      "expectedMaxMarks": 5,
+      "errorType": "method_error",
+      "plantedError": "Wrong formula — acceleration is (v-u)/t = 20/4 = 5 m/s^2, not v*t. Multiplying velocity by time is not the acceleration formula.",
+      "keywords": [
+        "formula",
+        "v-u",
+        "divide",
+        "5 m/s",
+        "wrong formula",
+        "(v-u)/t"
+      ]
+    },
+    {
+      "questionNumber": 3,
+      "expectedMarks": 1,
+      "expectedMaxMarks": 5,
+      "errorType": "method_error",
+      "plantedError": "Wrong formula — area of a circle is pi*r^2 = 22/7 x 49 = 154 cm^2, not pi*r. The student used r instead of r^2.",
+      "keywords": [
+        "r^2",
+        "154",
+        "wrong formula",
+        "radius squared",
+        "pi*r^2",
+        "pi r^2"
+      ]
+    }
+  ]
+}

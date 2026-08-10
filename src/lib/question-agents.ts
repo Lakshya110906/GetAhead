@@ -13,7 +13,7 @@ import { parseCustomInstructions, type ParsedConstraints } from "./paperConstrai
 import { timedGeminiCall } from "./geminiCallLog";
 
 const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY || process.env.GEMINI_API_KEY;
-const MODEL_ID = "gemini-2.5-flash";
+export const MODEL_ID = "gemini-2.5-flash";
 
 export function isGeminiConfigured(): boolean {
   return !!apiKey && apiKey !== "your-gemini-api-key-here" && !apiKey.startsWith("your-gemini");
@@ -38,6 +38,7 @@ export {
   AUTH_ERROR_PATTERN,
   INVALID_ARGUMENT_PATTERN,
   RETRYABLE_ERROR_PATTERN,
+  extractRetryDelay,
 } from "./geminiErrorPatterns";
 import {
   DAILY_QUOTA_PATTERN,
@@ -45,6 +46,7 @@ import {
   AUTH_ERROR_PATTERN,
   INVALID_ARGUMENT_PATTERN,
   RETRYABLE_ERROR_PATTERN,
+  extractRetryDelay,
 } from "./geminiErrorPatterns";
 
 export class DailyQuotaExhaustedError extends Error {
@@ -52,15 +54,24 @@ export class DailyQuotaExhaustedError extends Error {
     super(
       `${label}: the Gemini API's daily request quota (RPD) is exhausted for this project. ` +
         `This is a daily limit, not a per-minute one — it will not clear within seconds or by retrying now. ` +
-        `It resets at midnight Pacific Time, per Google's documented reset window for Gemini API daily quotas.`
+        `It resets at midnight Pacific Time, per Google's documented reset window for Gemini API daily quotas ` +
+        `(the 429 response for a daily-quota error does not include a specific reset timestamp — this is Google's documented policy, not a parsed value).`
     );
     this.name = "DailyQuotaExhaustedError";
   }
 }
 
 export class GeminiRateLimitError extends Error {
-  constructor(label: string) {
-    super(`${label}: the Gemini API's per-minute rate limit (RPM) was hit. This clears within seconds — retrying shortly is the right move.`);
+  // retryAfter carries the REAL server-provided delay (parsed from the 429
+  // response's RetryInfo), when Google's response included one — never a
+  // guess. Callers that want to actually wait before letting the user retry
+  // can use this instead of inventing their own number.
+  constructor(label: string, public readonly retryAfter?: { raw: string; ms: number }) {
+    super(
+      retryAfter
+        ? `${label}: the Gemini API's per-minute rate limit (RPM) was hit. Google says retry after ${retryAfter.raw} — this clears quickly, retrying then is the right move.`
+        : `${label}: the Gemini API's per-minute rate limit (RPM) was hit. This clears within seconds — retrying shortly is the right move.`
+    );
     this.name = "GeminiRateLimitError";
   }
 }
@@ -125,9 +136,14 @@ export async function withRetry<T>(fn: () => Promise<T>, label: string, attempts
         throw new GeminiInvalidArgumentError(label);
       }
       if (PER_MINUTE_QUOTA_PATTERN.test(message)) {
-        if (i === attempts - 1) throw new GeminiRateLimitError(label);
-        const backoffMs = 1000 * Math.pow(2, i);
-        console.warn(`${label} failed: per-minute Gemini rate limit (RPM) — retrying in ${backoffMs}ms (attempt ${i + 1}/${attempts}).`);
+        const retryAfter = extractRetryDelay(err) ?? undefined;
+        if (i === attempts - 1) throw new GeminiRateLimitError(label, retryAfter);
+        // Use Google's own server-computed delay when the response included
+        // one — it knows the real remaining window, an exponential guess
+        // doesn't. Falls back to the guess only when the response genuinely
+        // didn't include a RetryInfo entry.
+        const backoffMs = retryAfter?.ms ?? 1000 * Math.pow(2, i);
+        console.warn(`${label} failed: per-minute Gemini rate limit (RPM) — retrying in ${backoffMs}ms (attempt ${i + 1}/${attempts})${retryAfter ? ` [server-specified: ${retryAfter.raw}]` : " [estimated]"}.`);
         await new Promise((resolve) => setTimeout(resolve, backoffMs));
         continue;
       }
@@ -609,10 +625,46 @@ Write plain text only — no LaTeX, no markdown, no dollar signs; spell out form
 }
 
 // 3. Reviewer Agent
+// Narrowed scope (see Section 2 findings): everything mechanically checkable
+// — question/marks counts, placeholder text, markScheme presence and sums,
+// section labels — is already enforced for free by validatePaper() and
+// doesn't need a second Gemini call. A real run showed the previous,
+// broader "audit everything" prompt made zero changes to a draft that had
+// already failed validatePaper()'s topic check — it wasn't earning the
+// call. What code genuinely cannot check is free-text custom-instruction
+// compliance (arbitrary constraints in config.customPrompt), factual/
+// mathematical correctness of answers, and difficulty calibration as
+// cognitive demand — so that's what this agent is for now, not a general
+// polish pass. Exported (not inlined in runReviewerAgent) so its content
+// can be asserted on directly in tests without a live Gemini call.
+export function buildReviewerPrompt(config: PaperConfig, draft: GeneratedPaperShape): string {
+  return `You are the compliance reviewer agent. The draft question paper below was already generated to match a structure plan; your job is to check the things code cannot check, and fix anything wrong. Do not touch anything that's already correct.
+
+Subject: ${config.subject}
+Grade: ${config.grade}
+Target difficulty: ${config.difficulty}
+${delimitCustomPrompt(config.customPrompt)}
+${config.studyMaterialText ? `Study material reference:
+--- START STUDY MATERIAL ---
+${config.studyMaterialText}
+--- END STUDY MATERIAL ---` : ""}
+
+Draft question paper:
+${JSON.stringify(draft, null, 2)}
+
+Your job, in priority order:
+1. CUSTOM INSTRUCTION COMPLIANCE — this is the primary reason you exist. If a custom prompt is present above, check every question against it line by line. If any question violates a stated constraint (a banned topic, a required focus area, a formatting rule, a numerical-only or non-numerical-only requirement, anything else stated), rewrite that question so it actually complies. If there is no custom prompt, skip this.
+2. FACTUAL AND MATHEMATICAL CORRECTNESS — verify every answer and mark scheme is actually correct for the question asked; fix any that are wrong. The markScheme array must still sum to exactly that question's marks after any fix.
+3. DIFFICULTY CALIBRATION — verify each question's COGNITIVE DEMAND (recall vs. application vs. analysis) genuinely matches "${config.difficulty}", not just its length; adjust wording if it doesn't.
+
+Do not change the number of questions, their order, or the marks assigned to any question. Do not "polish" wording that isn't actually wrong — only fix real violations of the three checks above.
+
+Output the final question paper, with reviewNotes listing specifically what you fixed and why (e.g. "Q3 violated the custom instruction to avoid numerical answers — rewrote as a conceptual question") — or an empty array if nothing needed changing.`;
+}
+
 export async function runReviewerAgent(
   genAI: GoogleGenerativeAI,
   config: PaperConfig,
-  plan: PlannerPlan,
   draft: GeneratedPaperShape
 ): Promise<GeneratedPaperShape> {
   const model = genAI.getGenerativeModel({
@@ -624,34 +676,7 @@ export async function runReviewerAgent(
     },
   });
 
-  const prompt = `You are the quality reviewer agent. Audit and polish the draft question paper below.
-
-Subject: ${config.subject}
-Grade: ${config.grade}
-Target difficulty: ${config.difficulty}
-${delimitCustomPrompt(config.customPrompt)}
-${config.studyMaterialText ? `Study material reference:
---- START STUDY MATERIAL ---
-${config.studyMaterialText}
---- END STUDY MATERIAL ---` : ""}
-
-Structure plan (the draft must match this exactly — same number of questions per section, same marks per question; do not add, drop, or resize questions):
-${JSON.stringify(plan, null, 2)}
-
-Draft question paper:
-${JSON.stringify(draft, null, 2)}
-
-Auditing instructions:
-1. Ensure the difficulty of all questions matches "${config.difficulty}" as COGNITIVE DEMAND (recall vs. application vs. analysis), not question length.
-2. Check that answers and mark schemes are factually and mathematically correct; fix any that are wrong. Every question must keep a markScheme array whose marks sum to exactly that question's marks.
-3. Fix typos, grammar, and layout issues.
-4. Verify MCQs have exactly 4 options and the answer matches one of them.
-5. Refine questions to be clear and pedagogically sound, and specific to the actual examinable concepts in the topic — not a generic template with the topic name slotted in.
-6. Do not change the number of questions or the marks assigned to any question — only improve their content.
-7. Write plain text only — no LaTeX, no markdown, no dollar signs.
-8. Never remove or shrink the markScheme field.
-
-Output the final polished question paper, with reviewNotes listing what you improved (or an empty array if nothing needed changing).`;
+  const prompt = buildReviewerPrompt(config, draft);
 
   const parsed = await timedGeminiCall({ operation: "paper_reviewer", model: MODEL_ID }, async () => {
     const result = await model.generateContent(prompt);
@@ -755,7 +780,7 @@ async function generateValidatedPaper(
     emit("agent_start", { agent: "reviewer", message: "Quality Reviewer Agent activated. Auditing draft..." });
     emit("agent_log", { agent: "reviewer", message: "Checking difficulty calibration, grammar, and answer accuracy..." });
   }
-  let current = await withRetry(() => runReviewerAgent(genAI, config, plan, current0), "Reviewer Agent");
+  let current = await withRetry(() => runReviewerAgent(genAI, config, current0), "Reviewer Agent");
   if (emit) emit("agent_done", { agent: "reviewer", message: "Review complete." });
 
   const attemptLogs: RepairAttemptLog[] = [];

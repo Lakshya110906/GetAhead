@@ -1,0 +1,41 @@
+{
+  "detectedSubject": "Chemistry",
+  "detectedGrade": "10th",
+  "questions": [
+    {
+      "questionNumber": 1,
+      "questionText": "Balance the following chemical equation: N2 + H2 -> NH3",
+      "marksAvailable": 5,
+      "studentAnswer": "N2 + 3H2 -> 2NH3. This is balanced because there are 2 nitrogen atoms and 6 hydrogen atoms on both sides of the equation.",
+      "readable": true
+    },
+    {
+      "questionNumber": 2,
+      "questionText": "State the type of chemical reaction that occurs when a candle burns in air, and name the products formed.",
+      "marksAvailable": 5,
+      "studentAnswer": "This is a combustion reaction. The wax (a hydrocarbon) reacts with oxygen in the air to produce carbon dioxide and water vapor, releasing heat and light.",
+      "readable": true
+    },
+    {
+      "questionNumber": 3,
+      "questionText": "Balance the following chemical equation: Fe + O2 -> Fe2O3",
+      "marksAvailable": 5,
+      "studentAnswer": "4Fe + 3O2 -> 4Fe2O3. I balanced the iron and oxygen atoms on the reactant side using coefficients 4 and 3.",
+      "readable": true
+    },
+    {
+      "questionNumber": 4,
+      "questionText": "Calculate the pH of a solution with hydrogen ion concentration [H+] = 1 x 10^-4 M.",
+      "marksAvailable": 5,
+      "studentAnswer": "pH = -log[H+] = -log(10^-4) = -4. So the pH of the solution is -4.",
+      "readable": true
+    },
+    {
+      "questionNumber": 5,
+      "questionText": "Name the gas evolved when dilute hydrochloric acid reacts with zinc granules, and describe one test to identify it.",
+      "marksAvailable": 5,
+      "studentAnswer": "Oxygen gas is evolved when zinc reacts with dilute HCl. To test for it, bring a glowing splint near the mouth of the test tube the splint will relight, confirming the gas is oxygen.",
+      "readable": true
+    }
+  ]
+}
