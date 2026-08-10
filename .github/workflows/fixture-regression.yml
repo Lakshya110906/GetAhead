@@ -1,0 +1,72 @@
+name: Fixture regression (replayed)
+
+# Runs the five (six, including the blank-page case) regression fixtures
+# against RECORDED Gemini responses (fixtures/gemini-cache) — never a live
+# call, no API key needed, seconds not minutes. Triggers on anything that
+# can change what these fixtures should produce: the grading prompts, the
+# response validation schemas, the paper/evaluation pipelines that call a
+# model, the fixture content itself, or the recordings.
+#
+# A regression here blocks the merge — mark this check as required in
+# branch protection.
+on:
+  pull_request:
+    paths:
+      - "src/lib/answerSheetGrading.ts"
+      - "src/lib/answerSheetSchema.ts"
+      - "src/lib/question-agents.ts"
+      - "src/lib/geminiErrorPatterns.ts"
+      - "src/lib/paperJob.ts"
+      - "src/lib/evaluationWorker.ts"
+      - "src/lib/paperValidation.ts"
+      - "src/lib/geminiFixtureCache.ts"
+      - "src/app/api/evaluations/**"
+      - "src/app/api/papers/**"
+      - "src/app/api/questions/**"
+      - "src/app/api/tutor/**"
+      - "fixtures/regression-set/**"
+      - "fixtures/gemini-cache/**"
+      - "scripts/generate-fixtures.ts"
+      - "scripts/lib/fixturePdf.ts"
+      - "src/lib/__tests__/fixtureRegression.test.ts"
+  push:
+    branches: [main]
+    paths:
+      - "src/lib/answerSheetGrading.ts"
+      - "src/lib/answerSheetSchema.ts"
+      - "src/lib/question-agents.ts"
+      - "src/lib/geminiErrorPatterns.ts"
+      - "src/lib/paperJob.ts"
+      - "src/lib/evaluationWorker.ts"
+      - "src/lib/paperValidation.ts"
+      - "src/lib/geminiFixtureCache.ts"
+      - "src/app/api/evaluations/**"
+      - "src/app/api/papers/**"
+      - "src/app/api/questions/**"
+      - "src/app/api/tutor/**"
+      - "fixtures/regression-set/**"
+      - "fixtures/gemini-cache/**"
+      - "scripts/generate-fixtures.ts"
+      - "scripts/lib/fixturePdf.ts"
+      - "src/lib/__tests__/fixtureRegression.test.ts"
+  workflow_dispatch: {}
+
+jobs:
+  fixture-regression:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      # Deliberately NO GEMINI_API_KEY here — this suite must never make a
+      # real call. If a fixture's recording is missing or stale, the test
+      # fails with a specific "run npm run fixtures:live" message instead
+      # of silently trying (and failing) to reach the network.
+      - name: Run fixture regression suite (replayed, zero live calls)
+        run: npx vitest run src/lib/__tests__/fixtureRegression.test.ts

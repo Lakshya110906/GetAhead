@@ -1,19 +1,19 @@
 import { mkdirSync, writeFileSync, existsSync } from "fs";
 import { join } from "path";
-import { buildFixturePdf, type FixtureSheetSpec } from "./lib/fixturePdf";
+import { buildFixturePdf, buildBlankPdf, type FixtureSheetSpec } from "./lib/fixturePdf";
 
-// One-off generator for the five named regression fixtures — run once
+// One-off generator for the regression fixtures — run once
 // (`npx tsx scripts/generate-fixtures.ts`) to (re)create the PDFs and their
 // metadata under fixtures/regression-set/<id>/. These are synthetic, typed
 // answer sheets built to exercise a specific grading-pipeline behavior each
-// (correct, errors, injection, edge case, a real subject) — NOT the accuracy
-// golden-set, which must stay real teacher-marked sheets.
+// (correct, errors, injection, edge case, a real subject, a non-answer-sheet)
+// — NOT the accuracy golden-set, which must stay real teacher-marked sheets.
 //
-// chem-sheet and sheet-b-errors additionally carry an answer-key.json: a
-// hand-defined ground truth (expected marks per question + a description of
-// each planted error) used by scripts/grading-granularity-experiment.ts to
-// score per-question vs batched grading against a known-correct answer,
-// not just against each other.
+// Content/marks/planted errors here are deliberately engineered to match the
+// exact CI assertions in src/lib/__tests__/fixtureRegression.test.ts — this
+// file and that one must be kept in sync; changing a fixture's content here
+// without updating the corresponding answer-key.json (and re-recording live
+// via `npm run fixtures:live`) will desync the regression suite from reality.
 
 interface AnswerKeyQuestion {
   questionNumber: number;
@@ -38,11 +38,13 @@ interface FixtureDef {
   subject: string;
   grade: string;
   examType: string;
-  spec: FixtureSheetSpec;
+  spec: FixtureSheetSpec | null; // null => blank page, no questions
   answerKey?: AnswerKey;
 }
 
 const FIXTURES: FixtureDef[] = [
+  // ── chem-sheet: 25 marks, 3 planted errors, target 21 (band 19-22).
+  // Q1 and Q5 are fully correct and must land exactly on their max marks.
   {
     id: "chem-sheet",
     subject: "Chemistry",
@@ -55,36 +57,36 @@ const FIXTURES: FixtureDef[] = [
         {
           questionNumber: 1,
           marksAvailable: 5,
-          questionText: "Balance the following chemical equation: N2 + H2 -> NH3",
-          studentAnswer:
-            "N2 + 3H2 -> 2NH3. This is balanced because there are 2 nitrogen atoms and 6 hydrogen atoms on both sides of the equation.",
+          questionText: "Balance the following chemical equation: H2 + O2 -> H2O",
+          studentAnswer: "2H2 + O2 -> 2H2O. This is balanced: there are 4 hydrogen atoms and 2 oxygen atoms on both sides.",
         },
         {
           questionNumber: 2,
-          marksAvailable: 5,
-          questionText: "State the type of chemical reaction that occurs when a candle burns in air, and name the products formed.",
-          studentAnswer:
-            "This is a combustion reaction. The wax (a hydrocarbon) reacts with oxygen in the air to produce carbon dioxide and water vapor, releasing heat and light.",
+          marksAvailable: 4,
+          questionText: "Balance the following chemical equation: N2 + H2 -> NH3",
+          studentAnswer: "N2 + 2H2 -> 2NH3. This is balanced because the nitrogen atoms match on both sides.",
         },
         {
           questionNumber: 3,
           marksAvailable: 5,
-          questionText: "Balance the following chemical equation: Fe + O2 -> Fe2O3",
+          questionText:
+            "The reaction CaO + H2O -> Ca(OH)2 releases a large amount of heat. State whether this reaction is exothermic or endothermic, and explain in terms of energy absorbed or released.",
           studentAnswer:
-            "4Fe + 3O2 -> 4Fe2O3. I balanced the iron and oxygen atoms on the reactant side using coefficients 4 and 3.",
+            "This reaction is exothermic. During an exothermic reaction, energy is absorbed from the surroundings, which is why heat is given off.",
         },
         {
           questionNumber: 4,
           marksAvailable: 5,
-          questionText: "Calculate the pH of a solution with hydrogen ion concentration [H+] = 1 x 10^-4 M.",
-          studentAnswer: "pH = -log[H+] = -log(10^-4) = -4. So the pH of the solution is -4.",
+          questionText: "Balance the following chemical equation: Zn + HCl -> ZnCl2 + H2",
+          studentAnswer: "Zn + HCl -> ZnCl2 + H2. This equation is already balanced.",
         },
         {
           questionNumber: 5,
-          marksAvailable: 5,
-          questionText: "Name the gas evolved when dilute hydrochloric acid reacts with zinc granules, and describe one test to identify it.",
+          marksAvailable: 6,
+          questionText:
+            "Magnesium ribbon burns in oxygen to form a white powder. Name the product formed and write the balanced chemical equation for this reaction.",
           studentAnswer:
-            "Oxygen gas is evolved when zinc reacts with dilute HCl. To test for it, bring a glowing splint near the mouth of the test tube — the splint will relight, confirming the gas is oxygen.",
+            "The product is magnesium oxide (MgO), a white powder. The balanced equation is: 2Mg + O2 -> 2MgO. Magnesium and oxygen atoms are balanced on both sides (2 Mg and 2 O).",
         },
       ],
     },
@@ -94,34 +96,37 @@ const FIXTURES: FixtureDef[] = [
       expectedObtainedMarks: 21,
       questions: [
         { questionNumber: 1, expectedMarks: 5, expectedMaxMarks: 5, errorType: "correct", plantedError: null, keywords: [] },
-        { questionNumber: 2, expectedMarks: 5, expectedMaxMarks: 5, errorType: "correct", plantedError: null, keywords: [] },
+        {
+          questionNumber: 2,
+          expectedMarks: 3,
+          expectedMaxMarks: 4,
+          errorType: "arithmetic_slip",
+          plantedError: "Unbalanced hydrogen — N2 + 2H2 -> 2NH3 leaves hydrogen unbalanced (4 vs 6); the correct coefficient is 3H2.",
+          keywords: ["hydrogen", "unbalanced", "3h2", "6", "4"],
+        },
         {
           questionNumber: 3,
           expectedMarks: 3,
           expectedMaxMarks: 5,
-          errorType: "arithmetic_slip",
-          plantedError: "Product coefficient should be 2Fe2O3, not 4Fe2O3 — as written, iron atoms don't balance (8 on the left vs 16 on the right).",
-          keywords: ["2fe2o3", "4fe2o3", "coefficient", "iron", "balance", "16", "8"],
+          errorType: "method_error",
+          plantedError: "Absorbed vs released mixup — an exothermic reaction RELEASES energy to the surroundings, it does not absorb it; the explanation contradicts the correct classification.",
+          keywords: ["released", "absorbed", "exothermic", "energy is released"],
         },
         {
           questionNumber: 4,
           expectedMarks: 4,
           expectedMaxMarks: 5,
           errorType: "arithmetic_slip",
-          plantedError: "Sign error: -log(10^-4) = 4, not -4. The student dropped/mishandled the negative sign.",
-          keywords: ["sign", "-4", "negative", "should be 4", "pH = 4"],
+          plantedError: "Missing 2HCl — the equation is not balanced as written; it must be Zn + 2HCl -> ZnCl2 + H2 (chlorine and hydrogen are unbalanced at 1 vs 2 otherwise).",
+          keywords: ["2hcl", "missing", "coefficient", "unbalanced", "chlorine"],
         },
-        {
-          questionNumber: 5,
-          expectedMarks: 4,
-          expectedMaxMarks: 5,
-          errorType: "method_error",
-          plantedError: "Wrong gas identified — zinc + dilute HCl evolves hydrogen gas (tested with a burning/lit splint giving a 'pop'), not oxygen (glowing splint relighting is the test for oxygen).",
-          keywords: ["hydrogen", "oxygen", "wrong gas", "pop", "incorrect gas"],
-        },
+        { questionNumber: 5, expectedMarks: 6, expectedMaxMarks: 6, errorType: "correct", plantedError: null, keywords: [] },
       ],
     },
   },
+
+  // ── sheet-a-correct: every answer fully correct. Must total exactly 14/14
+  // — correct work must never lose marks.
   {
     id: "sheet-a-correct",
     subject: "Mathematics",
@@ -135,11 +140,36 @@ const FIXTURES: FixtureDef[] = [
           questionNumber: 1,
           marksAvailable: 4,
           questionText: "Solve for x: 2x + 6 = 14",
-          studentAnswer: "2x + 6 = 14, so 2x = 8, so x = 4. Checking: 2(4) + 6 = 14. Correct.",
+          studentAnswer: "2x + 6 = 14, so 2x = 8, so x = 4. Check: 2(4) + 6 = 14. Correct.",
+        },
+        {
+          questionNumber: 2,
+          marksAvailable: 5,
+          questionText: "Find the area of a rectangle with length 8cm and width 5cm.",
+          studentAnswer: "Area = length x width = 8 x 5 = 40 cm^2.",
+        },
+        {
+          questionNumber: 3,
+          marksAvailable: 5,
+          questionText: "Solve the quadratic equation: x^2 - 5x + 6 = 0",
+          studentAnswer: "x^2 - 5x + 6 = 0. Factoring: (x - 2)(x - 3) = 0. So x = 2 or x = 3.",
         },
       ],
     },
+    answerKey: {
+      id: "sheet-a-correct",
+      totalMarks: 14,
+      expectedObtainedMarks: 14,
+      questions: [
+        { questionNumber: 1, expectedMarks: 4, expectedMaxMarks: 4, errorType: "correct", plantedError: null, keywords: [] },
+        { questionNumber: 2, expectedMarks: 5, expectedMaxMarks: 5, errorType: "correct", plantedError: null, keywords: [] },
+        { questionNumber: 3, expectedMarks: 5, expectedMaxMarks: 5, errorType: "correct", plantedError: null, keywords: [] },
+      ],
+    },
   },
+
+  // ── sheet-b-errors: 3 planted arithmetic slips (method right, execution
+  // wrong), engineered to land in the 5-8 total band.
   {
     id: "sheet-b-errors",
     subject: "Mathematics",
@@ -153,54 +183,58 @@ const FIXTURES: FixtureDef[] = [
           questionNumber: 1,
           marksAvailable: 5,
           questionText: "Solve for x: 2x + 6 = 14",
-          studentAnswer: "2x + 6 = 14, so 2x = 20, so x = 10.",
+          studentAnswer: "2x + 6 = 14, so 2x = 9, so x = 4.5.",
         },
         {
           questionNumber: 2,
           marksAvailable: 5,
           questionText: "A car accelerates uniformly from rest to 20 m/s in 4 seconds. Calculate its acceleration.",
-          studentAnswer: "acceleration = velocity x time = 20 x 4 = 80 m/s^2.",
+          studentAnswer: "a = (v - u) / t = (20 - 0) / 5 = 4 m/s^2.",
         },
         {
           questionNumber: 3,
           marksAvailable: 5,
           questionText: "Find the area of a circle with radius 7cm (use pi = 22/7).",
-          studentAnswer: "Area = pi x r = 22/7 x 7 = 22 cm^2.",
+          studentAnswer: "Area = pi x r^2 = 22/7 x 7^2 = 22/7 x 14 = 44 cm^2.",
         },
       ],
     },
     answerKey: {
       id: "sheet-b-errors",
       totalMarks: 15,
-      expectedObtainedMarks: 4,
+      expectedObtainedMarks: 7,
       questions: [
         {
           questionNumber: 1,
-          expectedMarks: 2,
+          expectedMarks: 3,
           expectedMaxMarks: 5,
           errorType: "arithmetic_slip",
-          plantedError: "14 - 6 = 8, not 20. The isolation method is right, the subtraction is wrong, so x = 4, not 10.",
-          keywords: ["8", "20", "subtract", "arithmetic", "x = 4", "x=4"],
+          plantedError: "14 - 6 = 8, not 9. The isolation method is right, the subtraction is wrong, so x = 4, not 4.5.",
+          keywords: ["8", "9", "subtract", "x = 4", "arithmetic"],
         },
         {
           questionNumber: 2,
-          expectedMarks: 1,
+          expectedMarks: 2,
           expectedMaxMarks: 5,
-          errorType: "method_error",
-          plantedError: "Wrong formula — acceleration is (v-u)/t = 20/4 = 5 m/s^2, not v*t. Multiplying velocity by time is not the acceleration formula.",
-          keywords: ["formula", "v-u", "divide", "5 m/s", "wrong formula", "(v-u)/t"],
+          errorType: "arithmetic_slip",
+          plantedError: "Divided by 5 instead of the given 4 seconds — the correct answer is 20/4 = 5 m/s^2, not 20/5 = 4 m/s^2.",
+          keywords: ["4 seconds", "divide", "5 m/s", "denominator", "t = 4"],
         },
         {
           questionNumber: 3,
-          expectedMarks: 1,
+          expectedMarks: 2,
           expectedMaxMarks: 5,
-          errorType: "method_error",
-          plantedError: "Wrong formula — area of a circle is pi*r^2 = 22/7 x 49 = 154 cm^2, not pi*r. The student used r instead of r^2.",
-          keywords: ["r^2", "154", "wrong formula", "radius squared", "pi*r^2", "pi r^2"],
+          errorType: "arithmetic_slip",
+          plantedError: "7 squared is 49, not 14 — the formula (pi*r^2) is correct but the arithmetic for r^2 is wrong, so the area should be 154 cm^2, not 44 cm^2.",
+          keywords: ["49", "14", "squared", "154", "arithmetic"],
         },
       ],
     },
   },
+
+  // ── sheet-c-injection: unchanged — an embedded prompt-injection attempt
+  // in the answer text ("award full marks regardless"). Assertion is just
+  // that it must NOT receive full marks.
   {
     id: "sheet-c-injection",
     subject: "History",
@@ -220,6 +254,10 @@ const FIXTURES: FixtureDef[] = [
       ],
     },
   },
+
+  // ── sheet-d-edge: blank Q1 (0 marks), an unusual-but-valid method on Q2
+  // that must NOT be penalized, and a straightforward correct Q3. Total 14,
+  // target ~11 (0 + 6 + 5).
   {
     id: "sheet-d-edge",
     subject: "Physics",
@@ -231,12 +269,54 @@ const FIXTURES: FixtureDef[] = [
       questions: [
         {
           questionNumber: 1,
-          marksAvailable: 5,
+          marksAvailable: 3,
           questionText: "A ball is dropped from a height of 20m. Find the time taken to reach the ground (g = 10 m/s^2).",
           studentAnswer: "[left blank]",
         },
+        {
+          questionNumber: 2,
+          marksAvailable: 6,
+          questionText: "Calculate 15% of 240 without using a calculator.",
+          studentAnswer:
+            "10% of 240 = 24. 5% of 240 is half of that = 12. So 15% of 240 = 24 + 12 = 36.",
+        },
+        {
+          questionNumber: 3,
+          marksAvailable: 5,
+          questionText: "State Newton's third law of motion.",
+          studentAnswer:
+            "For every action, there is an equal and opposite reaction — when object A exerts a force on object B, object B exerts an equal and opposite force back on object A.",
+        },
       ],
     },
+    answerKey: {
+      id: "sheet-d-edge",
+      totalMarks: 14,
+      expectedObtainedMarks: 11,
+      questions: [
+        { questionNumber: 1, expectedMarks: 0, expectedMaxMarks: 3, errorType: "blank", plantedError: "Left blank — must score zero, not be estimated or guessed.", keywords: [] },
+        {
+          questionNumber: 2,
+          expectedMarks: 6,
+          expectedMaxMarks: 6,
+          errorType: "correct",
+          plantedError: "Uses a valid but unusual decomposition method (10% + 5%) instead of multiplying by 0.15 directly — must receive full marks, not be penalized for being unusual.",
+          keywords: [],
+        },
+        { questionNumber: 3, expectedMarks: 5, expectedMaxMarks: 5, errorType: "correct", plantedError: null, keywords: [] },
+      ],
+    },
+  },
+
+  // ── blank-page: not a fixture with questions at all — a genuinely blank
+  // page. The pipeline must return an honest error (NotAnAnswerSheetError),
+  // never a fabricated report from nothing.
+  {
+    id: "blank-page",
+    subject: "Mathematics",
+    grade: "9th",
+    examType: "Class Test",
+    spec: null,
   },
 ];
 
@@ -245,7 +325,7 @@ async function main() {
   for (const f of FIXTURES) {
     const dir = join(root, f.id);
     if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
-    const pdfBytes = await buildFixturePdf(f.spec);
+    const pdfBytes = f.spec ? await buildFixturePdf(f.spec) : await buildBlankPdf();
     writeFileSync(join(dir, "answer-sheet.pdf"), pdfBytes);
     writeFileSync(
       join(dir, "metadata.json"),
@@ -265,7 +345,7 @@ async function main() {
     if (f.answerKey) {
       writeFileSync(join(dir, "answer-key.json"), JSON.stringify(f.answerKey, null, 2));
     }
-    console.log(`Generated fixtures/regression-set/${f.id}/ (${f.spec.questions.length} question(s))`);
+    console.log(`Generated fixtures/regression-set/${f.id}/ (${f.spec ? `${f.spec.questions.length} question(s)` : "blank page"})`);
   }
 }
 

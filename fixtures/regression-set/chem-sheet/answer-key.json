@@ -13,26 +13,29 @@
     },
     {
       "questionNumber": 2,
-      "expectedMarks": 5,
-      "expectedMaxMarks": 5,
-      "errorType": "correct",
-      "plantedError": null,
-      "keywords": []
+      "expectedMarks": 3,
+      "expectedMaxMarks": 4,
+      "errorType": "arithmetic_slip",
+      "plantedError": "Unbalanced hydrogen — N2 + 2H2 -> 2NH3 leaves hydrogen unbalanced (4 vs 6); the correct coefficient is 3H2.",
+      "keywords": [
+        "hydrogen",
+        "unbalanced",
+        "3h2",
+        "6",
+        "4"
+      ]
     },
     {
       "questionNumber": 3,
       "expectedMarks": 3,
       "expectedMaxMarks": 5,
-      "errorType": "arithmetic_slip",
-      "plantedError": "Product coefficient should be 2Fe2O3, not 4Fe2O3 — as written, iron atoms don't balance (8 on the left vs 16 on the right).",
+      "errorType": "method_error",
+      "plantedError": "Absorbed vs released mixup — an exothermic reaction RELEASES energy to the surroundings, it does not absorb it; the explanation contradicts the correct classification.",
       "keywords": [
-        "2fe2o3",
-        "4fe2o3",
-        "coefficient",
-        "iron",
-        "balance",
-        "16",
-        "8"
+        "released",
+        "absorbed",
+        "exothermic",
+        "energy is released"
       ]
     },
     {
@@ -40,28 +43,22 @@
       "expectedMarks": 4,
       "expectedMaxMarks": 5,
       "errorType": "arithmetic_slip",
-      "plantedError": "Sign error: -log(10^-4) = 4, not -4. The student dropped/mishandled the negative sign.",
+      "plantedError": "Missing 2HCl — the equation is not balanced as written; it must be Zn + 2HCl -> ZnCl2 + H2 (chlorine and hydrogen are unbalanced at 1 vs 2 otherwise).",
       "keywords": [
-        "sign",
-        "-4",
-        "negative",
-        "should be 4",
-        "pH = 4"
+        "2hcl",
+        "missing",
+        "coefficient",
+        "unbalanced",
+        "chlorine"
       ]
     },
     {
       "questionNumber": 5,
-      "expectedMarks": 4,
-      "expectedMaxMarks": 5,
-      "errorType": "method_error",
-      "plantedError": "Wrong gas identified — zinc + dilute HCl evolves hydrogen gas (tested with a burning/lit splint giving a 'pop'), not oxygen (glowing splint relighting is the test for oxygen).",
-      "keywords": [
-        "hydrogen",
-        "oxygen",
-        "wrong gas",
-        "pop",
-        "incorrect gas"
-      ]
+      "expectedMarks": 6,
+      "expectedMaxMarks": 6,
+      "errorType": "correct",
+      "plantedError": null,
+      "keywords": []
     }
   ]
 }

@@ -35,6 +35,16 @@ function wrapText(text: string, maxCharsPerLine: number): string[] {
   return lines;
 }
 
+// A genuinely blank page — no title, no questions, no text at all. Used to
+// verify the pipeline returns an honest error (NotAnAnswerSheetError) for a
+// non-answer-sheet upload instead of fabricating a report from nothing.
+export async function buildBlankPdf(): Promise<Buffer> {
+  const doc = await PDFDocument.create();
+  doc.addPage([612, 792]);
+  const bytes = await doc.save();
+  return Buffer.from(bytes);
+}
+
 export async function buildFixturePdf(spec: FixtureSheetSpec): Promise<Buffer> {
   const doc = await PDFDocument.create();
   const font = await doc.embedFont(StandardFonts.Helvetica);

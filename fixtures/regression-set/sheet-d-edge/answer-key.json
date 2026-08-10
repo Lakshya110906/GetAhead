@@ -1,0 +1,31 @@
+{
+  "id": "sheet-d-edge",
+  "totalMarks": 14,
+  "expectedObtainedMarks": 11,
+  "questions": [
+    {
+      "questionNumber": 1,
+      "expectedMarks": 0,
+      "expectedMaxMarks": 3,
+      "errorType": "blank",
+      "plantedError": "Left blank — must score zero, not be estimated or guessed.",
+      "keywords": []
+    },
+    {
+      "questionNumber": 2,
+      "expectedMarks": 6,
+      "expectedMaxMarks": 6,
+      "errorType": "correct",
+      "plantedError": "Uses a valid but unusual decomposition method (10% + 5%) instead of multiplying by 0.15 directly — must receive full marks, not be penalized for being unusual.",
+      "keywords": []
+    },
+    {
+      "questionNumber": 3,
+      "expectedMarks": 5,
+      "expectedMaxMarks": 5,
+      "errorType": "correct",
+      "plantedError": null,
+      "keywords": []
+    }
+  ]
+}
