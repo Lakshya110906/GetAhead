@@ -18,6 +18,20 @@ export async function POST(request: NextRequest) {
 
     const userId = (session.user as { id: string }).id;
 
+    // Ownership check — this is the fix for a confirmed IDOR: without it, a
+    // client-supplied evaluationId that belongs to a DIFFERENT user still
+    // passed FK validation (it's a real Evaluation row, just not this
+    // user's), and the create below would have silently linked it to this
+    // user's SavedReport list anyway. 404, not 403 — do not confirm to the
+    // caller that an evaluation with this id exists at all if it isn't theirs.
+    const ownedEvaluation = await prisma.evaluation.findFirst({
+      where: { id: evaluationId, userId },
+      select: { id: true },
+    });
+    if (!ownedEvaluation) {
+      return NextResponse.json({ error: "Evaluation not found" }, { status: 404 });
+    }
+
     // Check if already saved
     const existing = await prisma.savedReport.findFirst({
       where: { userId, evaluationId }
@@ -64,8 +78,16 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: true, saved: !!saved });
     }
 
+    // The ownership filter is on BOTH sides of the relation, in the query
+    // itself — SavedReport.userId (the save-list owner) AND
+    // evaluation.userId (the underlying report's actual owner) must both
+    // match the caller. A SavedReport row can only exist for an evaluation
+    // this user owns after the POST-side fix above, but this second check
+    // is defense in depth: if a bad row ever exists (e.g. one created before
+    // this fix shipped), it must never be returned here regardless of how
+    // it got into the table.
     const savedReports = await prisma.savedReport.findMany({
-      where: { userId },
+      where: { userId, evaluation: { userId } },
       include: {
         evaluation: true
       },
