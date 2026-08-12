@@ -15,6 +15,7 @@ import { assertDeclaredTypeMatches } from "@/lib/fileSignature";
 import { logger } from "@/lib/logger";
 import { captureException } from "@/lib/errorTracking";
 import { reportApiError } from "@/lib/apiError";
+import { normalizeEntryText } from "@/lib/normalizeText";
 
 // after() keeps the worker call running past the point the response is
 // sent, so this stays fast for the client while the real work (which can
@@ -30,8 +31,14 @@ const enqueueSchema = z.object({
   fileName: z.string().min(1),
   fileSize: z.number().int().positive(),
   fileType: z.enum(["application/pdf", "image/png", "image/jpeg"]),
-  subject: z.string().min(1, "Subject is required"),
-  grade: z.string().optional(),
+  // Normalized (trimmed, whitespace-collapsed) BEFORE the length check, not
+  // after — otherwise a subject of all-whitespace would pass min(1) as a
+  // "real" value, and a real one with stray leading/trailing/doubled
+  // spaces would reach analytics' subject-grouping unnormalized (which
+  // groups by raw string equality, so "Mathematics" and "Mathematics "
+  // would silently split into two rows).
+  subject: z.string().transform(normalizeEntryText).pipe(z.string().min(1, "Subject is required")),
+  grade: z.string().transform(normalizeEntryText).optional(),
   examType: z.enum(["MCQ", "Descriptive", "Mixed"]),
 });
 

@@ -57,19 +57,27 @@ export default function SettingsPage() {
   const [notificationsSaved, setNotificationsSaved] = useState(false);
   const [notificationsLoading, setNotificationsLoading] = useState(false);
   const [notificationsError, setNotificationsError] = useState("");
+  // The four toggles above start at hardcoded defaults, not the user's real
+  // saved values — if the load below fails, those defaults stay on screen
+  // looking exactly like real settings. Saving from that state would
+  // silently overwrite the user's actual preferences with the wrong
+  // defaults. Tracked so Save can refuse to run until a real load succeeds.
+  const [notificationsLoadFailed, setNotificationsLoadFailed] = useState(false);
 
   useEffect(() => {
     fetch("/api/user/notification-preferences")
-      .then((r) => r.json())
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`status ${r.status}`))))
       .then((d) => {
         if (d.success && d.preferences) {
           setEvalEmail(d.preferences.evaluationCompletion);
           setFeatureEmail(d.preferences.featureUpdates);
           setWeeklyEmail(d.preferences.weeklyProgress);
           setPushNotif(d.preferences.pushNotifications);
+        } else {
+          setNotificationsLoadFailed(true);
         }
       })
-      .catch(() => {});
+      .catch(() => setNotificationsLoadFailed(true));
   }, []);
 
   const handleSave = async () => {
@@ -176,6 +184,10 @@ export default function SettingsPage() {
   };
 
   const handleNotificationsSave = async () => {
+    if (notificationsLoadFailed) {
+      setNotificationsError("Your current preferences couldn't be loaded, so saving now would overwrite them with defaults. Refresh the page and try again.");
+      return;
+    }
     setNotificationsError("");
     setNotificationsLoading(true);
     try {

@@ -79,4 +79,18 @@ describe("buildReviewerPrompt", () => {
     const prompt = buildReviewerPrompt(makeConfig(), draft);
     expect(prompt).toContain("Do not change the number of questions");
   });
+
+  // Regression: a live end-to-end run (topic "geometry" + a custom
+  // instruction narrowing questions to circles) showed the reviewer can
+  // rewrite topicAddressed as a side effect of custom-instruction
+  // compliance edits, dropping the topic's own word even though the
+  // generator's prompt (fixed separately) requires it — the reviewer never
+  // had that same constraint, so its rewrites could reintroduce the exact
+  // topic-validation failure the generator fix closed.
+  it("requires topicAddressed to keep naming the topic even when a question is rewritten", () => {
+    const config = makeConfig({ topic: "geometry", customPrompt: "Every question must involve circles specifically." });
+    const prompt = buildReviewerPrompt(config, draft);
+    expect(prompt).toContain("topicAddressed");
+    expect(prompt).toContain('MUST still explicitly name the requested topic "geometry"');
+  });
 });

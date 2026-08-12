@@ -12,6 +12,7 @@ import { suggestTopicCorrection } from "@/lib/topicSpellcheck";
 import { initialAgentStates, processJobStep } from "@/lib/paperJob";
 import { reportApiError } from "@/lib/apiError";
 import { logger } from "@/lib/logger";
+import { normalizeEntryText } from "@/lib/normalizeText";
 import type { PaperConfig } from "@/lib/question-agents";
 
 // Deliberately small — this route only validates input, resolves conflicts,
@@ -53,9 +54,19 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
     const {
-      subject, grade, topic, difficulty, totalMarks, questionTypes,
+      difficulty, totalMarks, questionTypes,
       customPrompt, studyMaterialText, conflictResolution, topicResolution,
     } = body;
+    // Normalized once, here, at the entry point — every downstream
+    // consumer (validation, the topic-typo suggestion, the job config
+    // that's persisted, analytics grouping by subject) sees the same
+    // trimmed, whitespace-collapsed value instead of each needing its own
+    // tolerance for a stray leading/trailing/doubled space. This is the
+    // same class of bug as the "trigonometry " topic-validation incident,
+    // fixed at its actual source instead of downstream.
+    const subject = typeof body.subject === "string" ? normalizeEntryText(body.subject) : body.subject;
+    const grade = typeof body.grade === "string" ? normalizeEntryText(body.grade) : body.grade;
+    const topic = typeof body.topic === "string" ? normalizeEntryText(body.topic) : body.topic;
 
     if (!subject || !grade || !topic || !difficulty || !totalMarks || !questionTypes || !Array.isArray(questionTypes)) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
@@ -86,7 +97,7 @@ export async function POST(request: NextRequest) {
         );
       }
     } else if (topicResolution === "useSuggested" && typeof body.suggestedTopic === "string") {
-      effectiveTopic = body.suggestedTopic;
+      effectiveTopic = normalizeEntryText(body.suggestedTopic);
     }
     // topicResolution === "useOriginal" (or anything else): keep the user's
     // topic exactly as typed — validatePaper() still matches on the
@@ -117,12 +128,17 @@ export async function POST(request: NextRequest) {
       if (parsedConstraints.impliedQuestionTypes !== null) effectiveQuestionTypes = parsedConstraints.impliedQuestionTypes;
     }
 
-    // Gemini's own daily quota: best-case generation is 3 requests
-    // (planner + generator + reviewer); failing here means the user never
-    // burns their own daily generation credit on a job that was already
-    // going to run out of Gemini quota partway through the step machine.
+    // Gemini's own daily quota: best case is 3 requests (planner +
+    // generator + reviewer), but a repair loop can add up to 2 more (one
+    // repair call per failed validate attempt, MAX_STEP_ATTEMPTS=3 total
+    // attempts). Checking only the best case meant a job could clear this
+    // gate with 3 requests of headroom, spend all 3 getting to the validate
+    // step, hit a violation, and then hit DailyQuotaExhaustedError on the
+    // repair call — the exact "quota spent, no paper produced" failure
+    // mode this check exists to prevent. Reserving the worst case means a
+    // job that starts is one that can actually finish.
     try {
-      await assertQuotaHeadroom(PAPER_MODEL_ID, 3);
+      await assertQuotaHeadroom(PAPER_MODEL_ID, 5);
     } catch (err) {
       if (err instanceof QuotaHeadroomError) {
         return NextResponse.json(

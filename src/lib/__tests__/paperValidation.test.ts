@@ -286,6 +286,121 @@ describe("validatePaper", () => {
     const result = validatePaper(trigPaper, trigCtx);
     expect(result.violations.some((v) => v.includes("don't address the requested topic"))).toBe(false);
   });
+
+  // ── Regression suite for the "geometry" / "trigonometry " incident
+  // (2026-08-12). Root cause (confirmed by replaying validatePaper() itself
+  // against the real persisted job data from both failed runs — see
+  // conversation record, not inferred): the generator's own prompt told the
+  // model topicAddressed could honestly omit the topic's exact word, while
+  // this check requires literal containment — a self-contradiction, not a
+  // bug in the matching logic itself. Fixed by making the generator/repair
+  // prompts require topicAddressed to always name the topic explicitly.
+  // These tests lock in every case from that incident report so it cannot
+  // regress silently a fourth time.
+  function topicCtx(topic: string, overrides: Partial<typeof baseCtx> = {}) {
+    return { targetTotalMarks: 30, allowedQuestionTypes: ["Short Answer"], topic, parsedConstraints: parseCustomInstructions(""), ...overrides };
+  }
+
+  function geometryPaper(topicAddresseds: string[]) {
+    return paper({
+      sections: [
+        {
+          title: "Section A: Short Answer",
+          description: "desc",
+          questions: topicAddresseds.map((ta, i) =>
+            q({ number: i + 1, marks: 30 / topicAddresseds.length, markScheme: [{ point: "p", marks: 30 / topicAddresseds.length }], topicAddressed: ta })
+          ),
+        },
+      ],
+    });
+  }
+
+  it("passes for topic \"geometry\" — the real incident's exact topic, minimal case", () => {
+    const result = validatePaper(geometryPaper(["Geometry — properties of similar triangles"]), topicCtx("geometry"));
+    expect(result.valid).toBe(true);
+    expect(result.violations).toEqual([]);
+  });
+
+  it("passes for topic \"trigonometry\" (no whitespace)", () => {
+    const result = validatePaper(geometryPaper(["Trigonometry — angle of elevation"]), topicCtx("trigonometry"));
+    expect(result.violations.some((v) => v.includes("don't address the requested topic"))).toBe(false);
+  });
+
+  it("passes for topic \"trigonometry \" (trailing space)", () => {
+    const result = validatePaper(geometryPaper(["Trigonometry — angle of elevation"]), topicCtx("trigonometry "));
+    expect(result.violations.some((v) => v.includes("don't address the requested topic"))).toBe(false);
+  });
+
+  it("passes for topic \" trigonometry\" (leading space)", () => {
+    const result = validatePaper(geometryPaper(["Trigonometry — angle of elevation"]), topicCtx(" trigonometry"));
+    expect(result.violations.some((v) => v.includes("don't address the requested topic"))).toBe(false);
+  });
+
+  it("passes for topic \"Trigonometry\" (capitalized)", () => {
+    const result = validatePaper(geometryPaper(["Trigonometry — angle of elevation"]), topicCtx("Trigonometry"));
+    expect(result.violations.some((v) => v.includes("don't address the requested topic"))).toBe(false);
+  });
+
+  it("passes for topic \"trigonometry and geometry\" (multi-word topic)", () => {
+    const result = validatePaper(
+      geometryPaper(["Trigonometry — identities", "Geometry — circle tangents"]),
+      topicCtx("trigonometry and geometry")
+    );
+    expect(result.violations.some((v) => v.includes("don't address the requested topic"))).toBe(false);
+  });
+
+  it("passes for a misspelled topic (\"trignometry\") when the model correctly spells it in topicAddressed", () => {
+    // The typo is caught and offered as a suggestion at input time
+    // (topicSpellcheck.ts, wired into the enqueue route) — this covers the
+    // case where the user declined that suggestion and generation proceeded
+    // with the misspelled topic as-is. Must never burn a repair cycle over
+    // a spelling difference the model itself already corrected.
+    const result = validatePaper(geometryPaper(["Trigonometry — standard angle ratios"]), topicCtx("trignometry"));
+    expect(result.violations.some((v) => v.includes("don't address the requested topic"))).toBe(false);
+  });
+
+  it("passes a genuinely on-topic question that tests geometry without the word \"geometry\" (minority case)", () => {
+    const result = validatePaper(
+      geometryPaper(["Geometry — coordinate distance formula", "Properties and angle sums of triangles"]),
+      topicCtx("geometry")
+    );
+    expect(result.violations.some((v) => v.includes("don't address the requested topic"))).toBe(false);
+  });
+
+  it("still correctly rejects a genuinely off-topic paper for topic \"geometry\"", () => {
+    const offTopicPaper = geometryPaper([
+      "Photosynthesis and cellular respiration",
+      "The French Revolution's causes",
+      "Basic supply and demand economics",
+    ]);
+    const result = validatePaper(offTopicPaper, topicCtx("geometry"));
+    expect(result.violations.some((v) => v.includes("don't address the requested topic"))).toBe(true);
+  });
+
+  // Direct replay of the real incident's persisted data (job
+  // cmsq46gvx0003ie04puwp73et, 2026-08-12): 12 questions, every
+  // topicAddressed genuinely contains "geometry" or "Geometry". This must
+  // always pass — if it doesn't, something regressed the matching logic
+  // itself, not just the generator prompt.
+  it("passes the real incident's exact 12-question topicAddressed set", () => {
+    const realTopicAddresseds = [
+      "Ratio of areas of similar triangles (Geometry)",
+      "Definition and properties of a tangent to a circle (Geometry)",
+      "Distance formula in coordinate geometry",
+      "Midpoint formula in coordinate geometry",
+      "Application of Pythagoras theorem (Geometry)",
+      "Basic Proportionality Theorem (Thales Theorem) (Geometry)",
+      "AA similarity criterion for triangles (Geometry)",
+      "Properties of tangents from an external point to a circle (Geometry)",
+      "Angles subtended by a chord at the center and circumference of a circle (Geometry)",
+      "Section formula for internal division in coordinate geometry",
+      "Proof of the theorem on the ratio of areas of similar triangles (Geometry)",
+      "Area of a triangle using coordinate geometry",
+    ];
+    const result = validatePaper(geometryPaper(realTopicAddresseds), topicCtx("geometry"));
+    expect(result.valid).toBe(true);
+    expect(result.violations).toEqual([]);
+  });
 });
 
 describe("assignSectionLetters", () => {

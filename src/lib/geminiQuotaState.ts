@@ -39,13 +39,6 @@ export function getModelLimit(model: string): ModelQuotaLimit {
   return MODEL_QUOTA_LIMITS[model] ?? DEFAULT_LIMIT;
 }
 
-function todayRangeUtc() {
-  const now = new Date();
-  const start = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
-  const end = new Date(start.getTime() + 24 * 60 * 60 * 1000);
-  return { start, end, dateKey: start.toISOString().slice(0, 10) };
-}
-
 /**
  * Gemini's actual daily quota reset is midnight Pacific Time (Google's
  * documented policy for the free tier — the API itself does not return a
@@ -66,6 +59,25 @@ export function nextPacificMidnightUtc(now: Date = new Date()): Date {
     pacificMidnightUtc = new Date(pacificMidnightUtc.getTime() + 24 * 60 * 60 * 1000);
   }
   return pacificMidnightUtc;
+}
+
+// The window getModelUsageToday() actually COUNTS against must be the same
+// window nextPacificMidnightUtc() reports as resetting — derived from that
+// same function rather than reimplementing the boundary math, so the two
+// can never drift apart again. Previously this counted the UTC calendar day
+// instead (00:00-24:00 UTC), which is misaligned from the real Pacific
+// reset by up to 7 hours: a call made between UTC 00:00 and 07:00 was
+// excluded from "today"'s count even though it was still part of the
+// CURRENTLY ACTIVE Pacific quota window (which started the previous UTC
+// calendar day, at that same day's UTC 07:00). Confirmed live: this app
+// reported "0 used, 20 remaining" for gemini-2.5-flash, then a real
+// generation immediately hit a 429 daily_quota error on its 4th call —
+// real usage from earlier in the SAME still-active Pacific window had
+// already exhausted the quota, invisibly to the old count.
+function currentPacificQuotaWindowUtc(now: Date = new Date()): { start: Date; end: Date } {
+  const end = nextPacificMidnightUtc(now);
+  const start = new Date(end.getTime() - 24 * 60 * 60 * 1000);
+  return { start, end };
 }
 
 export interface ModelQuotaUsage {
@@ -96,15 +108,27 @@ function levelFor(fractionUsed: number): "ok" | "warn" | "block" {
  * rate_limit means Google rejected the request before it counted against
  * anything; counting those again would double-count the rejection, not
  * measure real usage).
+ *
+ * `NOT: { errorType: { in: [...] } }` on its own is a real bug, not just a
+ * style choice: SQL's three-valued logic makes `NULL NOT IN (...)`
+ * evaluate to NULL, not TRUE, so every successful row (errorType IS NULL —
+ * the overwhelming majority of rows) was silently excluded by that filter,
+ * not just the daily_quota/rate_limit ones it was meant to exclude.
+ * Confirmed directly against the real table: 18 successful calls existed
+ * in today's window, and the old query counted 0 of them. That's why this
+ * app could report "0 used, 20 remaining" moments before a live generation
+ * immediately hit a real 429 on its 4th call — the quota gate was reading
+ * a number that was wrong for this table's entire lifetime, not stale for
+ * a few hours. errorType: null rows must be counted explicitly.
  */
 export async function getModelUsageToday(model: string): Promise<ModelQuotaUsage> {
-  const { start, end } = todayRangeUtc();
+  const { start, end } = currentPacificQuotaWindowUtc();
   const used = await prisma.geminiCallLog.count({
     where: {
       model,
       replayed: false,
       createdAt: { gte: start, lt: end },
-      NOT: { errorType: { in: ["daily_quota", "rate_limit"] } },
+      OR: [{ errorType: null }, { NOT: { errorType: { in: ["daily_quota", "rate_limit"] } } }],
     },
   });
   const limit = getModelLimit(model);

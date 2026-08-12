@@ -17,13 +17,22 @@ interface QuotaStatus {
 // that quota is available when this shared ceiling is the real blocker.
 export function SharedQuotaBadge() {
   const [status, setStatus] = useState<QuotaStatus | null>(null);
+  // A failed fetch used to render nothing — the exact omission this
+  // component's whole purpose is to prevent. If the badge can't tell you
+  // the real state, it must say so, not go silent and let that read as
+  // "everything's fine."
+  const [loadError, setLoadError] = useState(false);
 
   useEffect(() => {
     fetch("/api/quota-status")
-      .then((r) => (r.ok ? r.json() : null))
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`status ${r.status}`))))
       .then(setStatus)
-      .catch(() => {});
+      .catch(() => setLoadError(true));
   }, []);
+
+  if (loadError) {
+    return <p className="text-xs text-graphite">Couldn&apos;t check the shared AI quota — it may be limited.</p>;
+  }
 
   if (!status) return null;
 

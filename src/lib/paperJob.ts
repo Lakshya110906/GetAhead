@@ -201,7 +201,23 @@ export async function processJobStep(jobId: string): Promise<void> {
       const attemptLogs: RepairAttemptLog[] = job.repairAttempts ? JSON.parse(job.repairAttempts) : [];
       const attemptNumber = job.validationAttempt + 1;
       const previousAttempt = attemptLogs[attemptLogs.length - 1];
-      const violationsKey = (v: string[]) => [...v].sort().join("|");
+      // The off-topic violation embeds a live "X/Y questions" count
+      // (paperValidation.ts's topic check) that moves attempt to attempt
+      // even when the check is failing for the same underlying reason every
+      // time — confirmed live: topic "geometry" produced "11/12", then
+      // "8/12", then "12/12" across three attempts, each byte-different, so
+      // the identical-consecutive-failure abort below never fired and the
+      // job burned a full 3rd repair+validate cycle it had no realistic
+      // chance of passing, then reported retryWorthwhile: true on a
+      // deterministic failure. Normalizing that one volatile count out of
+      // the comparison (and ONLY that one — every other violation kind,
+      // e.g. marks-sum-mismatch, keeps exact-text comparison, since a
+      // change in ITS embedded number can mean genuine incremental
+      // progress worth a further attempt) makes two "still off-topic"
+      // attempts in a row register as unchanged, same as the trigonometry
+      // incident this abort was originally built for.
+      const normalizeViolation = (v: string) => v.replace(/^most questions \(\d+\/\d+\)/, "most questions (N/M)");
+      const violationsKey = (v: string[]) => [...v].map(normalizeViolation).sort().join("|");
       const outputChanged = !previousAttempt || violationsKey(previousAttempt.violations) !== violationsKey(validation.violations);
       attemptLogs.push({ attempt: attemptNumber, violations: validation.violations, outputChanged });
       logger.info(`Paper generation job ${jobId} validate attempt ${attemptNumber}: ${validation.valid ? "PASSED" : "FAILED"}${previousAttempt ? `, outputChanged=${outputChanged}` : ""}`, {

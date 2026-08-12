@@ -722,7 +722,7 @@ You are tasked with refining the existing question paper based on the user's rev
 ${aiFeedback}
 
 [Existing Question Paper JSON]:
-${JSON.stringify(paper, null, 2)}
+${JSON.stringify(paper)}
 `;
 
     setAiFeedback("");

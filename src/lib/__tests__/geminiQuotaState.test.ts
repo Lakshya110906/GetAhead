@@ -81,7 +81,17 @@ describe("geminiQuotaState — simulated near-limit states", () => {
 
     await getModelUsageToday("gemini-2.5-flash");
     const whereArg = countMock.mock.calls[0][0].where;
-    expect(whereArg.NOT).toEqual({ errorType: { in: ["daily_quota", "rate_limit"] } });
+    // A bare `NOT: { errorType: { in: [...] } }` is a real bug, not a style
+    // choice: SQL's three-valued logic makes `NULL NOT IN (...)` evaluate
+    // to NULL, not TRUE, silently dropping every successful row
+    // (errorType IS NULL) from the count along with the ones actually
+    // meant to be excluded. Confirmed live against the real table: 18
+    // successful calls existed in the current window and the buggy query
+    // counted 0 of them. The query must explicitly include null rows.
+    expect(whereArg.OR).toEqual([
+      { errorType: null },
+      { NOT: { errorType: { in: ["daily_quota", "rate_limit"] } } },
+    ]);
     expect(whereArg.replayed).toBe(false);
   });
 });

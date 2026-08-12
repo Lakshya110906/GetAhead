@@ -18,7 +18,12 @@ describe("buildUserFacingValidationMessage", () => {
       expect(message.toLowerCase()).not.toContain(fragment.toLowerCase());
     }
     expect(message).toContain("trignometry and geometry");
-    expect(message.toLowerCase()).toContain("spelling");
+    // A correctly-spelled topic can fail this heuristic check too (see
+    // paperValidation.ts's topicAddressed keyword match) — the message must
+    // not blame the user's spelling for what's actually an internal
+    // check limitation.
+    expect(message.toLowerCase()).not.toContain("check the spelling");
+    expect(message.toLowerCase()).toContain("isn't necessarily a problem with what you typed");
   });
 
   it("gives a clean, specific message for a marks mismatch", () => {

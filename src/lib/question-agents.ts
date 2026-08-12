@@ -1,4 +1,4 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { GoogleGenerativeAI, type GenerationConfig } from "@google/generative-ai";
 import {
   plannerPlanSchema,
   generatedPaperSchema,
@@ -14,6 +14,25 @@ import { timedGeminiCall } from "./geminiCallLog";
 
 const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY || process.env.GEMINI_API_KEY;
 export const MODEL_ID = "gemini-2.5-flash";
+
+// gemini-2.5-flash defaults to a dynamic internal "thinking" budget —
+// invisible reasoning tokens billed as output tokens on every call, even
+// for a mechanical, schema-constrained, temperature-0 JSON-structuring task
+// that doesn't need chain-of-thought. None of the four paper-generation
+// calls (planner/generator/reviewer/repair) benefit from it: the schema
+// already constrains the shape, temperature 0 already constrains the
+// content, and the task itself is "fill in this structure correctly," not
+// open-ended reasoning. Disabling it is the single largest token lever
+// available here — no correctness tradeoff, since nothing downstream reads
+// or depends on a "thinking" trace. The installed @google/generative-ai SDK
+// (0.24.1) predates this field in its own types (hence the interface
+// extension below), but generationConfig is passed through to the REST API
+// as a plain object with no allowlist filtering (confirmed in the SDK's own
+// source), so the API honors it regardless of the SDK's type coverage.
+interface GenerationConfigWithThinking extends GenerationConfig {
+  thinkingConfig?: { thinkingBudget: number };
+}
+const NO_THINKING: GenerationConfigWithThinking["thinkingConfig"] = { thinkingBudget: 0 };
 
 export function isGeminiConfigured(): boolean {
   return !!apiKey && apiKey !== "your-gemini-api-key-here" && !apiKey.startsWith("your-gemini");
@@ -559,14 +578,13 @@ function syllabusContext(config: PaperConfig): string {
 
 // 1. Planner Agent
 export async function runPlannerAgent(genAI: GoogleGenerativeAI, config: PaperConfig): Promise<PlannerPlan> {
-  const model = genAI.getGenerativeModel({
-    model: MODEL_ID,
-    generationConfig: {
-      responseMimeType: "application/json",
-      responseSchema: GEMINI_PLANNER_RESPONSE_SCHEMA,
-      temperature: 0,
-    },
-  });
+  const generationConfig: GenerationConfigWithThinking = {
+    responseMimeType: "application/json",
+    responseSchema: GEMINI_PLANNER_RESPONSE_SCHEMA,
+    temperature: 0,
+    thinkingConfig: NO_THINKING,
+  };
+  const model = genAI.getGenerativeModel({ model: MODEL_ID, generationConfig });
   const prompt = `You are an expert educational curriculum planner. Structure a question paper.
 
 Subject: ${config.subject}
@@ -600,14 +618,13 @@ The sum of (marksPerQuestion × questionCount) across all sections must equal ex
 
 // 2. Generator Agent
 export async function runGeneratorAgent(genAI: GoogleGenerativeAI, config: PaperConfig, plan: PlannerPlan): Promise<GeneratedPaperShape> {
-  const model = genAI.getGenerativeModel({
-    model: MODEL_ID,
-    generationConfig: {
-      responseMimeType: "application/json",
-      responseSchema: GEMINI_PAPER_RESPONSE_SCHEMA,
-      temperature: 0,
-    },
-  });
+  const generationConfig: GenerationConfigWithThinking = {
+    responseMimeType: "application/json",
+    responseSchema: GEMINI_PAPER_RESPONSE_SCHEMA,
+    temperature: 0,
+    thinkingConfig: NO_THINKING,
+  };
+  const model = genAI.getGenerativeModel({ model: MODEL_ID, generationConfig });
 
   const prompt = `You are a question generator agent. Generate the actual questions, options (for MCQs), answers, and mark schemes based on the planner's layout below.
 
@@ -623,14 +640,14 @@ ${config.studyMaterialText}
 --- END STUDY MATERIAL ---` : ""}
 
 Structure plan (follow the exact questionCount and marksPerQuestion for every section — do not add, drop, or resize questions):
-${JSON.stringify(plan, null, 2)}
+${JSON.stringify(plan)}
 
 For MCQs, provide exactly 4 options as plain text (do not prefix them with "A)", "B)", etc. — that numbering is added when the paper is displayed) and the correct letter (A, B, C, or D) as the answer.
 
 For every question, provide:
 - "answer": a full model answer an evaluator can use.
 - "markScheme": an array of { point, marks } entries breaking the question's marks down into the specific things a grader should award marks for (e.g. "Correctly identifies the time complexity (1 mark)", "Justifies it with the recurrence relation (2 marks)"). The marks in markScheme MUST sum to exactly the question's total marks. For MCQs, a single markScheme entry ("Selects the correct option") worth the full marks is sufficient.
-- "topicAddressed": which specific requested topic/subtopic (from "${config.topic}") this question actually tests, in your own words (e.g. "trigonometric identities", "circle geometry — tangents"). A question can genuinely test a topic without ever using that exact word in its text (a question about a right triangle and an angle of elevation is trigonometry even if the word "trigonometry" never appears) — say what it actually tests, honestly, not a copy of the topic string.
+- "topicAddressed": which specific requested topic/subtopic (from "${config.topic}") this question actually tests. This field is checked by an automated content-validation step against the requested topic's own words, so it MUST explicitly name the requested topic or subtopic — e.g. "Trigonometry — angles of elevation", "Geometry — circle tangents" — even for a question whose own text never uses that word (a right-triangle/angle-of-elevation problem is trigonometry even though the word "trigonometry" may never appear in the QUESTION text itself). The question and answer text can and should read naturally; this field specifically must not.
 
 Write plain text only — no LaTeX, no markdown, no dollar signs; spell out formulas in words or plain characters (e.g. "H2O", "x^2" as "x squared" or "x^2").`;
 
@@ -672,7 +689,7 @@ ${config.studyMaterialText}
 --- END STUDY MATERIAL ---` : ""}
 
 Draft question paper:
-${JSON.stringify(draft, null, 2)}
+${JSON.stringify(draft)}
 
 Your job, in priority order:
 1. CUSTOM INSTRUCTION COMPLIANCE — this is the primary reason you exist. If a custom prompt is present above, check every question against it line by line. If any question violates a stated constraint (a banned topic, a required focus area, a formatting rule, a numerical-only or non-numerical-only requirement, anything else stated), rewrite that question so it actually complies. If there is no custom prompt, skip this.
@@ -680,6 +697,8 @@ Your job, in priority order:
 3. DIFFICULTY CALIBRATION — verify each question's COGNITIVE DEMAND (recall vs. application vs. analysis) genuinely matches "${config.difficulty}", not just its length; adjust wording if it doesn't.
 
 Do not change the number of questions, their order, or the marks assigned to any question. Do not "polish" wording that isn't actually wrong — only fix real violations of the three checks above.
+
+If you rewrite a question (e.g. to comply with a custom instruction), its "topicAddressed" field MUST still explicitly name the requested topic "${config.topic}" or its subtopic — this field is checked by an automated content-validation step against the requested topic's own words, so narrowing a question's focus (e.g. to satisfy a custom instruction) must not drop that word from topicAddressed even if the question itself narrows to a subtopic.
 
 Output the final question paper, with reviewNotes listing specifically what you fixed and why (e.g. "Q3 violated the custom instruction to avoid numerical answers — rewrote as a conceptual question") — or an empty array if nothing needed changing.`;
 }
@@ -689,14 +708,13 @@ export async function runReviewerAgent(
   config: PaperConfig,
   draft: GeneratedPaperShape
 ): Promise<GeneratedPaperShape> {
-  const model = genAI.getGenerativeModel({
-    model: MODEL_ID,
-    generationConfig: {
-      responseMimeType: "application/json",
-      responseSchema: GEMINI_PAPER_RESPONSE_SCHEMA,
-      temperature: 0,
-    },
-  });
+  const generationConfig: GenerationConfigWithThinking = {
+    responseMimeType: "application/json",
+    responseSchema: GEMINI_PAPER_RESPONSE_SCHEMA,
+    temperature: 0,
+    thinkingConfig: NO_THINKING,
+  };
+  const model = genAI.getGenerativeModel({ model: MODEL_ID, generationConfig });
 
   const prompt = buildReviewerPrompt(config, draft);
 
@@ -724,14 +742,13 @@ export async function runRepairAgent(
   draft: GeneratedPaperShape,
   violations: string[]
 ): Promise<GeneratedPaperShape> {
-  const model = genAI.getGenerativeModel({
-    model: MODEL_ID,
-    generationConfig: {
-      responseMimeType: "application/json",
-      responseSchema: GEMINI_PAPER_RESPONSE_SCHEMA,
-      temperature: 0,
-    },
-  });
+  const generationConfig: GenerationConfigWithThinking = {
+    responseMimeType: "application/json",
+    responseSchema: GEMINI_PAPER_RESPONSE_SCHEMA,
+    temperature: 0,
+    thinkingConfig: NO_THINKING,
+  };
+  const model = genAI.getGenerativeModel({ model: MODEL_ID, generationConfig });
 
   const prompt = `You are the repair agent. The question paper below FAILED validation. Fix ONLY the specific violations listed — do not otherwise change questions, wording, or structure that wasn't flagged.
 
@@ -739,13 +756,13 @@ Subject: ${config.subject} | Grade: ${config.grade} | Target total marks: ${conf
 ${delimitCustomPrompt(config.customPrompt)}
 
 Structure plan:
-${JSON.stringify(plan, null, 2)}
+${JSON.stringify(plan)}
 
 VIOLATIONS TO FIX (each one MUST be resolved in your output):
 ${violations.map((v, i) => `${i + 1}. ${v}`).join("\n")}
 
 Current (failing) paper:
-${JSON.stringify(draft, null, 2)}
+${JSON.stringify(draft)}
 
 Output the complete corrected paper (all sections and questions, not just the fixed ones), with reviewNotes describing what you changed to fix each violation.`;
 

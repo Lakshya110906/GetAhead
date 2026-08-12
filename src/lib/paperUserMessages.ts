@@ -9,9 +9,19 @@
 export function buildUserFacingValidationMessage(violations: string[], topic: string): string {
   if (violations.length === 0) return "The generated paper didn't pass our content checks.";
 
+  // "Check the spelling" used to be the copy here regardless of cause —
+  // wrong on its face for a topic that IS spelled correctly (a likely typo
+  // is already caught and offered as a suggestion before generation even
+  // starts, in the enqueue route — see topicSpellcheck.ts). This check is a
+  // heuristic keyword match against the model's own self-reported
+  // topicAddressed field per question, not a guarantee; it can fail on a
+  // valid, correctly-spelled topic without any fault in what the user
+  // typed. Blaming the user's input for an internal check's limitation is
+  // worse than a generic message — the real diagnostic detail (which
+  // questions, what keywords, what count) stays in internalError/logs.
   const isTopicMismatch = violations.some((v) => v.includes("don't address the requested topic"));
   if (isTopicMismatch) {
-    return `The generated questions did not match the topic "${topic}". Check the spelling, or try a broader topic.`;
+    return `We couldn't confirm the generated questions matched "${topic}" closely enough, even after retrying. This isn't necessarily a problem with what you typed — it can happen with a valid, correctly-spelled topic too. Try a more common phrasing or a slightly broader/narrower topic, or generate again.`;
   }
 
   const isMarksMismatch = violations.some((v) => v.includes("marks sum to") || v.includes("do not carry the requested"));
