@@ -8,9 +8,22 @@ export type QuotaKind = "EVALUATION" | "PAPER_GENERATION" | "TUTOR";
 // limit in the tutor stream route — the rate limit stops bursts, this stops
 // one user's tutor conversation from consuming unbounded model spend across
 // a whole day, same as every other Gemini-calling feature.
+// These are NOT independent per-user allowances — they exist against a
+// single shared Gemini free-tier ceiling (RPD=20 for the whole project,
+// confirmed live), not a per-user one. With batched grading (2 real calls
+// per evaluation, flat, regardless of sheet size — see
+// answerSheetGrading.ts's gradingMode default) the whole app can serve
+// roughly 10 evaluations/day, total, across every user, or ~6 paper
+// generations at best case (3 calls each). The numbers below were 10/10
+// before this pass — mathematically impossible to honor for even a single
+// user on a day anyone else also used the app; the shared-ceiling gate
+// (assertQuotaHeadroom, checked before these per-user counters) is what
+// actually prevents overpromising in practice, and its live number is now
+// surfaced to users (see GET /api/quota-status) rather than only shown in
+// the admin dashboard.
 export const DAILY_QUOTA: Record<QuotaKind, number> = {
-  EVALUATION: 10,
-  PAPER_GENERATION: 10,
+  EVALUATION: 5,
+  PAPER_GENERATION: 3,
   TUTOR: 50,
 };
 

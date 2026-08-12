@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import { GeneratedPaper } from "@/lib/question-agents";
 import { SubjectSelector } from "@/components/SubjectSelector";
+import { SharedQuotaBadge } from "@/components/SharedQuotaBadge";
 import { computeTimeAllowed } from "@/lib/timeAllowed";
 import { buildUserFacingValidationMessage } from "@/lib/paperUserMessages";
 
@@ -1197,6 +1198,7 @@ ${JSON.stringify(paper, null, 2)}
               <GraduationCap className="w-5 h-5" />
               Generate question paper
             </button>
+            <SharedQuotaBadge />
           </form>
         </div>
       )}

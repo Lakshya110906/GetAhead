@@ -1,13 +1,20 @@
 import { z } from "zod";
 import { SchemaType, type Schema } from "@google/generative-ai";
 
+// NOTE: this schema is not currently imported anywhere in src/ (confirmed
+// via grep) — it belongs to the old single-blob transcribe-then-grade
+// pipeline that answerSheetGrading.ts's two-stage, per-question pipeline
+// replaced (same lineage as the now-deleted lib/gemini.ts). Kept as-is here
+// rather than deleted unilaterally, since only gemini.ts's removal was
+// actually requested — flagging for a deliberate decision, not doing it
+// silently as a side effect of an unrelated task.
+//
 // Single source of truth for the shape of a grading result. Used twice:
 // once to build Gemini's structured-output responseSchema (so the model is
 // constrained to emit this shape), and again to actually validate what
 // comes back — the model can still lie about numbers even inside a schema
 // it's constrained to, so the shape being right is necessary but not
-// sufficient. See validateAndRecompute() in gemini.ts for the part that
-// checks whether the numbers make sense.
+// sufficient.
 
 export const questionMarkSchema = z.object({
   questionNumber: z.number(),

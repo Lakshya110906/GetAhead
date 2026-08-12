@@ -5,7 +5,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { consumeQuota, QuotaExceededError } from "@/lib/quota";
 import { assertSpendGateOpen, SpendLimitReachedError } from "@/lib/spendControl";
-import { assertQuotaHeadroom, QuotaHeadroomError } from "@/lib/geminiQuotaState";
+import { assertQuotaHeadroom, QuotaHeadroomError, PreviewEnvironmentBlockedError } from "@/lib/geminiQuotaState";
 import { MODEL_ID as PAPER_MODEL_ID } from "@/lib/question-agents";
 import { parseCustomInstructions, checkForConflict } from "@/lib/paperConstraintParser";
 import { suggestTopicCorrection } from "@/lib/topicSpellcheck";
@@ -129,6 +129,9 @@ export async function POST(request: NextRequest) {
           { error: err.message, quotaExceeded: true, remaining: err.usage.remaining, limit: err.usage.limit, resetsAt: err.usage.resetsAt },
           { status: 503 }
         );
+      }
+      if (err instanceof PreviewEnvironmentBlockedError) {
+        return NextResponse.json({ error: err.message, previewBlocked: true }, { status: 503 });
       }
       throw err;
     }

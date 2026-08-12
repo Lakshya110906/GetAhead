@@ -1,0 +1,17 @@
+{
+  "questionNumber": 1,
+  "marksAwarded": 4,
+  "marksAvailable": 5,
+  "topic": "Solving Linear Equations",
+  "correctPoints": [
+    "The student correctly identified the first step to isolate the '2x' term by subtracting 6 from both sides of the equation.",
+    "The student correctly identified the second step to solve for 'x' by dividing the result by 2.",
+    "The student correctly performed the division based on their intermediate result (9 / 2 = 4.5)."
+  ],
+  "incorrectPoints": [
+    "An arithmetic error occurred when calculating 14 - 6, which was incorrectly stated as 9 instead of 8."
+  ],
+  "errorType": "arithmetic_slip",
+  "groundingQuote": "2x = 9",
+  "feedback": "You correctly applied the method to solve the linear equation by first isolating the '2x' term and then dividing to find 'x'. However, there was an arithmetic slip in the first step: 14 - 6 should be 8, not 9. This arithmetic error led to an incorrect value for 'x'. The correct steps would be 2x = 14 - 6, which simplifies to 2x = 8, and then x = 8 / 2, so x = 4."
+}

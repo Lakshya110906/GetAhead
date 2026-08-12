@@ -1,0 +1,17 @@
+{
+  "questionNumber": 3,
+  "marksAwarded": 2,
+  "marksAvailable": 5,
+  "topic": "Area of a Circle",
+  "correctPoints": [
+    "Used the correct formula for the area of a circle (Area = pi x r^2).",
+    "Correctly substituted the given values for pi (22/7) and radius (7) into the formula."
+  ],
+  "incorrectPoints": [
+    "Incorrectly calculated 7^2 as 14 instead of 49.",
+    "Consequently, the final area calculation was incorrect."
+  ],
+  "errorType": "arithmetic_slip",
+  "groundingQuote": "= 22/7 x 14",
+  "feedback": "You correctly identified the formula for the area of a circle and substituted the values for pi and the radius. However, you made an arithmetic slip when calculating 7 squared (7^2). 7^2 is 49, not 14. This led to an incorrect final answer. Please be careful with your calculations."
+}

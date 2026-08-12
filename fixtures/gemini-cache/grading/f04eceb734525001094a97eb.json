@@ -1,0 +1,16 @@
+{
+  "questionNumber": 2,
+  "marksAwarded": 6,
+  "marksAvailable": 6,
+  "topic": "Percentage Calculation",
+  "correctPoints": [
+    "Correctly calculated 10% of 240 as 24.",
+    "Correctly calculated 5% of 240 as half of 10% (12).",
+    "Correctly summed 10% and 5% values to find 15% (24 + 12 = 36).",
+    "Correct final answer."
+  ],
+  "incorrectPoints": [],
+  "errorType": "correct",
+  "groundingQuote": "So 15% of 240 = 24 + 12 = 36.",
+  "feedback": "Excellent work! You have correctly calculated 15% of 240 by breaking it down into 10% and 5% and then adding these values. All steps are clear and accurate."
+}

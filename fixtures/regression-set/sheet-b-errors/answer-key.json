@@ -1,7 +1,7 @@
 {
   "id": "sheet-b-errors",
   "totalMarks": 15,
-  "expectedObtainedMarks": 7,
+  "expectedObtainedMarks": 10,
   "questions": [
     {
       "questionNumber": 1,
@@ -19,7 +19,7 @@
     },
     {
       "questionNumber": 2,
-      "expectedMarks": 2,
+      "expectedMarks": 4,
       "expectedMaxMarks": 5,
       "errorType": "arithmetic_slip",
       "plantedError": "Divided by 5 instead of the given 4 seconds — the correct answer is 20/4 = 5 m/s^2, not 20/5 = 4 m/s^2.",
@@ -33,7 +33,7 @@
     },
     {
       "questionNumber": 3,
-      "expectedMarks": 2,
+      "expectedMarks": 3,
       "expectedMaxMarks": 5,
       "errorType": "arithmetic_slip",
       "plantedError": "7 squared is 49, not 14 — the formula (pi*r^2) is correct but the arithmetic for r^2 is wrong, so the area should be 154 cm^2, not 44 cm^2.",

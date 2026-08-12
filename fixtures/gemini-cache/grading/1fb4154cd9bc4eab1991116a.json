@@ -1,0 +1,15 @@
+{
+  "questionNumber": 3,
+  "marksAwarded": 5,
+  "marksAvailable": 5,
+  "topic": "Solving Quadratic Equations by Factoring",
+  "correctPoints": [
+    "Correctly identified factoring as a method to solve the quadratic equation.",
+    "Correctly factored the quadratic expression x^2 - 5x + 6 into (x - 2)(x - 3).",
+    "Correctly derived the solutions x = 2 and x = 3 from the factored form."
+  ],
+  "incorrectPoints": [],
+  "errorType": "correct",
+  "groundingQuote": "So x = 2 or x = 3.",
+  "feedback": "Excellent work! You have correctly factored the quadratic equation and found the correct solutions."
+}

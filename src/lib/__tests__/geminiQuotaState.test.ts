@@ -85,3 +85,49 @@ describe("geminiQuotaState — simulated near-limit states", () => {
     expect(whereArg.replayed).toBe(false);
   });
 });
+
+describe("geminiQuotaState — unseparated Preview deployment guard", () => {
+  const ORIGINAL_ENV = { ...process.env };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    process.env = { ...ORIGINAL_ENV };
+  });
+
+  it("blocks real Gemini calls on a Preview deployment even with plenty of quota remaining", async () => {
+    const { prisma } = await import("@/lib/prisma");
+    const { assertQuotaHeadroom, PreviewEnvironmentBlockedError } = await import("@/lib/geminiQuotaState");
+    (prisma.geminiCallLog.count as ReturnType<typeof vi.fn>).mockResolvedValue(0); // plenty of quota
+
+    process.env.VERCEL_ENV = "preview";
+    delete process.env.ALLOW_PREVIEW_GEMINI_CALLS;
+
+    await expect(assertQuotaHeadroom("gemini-2.5-flash", 2)).rejects.toThrow(PreviewEnvironmentBlockedError);
+    // The block must be categorical, not a quota lookup — confirmed by
+    // never even querying today's usage.
+    expect(prisma.geminiCallLog.count).not.toHaveBeenCalled();
+  });
+
+  it("does not block Production or Development deployments", async () => {
+    const { prisma } = await import("@/lib/prisma");
+    const { assertQuotaHeadroom } = await import("@/lib/geminiQuotaState");
+    (prisma.geminiCallLog.count as ReturnType<typeof vi.fn>).mockResolvedValue(0);
+
+    process.env.VERCEL_ENV = "production";
+    await expect(assertQuotaHeadroom("gemini-2.5-flash", 2)).resolves.toBeDefined();
+
+    process.env.VERCEL_ENV = "development";
+    await expect(assertQuotaHeadroom("gemini-2.5-flash", 2)).resolves.toBeDefined();
+  });
+
+  it("allows an explicit, deliberate override via ALLOW_PREVIEW_GEMINI_CALLS", async () => {
+    const { prisma } = await import("@/lib/prisma");
+    const { assertQuotaHeadroom } = await import("@/lib/geminiQuotaState");
+    (prisma.geminiCallLog.count as ReturnType<typeof vi.fn>).mockResolvedValue(0);
+
+    process.env.VERCEL_ENV = "preview";
+    process.env.ALLOW_PREVIEW_GEMINI_CALLS = "true";
+
+    await expect(assertQuotaHeadroom("gemini-2.5-flash", 2)).resolves.toBeDefined();
+  });
+});

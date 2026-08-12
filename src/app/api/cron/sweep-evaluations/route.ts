@@ -13,10 +13,10 @@ export const maxDuration = 60;
 // (see vercel.json); on the Hobby plan crons only run once a day, so the
 // immediate trigger — not this sweep — is what keeps latency low in practice.
 //
-// Grading is now two sequential model calls (transcribe, then grade — see
-// lib/gemini.ts), so a single job can take longer than before. Batch size
-// is kept small relative to maxDuration=60 so the loop can't itself time
-// out mid-job on a multi-page submission.
+// Grading is two sequential model calls (extract, then grade — see
+// answerSheetGrading.ts), so a single job can take longer than a single
+// call would. Batch size is kept small relative to maxDuration=60 so the
+// loop can't itself time out mid-job on a multi-page submission.
 const BATCH_SIZE = 2;
 
 function isAuthorized(request: NextRequest): boolean {

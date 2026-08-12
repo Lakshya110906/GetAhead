@@ -4,11 +4,11 @@
   "marksAvailable": 5,
   "topic": "Balancing Chemical Equations",
   "correctPoints": [
-    "The chemical equation is correctly balanced.",
-    "The student correctly identified the number of hydrogen and oxygen atoms on both sides of the equation."
+    "Correctly balanced the chemical equation",
+    "Accurately identified the number of hydrogen and oxygen atoms on both sides"
   ],
   "incorrectPoints": [],
   "errorType": "correct",
-  "groundingQuote": "2H2 + O2 -> 2H2O",
-  "feedback": "Excellent work! You have correctly balanced the chemical equation and clearly explained how the atoms are conserved on both sides. Full marks awarded."
+  "groundingQuote": "2H2 + O2 -> 2H2O. This is balanced: there are 4 hydrogen atoms and 2 oxygen atoms on both sides.",
+  "feedback": "Excellent work! You have correctly balanced the equation for the formation of water and accurately counted the atoms on both sides to confirm it."
 }

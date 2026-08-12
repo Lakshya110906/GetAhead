@@ -235,6 +235,57 @@ describe("validatePaper", () => {
     const result = validatePaper(trigPaper, trigCtx);
     expect(result.violations.some((v) => v.includes("don't address the requested topic"))).toBe(false);
   });
+
+  // Regression case for the other half of the bug class this fix addresses:
+  // literal substring matching fails not just on typos but on any question
+  // that genuinely tests a topic without ever using the topic's own word.
+  // A right-triangle/Pythagorean question is real trigonometry-adjacent
+  // geometry content even though its topicAddressed field says neither
+  // "trigonometry" nor "geometry" verbatim. This passes today because the
+  // check tolerates a MINORITY of such questions (gross-drift detection,
+  // not a per-question keyword mandate) — this test is honest about that:
+  // it's one such question alongside one that does contain a keyword, not
+  // a claim that the checker understands topical relevance on its own.
+  it("does not reject a question that genuinely tests the topic without naming it, as long as it's not the majority", () => {
+    const trigCtx = {
+      targetTotalMarks: 30,
+      allowedQuestionTypes: ["Short Answer"],
+      topic: "trigonometry and geometry",
+      parsedConstraints: parseCustomInstructions(""),
+    };
+    const trigPaper = paper({
+      sections: [
+        {
+          title: "Section A: Short Answer",
+          description: "desc",
+          questions: [
+            q({
+              number: 1,
+              question: "Prove that (1 - cos^2 A) / (1 - sin^2 A) = tan^2 A.",
+              // Must literally contain "trigonometry" (not just
+              // "trigonometric") — the check is still substring matching,
+              // that's exactly the fragility this pair of tests documents.
+              topicAddressed: "trigonometry — identities",
+              marks: 15,
+              markScheme: [{ point: "p", marks: 15 }],
+            }),
+            q({
+              number: 2,
+              question: "A ladder 10m long leans against a wall, its foot 6m from the wall. How high up the wall does it reach?",
+              // Deliberately contains neither "trigonometry" nor "geometry" —
+              // this is the Pythagorean theorem, real content for this
+              // topic, described without the topic's own words.
+              topicAddressed: "right triangle relationships",
+              marks: 15,
+              markScheme: [{ point: "p", marks: 15 }],
+            }),
+          ],
+        },
+      ],
+    });
+    const result = validatePaper(trigPaper, trigCtx);
+    expect(result.violations.some((v) => v.includes("don't address the requested topic"))).toBe(false);
+  });
 });
 
 describe("assignSectionLetters", () => {

@@ -8,7 +8,7 @@ const release = process.env.VERCEL_GIT_COMMIT_SHA || "dev";
 
 export async function register() {
   const dsn = process.env.SENTRY_DSN;
-  if (!dsn) return; // no-op without a configured DSN, same fail-open pattern as rateLimit.ts / gemini.ts
+  if (!dsn) return; // no-op without a configured DSN, same fail-open pattern as rateLimit.ts
 
   if (process.env.NEXT_RUNTIME === "nodejs") {
     Sentry.init({

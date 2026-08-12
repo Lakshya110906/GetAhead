@@ -138,6 +138,32 @@ export class QuotaHeadroomError extends Error {
   }
 }
 
+// CONFIRMED live (via `vercel env pull` + hash comparison, this session):
+// Preview deployments share the exact same GOOGLE_GENERATIVE_AI_API_KEY as
+// Production — meaning every preview-branch test burns the same 20-request
+// daily ceiling real users depend on. Proper fix is a second, genuinely
+// separate Gemini API key for Preview (needs the Google AI Studio console —
+// not something this code can provision on its own); until that exists,
+// Preview is blocked from making real calls against the shared pool at all,
+// rather than silently competing with production traffic for it. Preview
+// should be testing against the record/replay fixtures (fixtures/gemini-cache,
+// see geminiFixtureCache.ts) anyway, which cost nothing and need no key.
+export class PreviewEnvironmentBlockedError extends Error {
+  constructor(requestsNeeded: number) {
+    super(
+      `This preview deployment shares Gemini's daily quota with production (confirmed: same API key). ` +
+        `Preview is blocked from making real Gemini calls (this operation would have needed ${requestsNeeded}) ` +
+        `to avoid burning quota production users depend on. Set ALLOW_PREVIEW_GEMINI_CALLS=true to override for a ` +
+        `deliberate one-off live test, or use replayed fixtures instead.`
+    );
+    this.name = "PreviewEnvironmentBlockedError";
+  }
+}
+
+function isUnseparatedPreview(): boolean {
+  return process.env.VERCEL_ENV === "preview" && process.env.ALLOW_PREVIEW_GEMINI_CALLS !== "true";
+}
+
 /**
  * Pre-flight gate: call before starting an operation that will make
  * `requestsNeeded` Gemini requests against `model`. Throws QuotaHeadroomError
@@ -145,9 +171,14 @@ export class QuotaHeadroomError extends Error {
  * "quota exceeded" — if today's usage is already past the block threshold
  * OR there isn't enough remaining headroom for this specific operation,
  * whichever is the tighter constraint. Never lets an operation start that's
- * already known to be unable to finish.
+ * already known to be unable to finish. Also refuses outright on an
+ * unseparated Preview deployment (see PreviewEnvironmentBlockedError) —
+ * checked first, since that's categorical, not a matter of remaining count.
  */
 export async function assertQuotaHeadroom(model: string, requestsNeeded: number): Promise<ModelQuotaUsage> {
+  if (isUnseparatedPreview()) {
+    throw new PreviewEnvironmentBlockedError(requestsNeeded);
+  }
   const usage = await getModelUsageToday(model);
   if (usage.level === "block" || usage.remaining < requestsNeeded) {
     throw new QuotaHeadroomError(usage, requestsNeeded);

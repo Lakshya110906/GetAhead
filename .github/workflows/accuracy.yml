@@ -6,7 +6,9 @@ name: Accuracy harness
 on:
   pull_request:
     paths:
-      - "src/lib/gemini.ts"
+      - "src/lib/answerSheetGrading.ts"
+      - "src/lib/paperValidation.ts"
+      - "src/lib/question-agents.ts"
       - "src/lib/evaluationWorker.ts"
       - "scripts/accuracy-harness.ts"
       - "scripts/lib/accuracyMetrics.ts"
@@ -16,7 +18,9 @@ on:
   push:
     branches: [main]
     paths:
-      - "src/lib/gemini.ts"
+      - "src/lib/answerSheetGrading.ts"
+      - "src/lib/paperValidation.ts"
+      - "src/lib/question-agents.ts"
       - "src/lib/evaluationWorker.ts"
       - "scripts/accuracy-harness.ts"
       - "scripts/lib/accuracyMetrics.ts"

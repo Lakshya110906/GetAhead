@@ -1,0 +1,17 @@
+{
+  "questionNumber": 5,
+  "marksAwarded": 6,
+  "marksAvailable": 6,
+  "topic": "Chemical Reactions and Equations",
+  "correctPoints": [
+    "Correctly identified the product as magnesium oxide",
+    "Provided the correct chemical formula for magnesium oxide (MgO)",
+    "Wrote the correct reactants (Mg and O2)",
+    "Wrote the correct product (MgO)",
+    "Correctly balanced the chemical equation (2Mg + O2 -> 2MgO)"
+  ],
+  "incorrectPoints": [],
+  "errorType": "correct",
+  "groundingQuote": "The product is magnesium oxide (MgO), a white powder. The balanced equation is: 2Mg + O2 -> 2MgO.",
+  "feedback": "Excellent work! You have correctly identified the product as magnesium oxide and provided a perfectly balanced chemical equation for its formation."
+}

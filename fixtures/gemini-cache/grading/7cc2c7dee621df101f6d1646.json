@@ -1,0 +1,18 @@
+{
+  "questionNumber": 2,
+  "marksAwarded": 4,
+  "marksAvailable": 5,
+  "topic": "Acceleration",
+  "correctPoints": [
+    "Used the correct formula for acceleration (a = (v - u) / t).",
+    "Correctly identified the initial velocity (u = 0 m/s) and final velocity (v = 20 m/s).",
+    "Performed the calculation correctly based on the substituted values (20/5 = 4).",
+    "Used the correct units for acceleration (m/s^2)."
+  ],
+  "incorrectPoints": [
+    "Incorrectly substituted the time as 5 seconds instead of the given 4 seconds from the problem statement."
+  ],
+  "errorType": "arithmetic_slip",
+  "groundingQuote": "a = (v - u) / t = (20 - 0) / 5 = 4 m/s^2.",
+  "feedback": "You correctly used the formula for acceleration and identified the initial and final velocities. Your calculation based on your substituted values was also correct, and you used the correct units. However, you made an arithmetic slip by using 5 seconds for the time instead of the given 4 seconds. If you had used 4 seconds, your final answer would have been 5 m/s^2."
+}

@@ -10,7 +10,7 @@ import { captureException } from "@/lib/errorTracking";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { timedGeminiCall } from "@/lib/geminiCallLog";
 import { DAILY_QUOTA_PATTERN, PER_MINUTE_QUOTA_PATTERN, AUTH_ERROR_PATTERN } from "@/lib/geminiErrorPatterns";
-import { assertQuotaHeadroom, QuotaHeadroomError } from "@/lib/geminiQuotaState";
+import { assertQuotaHeadroom, QuotaHeadroomError, PreviewEnvironmentBlockedError } from "@/lib/geminiQuotaState";
 
 const TUTOR_MODEL_ID = "gemini-2.5-flash";
 
@@ -74,6 +74,9 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
         JSON.stringify({ error: err.message, quotaExceeded: true, remaining: err.usage.remaining, limit: err.usage.limit, resetsAt: err.usage.resetsAt }),
         { status: 503 }
       );
+    }
+    if (err instanceof PreviewEnvironmentBlockedError) {
+      return new Response(JSON.stringify({ error: err.message, previewBlocked: true }), { status: 503 });
     }
     throw err;
   }

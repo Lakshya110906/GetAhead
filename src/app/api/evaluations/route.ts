@@ -9,7 +9,7 @@ import { processSpecificJob } from "@/lib/evaluationWorker";
 import { MAX_UPLOAD_BYTES } from "@/app/api/uploads/route";
 import { consumeQuota, QuotaExceededError } from "@/lib/quota";
 import { assertSpendGateOpen, SpendLimitReachedError } from "@/lib/spendControl";
-import { assertQuotaHeadroom, QuotaHeadroomError } from "@/lib/geminiQuotaState";
+import { assertQuotaHeadroom, QuotaHeadroomError, PreviewEnvironmentBlockedError } from "@/lib/geminiQuotaState";
 import { MODEL_ID as EVAL_MODEL_ID } from "@/lib/answerSheetGrading";
 import { assertDeclaredTypeMatches } from "@/lib/fileSignature";
 import { logger } from "@/lib/logger";
@@ -86,6 +86,9 @@ export async function POST(request: NextRequest) {
           { error: err.message, quotaExceeded: true, remaining: err.usage.remaining, limit: err.usage.limit, resetsAt: err.usage.resetsAt },
           { status: 503 }
         );
+      }
+      if (err instanceof PreviewEnvironmentBlockedError) {
+        return NextResponse.json({ error: err.message, previewBlocked: true }, { status: 503 });
       }
       throw err;
     }

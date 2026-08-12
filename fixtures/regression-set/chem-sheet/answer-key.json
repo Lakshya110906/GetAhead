@@ -1,7 +1,7 @@
 {
   "id": "chem-sheet",
   "totalMarks": 25,
-  "expectedObtainedMarks": 21,
+  "expectedObtainedMarks": 15,
   "questions": [
     {
       "questionNumber": 1,
@@ -13,7 +13,7 @@
     },
     {
       "questionNumber": 2,
-      "expectedMarks": 3,
+      "expectedMarks": 2,
       "expectedMaxMarks": 4,
       "errorType": "arithmetic_slip",
       "plantedError": "Unbalanced hydrogen — N2 + 2H2 -> 2NH3 leaves hydrogen unbalanced (4 vs 6); the correct coefficient is 3H2.",
@@ -27,7 +27,7 @@
     },
     {
       "questionNumber": 3,
-      "expectedMarks": 3,
+      "expectedMarks": 2,
       "expectedMaxMarks": 5,
       "errorType": "method_error",
       "plantedError": "Absorbed vs released mixup — an exothermic reaction RELEASES energy to the surroundings, it does not absorb it; the explanation contradicts the correct classification.",
@@ -40,7 +40,7 @@
     },
     {
       "questionNumber": 4,
-      "expectedMarks": 4,
+      "expectedMarks": 0,
       "expectedMaxMarks": 5,
       "errorType": "arithmetic_slip",
       "plantedError": "Missing 2HCl — the equation is not balanced as written; it must be Zn + 2HCl -> ZnCl2 + H2 (chlorine and hydrogen are unbalanced at 1 vs 2 otherwise).",

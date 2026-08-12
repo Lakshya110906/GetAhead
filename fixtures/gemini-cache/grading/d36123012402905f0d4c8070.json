@@ -1,0 +1,16 @@
+{
+  "questionNumber": 2,
+  "marksAwarded": 5,
+  "marksAvailable": 5,
+  "topic": "Area of a rectangle",
+  "correctPoints": [
+    "Correctly identified the formula for the area of a rectangle (Area = length x width).",
+    "Correctly substituted the given length (8cm) and width (5cm) into the formula.",
+    "Accurately calculated the product of 8 and 5 to get 40.",
+    "Included the correct units (cm^2) for the area."
+  ],
+  "incorrectPoints": [],
+  "errorType": "correct",
+  "groundingQuote": "Area = length x width = 8 x 5 = 40 cm^2.",
+  "feedback": "Excellent work! You correctly applied the formula for the area of a rectangle, substituted the given values, and calculated the correct area with the appropriate units."
+}

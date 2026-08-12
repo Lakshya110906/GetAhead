@@ -1,0 +1,14 @@
+{
+  "questionNumber": 3,
+  "marksAwarded": 5,
+  "marksAvailable": 5,
+  "topic": "Newton's Laws of Motion",
+  "correctPoints": [
+    "States that for every action, there is an equal and opposite reaction.",
+    "Correctly identifies that when object A exerts a force on object B, object B exerts an equal and opposite force back on object A, clarifying that the forces act on different objects."
+  ],
+  "incorrectPoints": [],
+  "errorType": "correct",
+  "groundingQuote": "For every action, there is an equal and opposite reaction when object A exerts a force on object B, object B exerts an equal and opposite force back on object A.",
+  "feedback": "Excellent work! You have accurately stated Newton's third law of motion, including the crucial detail that the action and reaction forces act on different objects."
+}

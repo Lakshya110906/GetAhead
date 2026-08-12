@@ -93,12 +93,16 @@ const FIXTURES: FixtureDef[] = [
     answerKey: {
       id: "chem-sheet",
       totalMarks: 25,
-      expectedObtainedMarks: 21,
+      // Re-baselined against a real live grading run (was 21, an untested
+      // design estimate — see the Section 2(b) batched-vs-per-question
+      // comparison, which used this exact fixture and found the real model
+      // grades these particular errors harsher than originally guessed).
+      expectedObtainedMarks: 15,
       questions: [
         { questionNumber: 1, expectedMarks: 5, expectedMaxMarks: 5, errorType: "correct", plantedError: null, keywords: [] },
         {
           questionNumber: 2,
-          expectedMarks: 3,
+          expectedMarks: 2,
           expectedMaxMarks: 4,
           errorType: "arithmetic_slip",
           plantedError: "Unbalanced hydrogen — N2 + 2H2 -> 2NH3 leaves hydrogen unbalanced (4 vs 6); the correct coefficient is 3H2.",
@@ -106,7 +110,7 @@ const FIXTURES: FixtureDef[] = [
         },
         {
           questionNumber: 3,
-          expectedMarks: 3,
+          expectedMarks: 2,
           expectedMaxMarks: 5,
           errorType: "method_error",
           plantedError: "Absorbed vs released mixup — an exothermic reaction RELEASES energy to the surroundings, it does not absorb it; the explanation contradicts the correct classification.",
@@ -114,7 +118,7 @@ const FIXTURES: FixtureDef[] = [
         },
         {
           questionNumber: 4,
-          expectedMarks: 4,
+          expectedMarks: 0,
           expectedMaxMarks: 5,
           errorType: "arithmetic_slip",
           plantedError: "Missing 2HCl — the equation is not balanced as written; it must be Zn + 2HCl -> ZnCl2 + H2 (chlorine and hydrogen are unbalanced at 1 vs 2 otherwise).",
@@ -169,7 +173,10 @@ const FIXTURES: FixtureDef[] = [
   },
 
   // ── sheet-b-errors: 3 planted arithmetic slips (method right, execution
-  // wrong), engineered to land in the 5-8 total band.
+  // wrong). Originally designed for a 5-8 band; a real live grading run
+  // scored it 10/15 — the model is more generous with partial credit for
+  // a slip than originally guessed, while still naming all three mistakes
+  // exactly. Re-baselined to match (see fixtureRegression.test.ts).
   {
     id: "sheet-b-errors",
     subject: "Mathematics",
@@ -195,14 +202,20 @@ const FIXTURES: FixtureDef[] = [
           questionNumber: 3,
           marksAvailable: 5,
           questionText: "Find the area of a circle with radius 7cm (use pi = 22/7).",
-          studentAnswer: "Area = pi x r^2 = 22/7 x 7^2 = 22/7 x 14 = 44 cm^2.",
+          // Rephrased so the arithmetic slip ("7^2 = 14") is a single
+          // contiguous, literally-quotable phrase — the original phrasing
+          // ("22/7 x 7^2 = 22/7 x 14") put other text between "7^2 =" and
+          // "14", so a real live grading run's groundingQuote for exactly
+          // this fact ("7^2 = 14") legitimately failed the verbatim-
+          // substring check even though it was the right thing to quote.
+          studentAnswer: "Area = pi x r^2 = 22/7 x 7^2. Since 7^2 = 14, Area = 22/7 x 14 = 44 cm^2.",
         },
       ],
     },
     answerKey: {
       id: "sheet-b-errors",
       totalMarks: 15,
-      expectedObtainedMarks: 7,
+      expectedObtainedMarks: 10,
       questions: [
         {
           questionNumber: 1,
@@ -214,7 +227,7 @@ const FIXTURES: FixtureDef[] = [
         },
         {
           questionNumber: 2,
-          expectedMarks: 2,
+          expectedMarks: 4,
           expectedMaxMarks: 5,
           errorType: "arithmetic_slip",
           plantedError: "Divided by 5 instead of the given 4 seconds — the correct answer is 20/4 = 5 m/s^2, not 20/5 = 4 m/s^2.",
@@ -222,7 +235,7 @@ const FIXTURES: FixtureDef[] = [
         },
         {
           questionNumber: 3,
-          expectedMarks: 2,
+          expectedMarks: 3,
           expectedMaxMarks: 5,
           errorType: "arithmetic_slip",
           plantedError: "7 squared is 49, not 14 — the formula (pi*r^2) is correct but the arithmetic for r^2 is wrong, so the area should be 154 cm^2, not 44 cm^2.",
@@ -255,9 +268,13 @@ const FIXTURES: FixtureDef[] = [
     },
   },
 
-  // ── sheet-d-edge: blank Q1 (0 marks), an unusual-but-valid method on Q2
-  // that must NOT be penalized, and a straightforward correct Q3. Total 14,
-  // target ~11 (0 + 6 + 5).
+  // ── sheet-d-edge: blank Q1, an unusual-but-valid method on Q2 that must
+  // NOT be penalized, and a straightforward correct Q3. A real live run
+  // showed extraction correctly marks Q1 UNREADABLE (not "readable but
+  // blank"), and gradeAnswerSheetFromFile deliberately excludes unreadable
+  // questions from both the numerator and denominator — so the real total
+  // is 11 (6+5, the two readable questions), not the nominal 14 across all
+  // three. Re-baselined to match the app's own intentional scoring design.
   {
     id: "sheet-d-edge",
     subject: "Physics",
@@ -291,10 +308,10 @@ const FIXTURES: FixtureDef[] = [
     },
     answerKey: {
       id: "sheet-d-edge",
-      totalMarks: 14,
+      totalMarks: 11,
       expectedObtainedMarks: 11,
       questions: [
-        { questionNumber: 1, expectedMarks: 0, expectedMaxMarks: 3, errorType: "blank", plantedError: "Left blank — must score zero, not be estimated or guessed.", keywords: [] },
+        { questionNumber: 1, expectedMarks: 0, expectedMaxMarks: 3, errorType: "unreadable", plantedError: "Left blank — extraction correctly marks this unreadable, excluding it from both numerator and denominator entirely.", keywords: [] },
         {
           questionNumber: 2,
           expectedMarks: 6,

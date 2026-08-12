@@ -412,6 +412,23 @@ async function gradeQuestionsBatched(
   // Same reasoning as the per-question path: questionNumber is trusted from
   // code (array position), never from the model's echo.
   const graded = validated.data.grades.map((g, i) => ({ ...g, questionNumber: questions[i].questionNumber }));
+
+  // Batched has no repair loop (a violation on one question would mean
+  // re-sending the whole batch to fix it, defeating the point) — but it
+  // still runs every grade through the SAME content gate per-question mode
+  // uses (marks bounds, groundingQuote is a real substring of that
+  // question's own answer, errorType "correct" implies full marks). Schema
+  // validation only proves the shape is right; this proves the content is.
+  // A violation here fails the evaluation honestly (refunded, clear
+  // message) rather than silently serving a grade that didn't pass the
+  // same bar every other grading path in this app has to clear.
+  for (let i = 0; i < graded.length; i++) {
+    const violations = validateQuestionGrade(graded[i], questions[i]);
+    if (violations.length > 0) {
+      throw new GradingValidationFailedError(graded[i].questionNumber, violations);
+    }
+  }
+
   if (replay) writeReplay("grading-batched", cacheKey, graded);
   return graded;
 }
@@ -525,13 +542,18 @@ export async function gradeAnswerSheetFromFile(
   ctx: GradingContext,
   meta?: CallMeta,
   replay?: ReplayOptions,
-  // Section 2(b) experiment flag: "per-question" (default, current
-  // production behavior) makes one isolated Gemini call per question, with
-  // the per-question validation-repair loop. "batched" makes ONE call for
-  // the whole sheet — no repair loop (see gradeQuestionsBatched) — a 5x
-  // request reduction on a 5-question sheet IF quality holds up; being
-  // measured against real fixtures before it's trusted as the default.
-  gradingMode: GradingMode = "per-question",
+  // Section 2(b): "batched" makes ONE call for the whole sheet instead of
+  // one per question (6 calls -> 2 on the 5-question chem-sheet fixture),
+  // now the default after comparing both against real fixture content with
+  // known planted errors — matched per-question on marks (within normal
+  // model variance) and named all three planted mistakes with equal
+  // specificity. No repair loop (a violation would mean re-sending the
+  // whole batch to fix one entry) — instead, every grade still runs through
+  // the same validateQuestionGrade() content gate per-question uses, and a
+  // violation fails the evaluation honestly rather than serving a grade
+  // that didn't pass it. "per-question" is kept available for comparison
+  // and as a fallback if batched quality ever regresses on a real fixture.
+  gradingMode: GradingMode = "batched",
   // Section 2(d) experiment: extraction (vision) and grading (reasoning)
   // are different tasks and may not need the same model — this lets each
   // be overridden independently. Both default to the production model.

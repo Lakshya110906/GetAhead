@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 
 import { SubjectSelector } from "@/components/SubjectSelector";
+import { SharedQuotaBadge } from "@/components/SharedQuotaBadge";
 
 const grades = [
   "8th Grade",
@@ -568,6 +569,7 @@ export default function UploadPage() {
                     Cancel
                   </button>
                 )}
+                {status === "idle" && <SharedQuotaBadge />}
               </div>
             )}
 
