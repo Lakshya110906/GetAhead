@@ -50,7 +50,7 @@ export const metadata: Metadata = {
   alternates: { canonical: "/" },
   openGraph: {
     title: "GetAhead | AI-powered exam answer evaluation",
-    description: "Instant AI-powered evaluation with detailed performance analytics.",
+    description: "AI-powered evaluation in under a minute, with detailed performance analytics.",
     url: "/",
     type: "website",
     locale: "en_IN",
@@ -67,7 +67,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "GetAhead | AI-powered exam answer evaluation",
-    description: "Instant AI-powered evaluation with detailed performance analytics.",
+    description: "AI-powered evaluation in under a minute, with detailed performance analytics.",
     images: ["/og-image.png"],
   },
 };

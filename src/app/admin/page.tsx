@@ -788,8 +788,8 @@ export default function AdminPage() {
                       <th className="px-6 py-4">Email</th>
                       <th className="px-6 py-4">Role</th>
                       <th className="px-6 py-4">Joined Date</th>
-                      <th className="px-6 py-4 text-center">Evaluations</th>
-                      <th className="px-6 py-4 text-center">Papers</th>
+                      <th className="px-6 py-4 text-right">Evaluations</th>
+                      <th className="px-6 py-4 text-right">Papers</th>
                       <th className="px-6 py-4 text-right">Actions</th>
                     </tr>
                   </thead>
@@ -808,8 +808,8 @@ export default function AdminPage() {
                         <td className="px-6 py-4 text-graphite">
                           {new Date(u.createdAt).toLocaleDateString("en-IN")}
                         </td>
-                        <td className="px-6 py-4 text-center font-bold text-ink">{u.totalEvaluations}</td>
-                        <td className="px-6 py-4 text-center font-bold text-ink">{u.questionPapersGenerated}</td>
+                        <td className="px-6 py-4 text-right font-mono tabular-nums font-bold text-ink">{u.totalEvaluations}</td>
+                        <td className="px-6 py-4 text-right font-mono tabular-nums font-bold text-ink">{u.questionPapersGenerated}</td>
                         <td className="px-6 py-4 text-right space-x-1.5 whitespace-nowrap">
                           <button
                             onClick={() => {
@@ -951,9 +951,9 @@ export default function AdminPage() {
                     <tr className="bg-gray-50 border-b border-rule text-xs font-bold text-graphite uppercase">
                       <th className="px-6 py-4">Owner</th>
                       <th className="px-6 py-4">Subject</th>
-                      <th className="px-6 py-4 text-center">Score</th>
+                      <th className="px-6 py-4 text-right">Score</th>
                       <th className="px-6 py-4 text-center">Grade</th>
-                      <th className="px-6 py-4">Duration</th>
+                      <th className="px-6 py-4 text-right">Duration</th>
                       <th className="px-6 py-4">Created Date</th>
                       <th className="px-6 py-4 text-right">Actions</th>
                     </tr>
@@ -965,9 +965,9 @@ export default function AdminPage() {
                           {ev.owner} <span className="text-gray-400 text-xs block font-normal">{ev.ownerEmail}</span>
                         </td>
                         <td className="px-6 py-4 text-graphite">{ev.subject}</td>
-                        <td className="px-6 py-4 text-center font-semibold text-ink">{ev.score}</td>
+                        <td className="px-6 py-4 text-right font-mono tabular-nums font-semibold text-ink">{ev.score}</td>
                         <td className="px-6 py-4 text-center font-bold text-ink">{ev.grade || "—"}</td>
-                        <td className="px-6 py-4 text-graphite">{ev.duration}s</td>
+                        <td className="px-6 py-4 text-right font-mono tabular-nums text-graphite">{ev.duration}s</td>
                         <td className="px-6 py-4 text-graphite">
                           {new Date(ev.createdAt).toLocaleDateString("en-IN")}
                         </td>
@@ -1050,7 +1050,7 @@ export default function AdminPage() {
                       <th className="px-6 py-4">Subject</th>
                       <th className="px-6 py-4">Grade</th>
                       <th className="px-6 py-4">Difficulty</th>
-                      <th className="px-6 py-4 text-center">Marks</th>
+                      <th className="px-6 py-4 text-right">Marks</th>
                       <th className="px-6 py-4 text-right">Actions</th>
                     </tr>
                   </thead>
@@ -1068,7 +1068,7 @@ export default function AdminPage() {
                             {p.difficulty}
                           </span>
                         </td>
-                        <td className="px-6 py-4 text-center font-bold text-ink">{p.totalMarks}</td>
+                        <td className="px-6 py-4 text-right font-mono tabular-nums font-bold text-ink">{p.totalMarks}</td>
                         <td className="px-6 py-4 text-right space-x-1.5">
                           <button
                             onClick={() => setPaperPreview(p)}

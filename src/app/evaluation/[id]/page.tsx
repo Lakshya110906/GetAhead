@@ -456,7 +456,7 @@ export default function EvaluationPage() {
               <thead>
                 <tr className="border-b border-rule">
                   <th className="text-left text-xs font-semibold text-graphite pb-3">Topic</th>
-                  <th className="text-center text-xs font-semibold text-graphite pb-3">Marks</th>
+                  <th className="text-right text-xs font-semibold text-graphite pb-3">Marks</th>
                   <th className="text-center text-xs font-semibold text-graphite pb-3">Score</th>
                 </tr>
               </thead>
@@ -474,7 +474,7 @@ export default function EvaluationPage() {
                       }`}
                     >
                       <td className="py-3 text-sm font-semibold text-ink">{item.topic}</td>
-                      <td className="py-3 text-sm text-graphite dark:text-graphite text-center font-mono">
+                      <td className="py-3 text-sm text-graphite dark:text-graphite text-right font-mono tabular-nums">
                         {item.obtainedMarks}/{item.totalMarks}
                       </td>
                       <td className="py-3 text-center">
