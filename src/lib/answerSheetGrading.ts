@@ -500,14 +500,29 @@ export function gradeFromPercentage(pct: number): GradedAnswerSheet["grade"] {
   return "F";
 }
 
-// Loose containment check — "Chemistry" should match "Chemistry - Class 12",
-// and an empty/undetected value is never treated as a mismatch (the model
-// said it couldn't tell, which is different from contradicting the form).
+function escapeRegex(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+// Whole-word containment, not raw substring — plain .includes() means
+// "Biochemistry" silently matches "Chemistry" (and "Geometry" matches
+// "Trigonometry"), since one is textually inside the other with no word
+// boundary between them. Same fix already applied to the topic-typo
+// correction in topicSpellcheck.ts, for the identical reason.
+function containsWholeWord(haystack: string, needle: string): boolean {
+  if (!needle) return false;
+  return new RegExp(`\\b${escapeRegex(needle)}\\b`, "i").test(haystack);
+}
+
+// "Chemistry" should match "Chemistry - Class 12" (whole-word containment,
+// not raw substring), and an empty/undetected value is never treated as a
+// mismatch (the model said it couldn't tell, which is different from
+// contradicting the form).
 export function looksMismatched(declared: string, detected: string | undefined): boolean {
   if (!detected || !detected.trim()) return false;
   const d = declared.toLowerCase().trim();
   const x = detected.toLowerCase().trim();
-  return !d.includes(x) && !x.includes(d);
+  return !containsWholeWord(d, x) && !containsWholeWord(x, d);
 }
 
 export function buildOverallFeedback(grades: QuestionGrade[], unreadableCount: number): string {

@@ -16,7 +16,6 @@ import {
 } from "lucide-react";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
-import { SUPPORT_EMAIL } from "@/lib/siteConfig";
 
 const contactTypes = [
   { id: "general", label: "General question", icon: MessageSquare },
@@ -117,9 +116,9 @@ export default function ContactPage() {
                 <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center mb-3">
                   <Mail className="w-5 h-5 text-blue-600" />
                 </div>
-                <h3 className="font-semibold text-gray-900 mb-1">Email us</h3>
-                <a href={`mailto:${SUPPORT_EMAIL}`} className="text-blue-600 text-sm hover:underline">{SUPPORT_EMAIL}</a>
-                <p className="text-xs text-graphite mt-2">For all general, technical, and account queries.</p>
+                <h3 className="font-semibold text-gray-900 mb-1">Send us a message</h3>
+                <a href="#contact-form" className="text-blue-600 text-sm hover:underline">Use the form below</a>
+                <p className="text-xs text-graphite mt-2">For all general, technical, and account queries — we don&apos;t currently support email.</p>
               </div>
 
               <div className="bg-surface rounded-2xl border border-rule shadow-sm p-6">
@@ -156,7 +155,7 @@ export default function ContactPage() {
             </div>
 
             {/* Contact form */}
-            <div className="lg:col-span-2">
+            <div id="contact-form" className="lg:col-span-2">
               <div className="bg-surface rounded-2xl border border-rule shadow-sm p-8">
                 <h2 className="text-xl font-bold text-gray-900 mb-6" style={{ fontFamily: "var(--font-display)" }}>
                   Send us a message
@@ -264,7 +263,7 @@ export default function ContactPage() {
 
                   {status === "error" && (
                     <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-sm" role="alert">
-                      Your message didn&apos;t send. Try again, or email us directly at {SUPPORT_EMAIL}
+                      Your message didn&apos;t send. Please try again in a moment.
                     </div>
                   )}
 

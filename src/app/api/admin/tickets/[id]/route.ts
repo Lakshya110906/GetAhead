@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/requireAdmin";
 import { prisma } from "@/lib/prisma";
 import { sendTicketReplyNotificationEmail } from "@/lib/email";
+import { captureException } from "@/lib/errorTracking";
+import { reportApiError } from "@/lib/apiError";
 
 type RouteParams = { params: Promise<{ id: string }> };
 
@@ -45,8 +47,7 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
 
     return NextResponse.json({ success: true, ticket });
   } catch (error) {
-    console.error("Admin fetch ticket detail API error:", error);
-    return NextResponse.json({ error: "Failed to retrieve ticket" }, { status: 500 });
+    return reportApiError({ code: "TICKET_FETCH_FAILED", error, route: "GET /api/admin/tickets/[id]" });
   }
 }
 
@@ -130,13 +131,13 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
         );
       } catch (emailError) {
         console.error("Failed to send ticket reply email notification:", emailError);
+        captureException(emailError, { route: "POST /api/admin/tickets/[id]", stage: "send-reply-notification", ticketId: id });
       }
 
       return NextResponse.json({ success: true, reply });
     }
   } catch (error) {
-    console.error("Admin ticket action API error:", error);
-    return NextResponse.json({ error: "Failed to perform ticket action" }, { status: 500 });
+    return reportApiError({ code: "TICKET_ACTION_FAILED", error, route: "POST /api/admin/tickets/[id]" });
   }
 }
 

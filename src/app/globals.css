@@ -85,6 +85,45 @@
   --color-fg: var(--ink);
   --color-fg-muted: var(--graphite);
   --color-border: var(--rule);
+
+  /* Dark-mode overrides for the decorative hues' 700/800/900 text shades
+     registered in @theme below (color-mix already handles their 50/100
+     backgrounds automatically since those formulas reference
+     var(--color-surface), which itself flips above). A literal dark value
+     that's merely "a bit lighter" than the light-mode one isn't enough —
+     the paired background has also moved from near-white to near-black, so
+     the text needs to flip to a genuinely light tint of the same hue, the
+     same way --examiner/--tick do. */
+  --color-orange-700: #fdba74;
+  --color-orange-800: #fdba74;
+  --color-orange-900: #fed7aa;
+  --color-amber-700: #fbbf24;
+  --color-amber-800: #fcd34d;
+  --color-amber-900: #fde68a;
+  --color-purple-700: #d8b4fe;
+  --color-purple-800: #d8b4fe;
+  --color-purple-900: #e9d5ff;
+  --color-pink-700: #f9a8d4;
+  --color-pink-800: #f9a8d4;
+  --color-pink-900: #fbcfe8;
+  --color-indigo-700: #a5b4fc;
+  --color-indigo-800: #a5b4fc;
+  --color-indigo-900: #c7d2fe;
+  --color-cyan-700: #67e8f9;
+  --color-cyan-800: #67e8f9;
+  --color-cyan-900: #a5f3fc;
+  --color-violet-700: #c4b5fd;
+  --color-violet-800: #c4b5fd;
+  --color-violet-900: #ddd6fe;
+  --color-sky-700: #7dd3fc;
+  --color-sky-800: #7dd3fc;
+  --color-sky-900: #bae6fd;
+  --color-rose-700: #fda4af;
+  --color-rose-800: #fda4af;
+  --color-rose-900: #fecdd3;
+  --color-yellow-700: #fde047;
+  --color-yellow-800: #fde047;
+  --color-yellow-900: #fef08a;
 }
 
 /* Tailwind v4 in-CSS theme registration: this is the only place raw
@@ -137,15 +176,43 @@
 
   /* Errors/corrections and success/positive states route through the
      examiner red and tick green tokens wherever the app already used
-     red-* / green-* utility classes for that purpose. */
+     red-* / green-* utility classes for that purpose. Every shade in the
+     family is aliased to the same token (50 through 900) rather than
+     stopping at 700 — a family that adapts at 50/500/600/700 but silently
+     falls back to Tailwind's static (non-adapting) default at 100/800/900
+     is exactly the "half-adapting shade family" root cause behind the
+     amber-50/amber-800 dark-mode contrast failures audited below (H5):
+     whichever shade a component happens to reach for must adapt, not just
+     the ones someone thought to map. */
   --color-red-50: color-mix(in srgb, var(--examiner) 10%, var(--color-surface));
+  /* 20% (matching every other hue's -100 formula) measured at 3.98:1
+     against full-strength --examiner text in both themes — fails WCAG AA.
+     12% is the highest mix that still clears 4.5:1 in both themes (verified
+     numerically, not eyeballed) while staying visibly more saturated than
+     -50's 10%. Used live: admin/page.tsx's alert-level and role badges
+     (bg-red-100 + text-red-700). */
+  --color-red-100: color-mix(in srgb, var(--examiner) 12%, var(--color-surface));
   --color-red-500: var(--examiner);
   --color-red-600: var(--examiner);
   --color-red-700: var(--examiner);
-  --color-green-50: color-mix(in srgb, var(--tick) 10%, var(--color-surface));
+  --color-red-800: var(--examiner);
+  --color-red-900: var(--examiner);
+  /* --tick is dimmer than --examiner (by design — green is the quieter of
+     the two marks), so the same 10%/20% formula that clears AA for red
+     does not clear it for green: green-50 measured 4.29:1 in dark mode
+     (fails) and green-100 measured 3.65-4.29:1 in both themes (fails).
+     6%/6.5% is the tuned pair that clears 4.5:1 in both themes, verified
+     numerically. Used live: dashboard/saved-reports status badges
+     (bg-green-100 + text-green-700). */
+  --color-green-50: color-mix(in srgb, var(--tick) 6%, var(--color-surface));
+  --color-green-100: color-mix(in srgb, var(--tick) 6.5%, var(--color-surface));
   --color-green-500: var(--tick);
   --color-green-600: var(--tick);
   --color-green-700: var(--tick);
+  --color-green-800: var(--tick);
+  --color-green-900: var(--tick);
+  --color-blue-800: var(--color-primary-dark);
+  --color-blue-900: var(--color-primary-dark);
 
   /* Tailwind's orange-600 (#f54900) fails WCAG AA (~3.4:1) on paper/white as
      small text — used as an "eyebrow" label color in a few places. Darken to
@@ -163,27 +230,84 @@
      Mixing each hue's own default swatch into --color-surface keeps its
      identity (still reads as amber, purple, etc.) while moving the actual
      background toward the dark surface in dark mode, same technique as the
-     red/green mapping above. */
+     red/green mapping above.
+
+     The 700/800/900 text shades of these same hues had the identical gap —
+     Tailwind's static default, e.g. amber-800 #92400e, is a *dark* brown
+     that was legible on the light-mode amber-50 tint but reads as
+     near-invisible dark-on-dark once that same amber-50 background mixes
+     toward the dark surface (audit H5, ~20+ instances, concentrated on the
+     paper-generation error/status screens: stuck, connection lost, quota
+     exceeded, maintenance). Each hue gets an explicit light-mode value here
+     plus a lighter, dark-mode-legible override in the .theme-dark block
+     above — the same "flip, don't merely darken-less" technique already
+     used for --examiner/--tick/--ink themselves, not a per-component patch. */
   --color-orange-50: color-mix(in srgb, #f97316 12%, var(--color-surface));
-  --color-orange-100: color-mix(in srgb, #f97316 20%, var(--color-surface));
+  /* 20% measured 4.31:1 in light mode against -700 text (fails AA) — used
+     live on coaching-centers' hero badge. 12% clears 4.5:1 in both themes. */
+  --color-orange-100: color-mix(in srgb, #f97316 12%, var(--color-surface));
+  --color-orange-700: #c2410c;
+  --color-orange-800: #9a3412;
+  --color-orange-900: #7c2d12;
   --color-amber-50: color-mix(in srgb, #f59e0b 12%, var(--color-surface));
-  --color-amber-100: color-mix(in srgb, #f59e0b 20%, var(--color-surface));
+  /* 20% measured 4.31:1 in light mode against -700 text (fails AA) — used
+     live on admin/dashboard/saved-reports status badges. 14% clears
+     4.5:1 in both themes while staying visibly more saturated than -50. */
+  --color-amber-100: color-mix(in srgb, #f59e0b 14%, var(--color-surface));
+  --color-amber-700: #b45309;
+  --color-amber-800: #92400e;
+  --color-amber-900: #78350f;
   --color-purple-50: color-mix(in srgb, #a855f7 12%, var(--color-surface));
   --color-purple-100: color-mix(in srgb, #a855f7 20%, var(--color-surface));
+  --color-purple-700: #7e22ce;
+  --color-purple-800: #6b21a8;
+  --color-purple-900: #581c87;
   --color-pink-50: color-mix(in srgb, #ec4899 12%, var(--color-surface));
   --color-pink-100: color-mix(in srgb, #ec4899 20%, var(--color-surface));
+  --color-pink-700: #be185d;
+  --color-pink-800: #9d174d;
+  --color-pink-900: #831843;
   --color-indigo-50: color-mix(in srgb, #6366f1 12%, var(--color-surface));
   --color-indigo-100: color-mix(in srgb, #6366f1 20%, var(--color-surface));
-  --color-teal-100: color-mix(in srgb, var(--tick) 20%, var(--color-surface));
+  --color-indigo-700: #4338ca;
+  --color-indigo-800: #3730a3;
+  --color-indigo-900: #312e81;
+  /* teal-50 was entirely unmapped (Tailwind's static #f0fdfa, same class
+     of bug as the audited bg-amber-50) — used live as an icon-badge
+     background on the contact page and several admin/marketing stat cards. */
+  --color-teal-50: color-mix(in srgb, var(--tick) 6%, var(--color-surface));
+  /* Same --tick anchor as green-100 above, same fix: 20% measured
+     3.65-4.29:1 against full-strength --tick text (fails AA) — used live
+     on teachers'/how-it-works' hero badges (bg-teal-100 + text-teal-700). */
+  --color-teal-100: color-mix(in srgb, var(--tick) 6.5%, var(--color-surface));
+  --color-teal-700: var(--tick);
+  --color-teal-800: var(--tick);
+  --color-teal-900: var(--tick);
   --color-cyan-50: color-mix(in srgb, #06b6d4 12%, var(--color-surface));
   --color-cyan-100: color-mix(in srgb, #06b6d4 20%, var(--color-surface));
+  --color-cyan-700: #0e7490;
+  --color-cyan-800: #155e75;
+  --color-cyan-900: #164e63;
   --color-violet-50: color-mix(in srgb, #8b5cf6 12%, var(--color-surface));
   --color-violet-100: color-mix(in srgb, #8b5cf6 20%, var(--color-surface));
+  --color-violet-700: #6d28d9;
+  --color-violet-800: #5b21b6;
+  --color-violet-900: #4c1d95;
   --color-sky-50: color-mix(in srgb, #0ea5e9 12%, var(--color-surface));
   --color-sky-100: color-mix(in srgb, #0ea5e9 20%, var(--color-surface));
+  --color-sky-700: #0369a1;
+  --color-sky-800: #075985;
+  --color-sky-900: #0c4a6e;
   --color-rose-50: color-mix(in srgb, #f43f5e 12%, var(--color-surface));
+  --color-rose-100: color-mix(in srgb, #f43f5e 20%, var(--color-surface));
+  --color-rose-700: #be123c;
+  --color-rose-800: #9f1239;
+  --color-rose-900: #881337;
   --color-yellow-50: color-mix(in srgb, #eab308 12%, var(--color-surface));
   --color-yellow-100: color-mix(in srgb, #eab308 20%, var(--color-surface));
+  --color-yellow-700: #a16207;
+  --color-yellow-800: #854d0e;
+  --color-yellow-900: #713f12;
   --color-slate-50: var(--color-surface-2);
   --color-slate-100: var(--color-surface-2);
 
@@ -335,3 +459,40 @@ h6 { font-family: var(--font-display); font-weight: 600; font-size: 0.9375rem; l
 
 .theme-dark .scrollbar-thin { scrollbar-color: var(--rule) transparent; }
 .theme-dark .scrollbar-thin::-webkit-scrollbar-thumb { background-color: var(--rule); }
+
+/* ── .paper-document: the generated question-paper preview (and anything
+   else standing in for a literal printed page) — audit H5(e). A sheet of
+   paper doesn't invert when the room lights go down, and neither does a
+   PDF reader's page; the surrounding app chrome (toolbar, refine card) is
+   free to follow the site theme, but everything INSIDE this wrapper must
+   read as fixed light paper with dark ink regardless of .theme-dark. These
+   overrides win on specificity over the general .theme-dark utility
+   remaps above (two classes vs. one) without touching every inner
+   className individually. ── */
+.theme-dark .paper-document { color: var(--fixed-ink); }
+.theme-dark .paper-document .text-ink { color: var(--fixed-ink); }
+.theme-dark .paper-document .text-graphite { color: var(--fixed-graphite); }
+.theme-dark .paper-document .text-gray-900,
+.theme-dark .paper-document .text-gray-800,
+.theme-dark .paper-document .text-gray-700 { color: var(--fixed-ink); }
+.theme-dark .paper-document .text-gray-600,
+.theme-dark .paper-document .text-gray-500,
+.theme-dark .paper-document .text-gray-400 { color: var(--fixed-graphite); }
+.theme-dark .paper-document .border-gray-100,
+.theme-dark .paper-document .border-gray-200,
+.theme-dark .paper-document .border-gray-300,
+.theme-dark .paper-document .border-gray-400,
+.theme-dark .paper-document .border-gray-800 { border-color: var(--fixed-rule); }
+.theme-dark .paper-document .bg-gray-50,
+.theme-dark .paper-document .bg-gray-100 { background-color: color-mix(in srgb, var(--fixed-ink) 4%, var(--fixed-paper)); }
+.theme-dark .paper-document input,
+.theme-dark .paper-document textarea {
+  background-color: transparent;
+  color: var(--fixed-ink);
+  border-color: transparent;
+}
+.theme-dark .paper-document input:hover,
+.theme-dark .paper-document textarea:hover { border-color: var(--fixed-rule); }
+.theme-dark .paper-document input::placeholder,
+.theme-dark .paper-document textarea::placeholder { color: var(--fixed-graphite); }
+.theme-dark .paper-document .focus\:bg-surface:focus { background-color: var(--fixed-paper); }

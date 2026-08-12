@@ -3,7 +3,7 @@ import Link from "next/link";
 import { ChevronRight, Shield } from "lucide-react";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
-import { PRIVACY_EMAIL, SUPPORT_EMAIL, SITE_URL } from "@/lib/siteConfig";
+import { SITE_URL } from "@/lib/siteConfig";
 
 export const metadata: Metadata = {
   title: "Privacy policy",
@@ -25,7 +25,6 @@ export const metadata: Metadata = {
 };
 
 const EFFECTIVE_DATE = "17 July 2026";
-const CONTACT_EMAIL = PRIVACY_EMAIL;
 
 export default function PrivacyPage() {
   return (
@@ -233,7 +232,7 @@ export default function PrivacyPage() {
               <li><strong>Portability</strong> — Request your evaluation data in a machine-readable format.</li>
               <li><strong>Objection</strong> — Object to specific processing of your data.</li>
             </ul>
-            <p className="text-ink leading-relaxed mt-4">To exercise any of these rights, email us at <a href={`mailto:${CONTACT_EMAIL}`} className="text-blue-600 hover:underline">{CONTACT_EMAIL}</a>. We will respond within 30 days.</p>
+            <p className="text-ink leading-relaxed mt-4">To exercise any of these rights, contact us via our <Link href="/contact" className="text-blue-600 hover:underline">Contact page</Link>. We will respond within 30 days.</p>
           </section>
 
           <hr className="border-rule" />
@@ -259,7 +258,7 @@ export default function PrivacyPage() {
 
           <section id="section-11">
             <h2 className="text-2xl font-bold text-gray-900 mb-4" style={{ fontFamily: "var(--font-display)" }}>11. Children</h2>
-            <p className="text-ink leading-relaxed">GetAhead AI is not directed at children under the age of 13. We do not knowingly collect personal data from children under 13. If you believe a child has provided us with personal data without parental consent, contact us at <a href={`mailto:${CONTACT_EMAIL}`} className="text-blue-600 hover:underline">{CONTACT_EMAIL}</a> and we will delete it promptly. For students aged 13–17, parental or guardian consent may be required depending on your jurisdiction.</p>
+            <p className="text-ink leading-relaxed">GetAhead AI is not directed at children under the age of 13. We do not knowingly collect personal data from children under 13. If you believe a child has provided us with personal data without parental consent, contact us via our <Link href="/contact" className="text-blue-600 hover:underline">Contact page</Link> and we will delete it promptly. For students aged 13–17, parental or guardian consent may be required depending on your jurisdiction.</p>
           </section>
 
           <hr className="border-rule" />
@@ -276,9 +275,7 @@ export default function PrivacyPage() {
             <p className="text-ink leading-relaxed mb-4">For any privacy-related questions, requests, or concerns:</p>
             <div className="bg-gray-50 rounded-2xl border border-rule p-6 space-y-2">
               <p className="text-ink"><strong>GetAhead AI</strong></p>
-              <p className="text-ink">Privacy enquiries: <a href={`mailto:${CONTACT_EMAIL}`} className="text-blue-600 hover:underline">{CONTACT_EMAIL}</a></p>
-              <p className="text-ink">General support: <a href={`mailto:${SUPPORT_EMAIL}`} className="text-blue-600 hover:underline">{SUPPORT_EMAIL}</a></p>
-              <p className="text-ink">Contact form: <Link href="/contact" className="text-blue-600 hover:underline">{SITE_URL.replace(/^https?:\/\//, "")}/contact</Link></p>
+              <p className="text-ink">Privacy enquiries and general support: use our <Link href="/contact" className="text-blue-600 hover:underline">Contact page</Link> ({SITE_URL.replace(/^https?:\/\//, "")}/contact) — we don&apos;t currently support email.</p>
             </div>
           </section>
 

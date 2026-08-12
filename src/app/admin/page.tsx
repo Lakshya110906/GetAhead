@@ -106,6 +106,23 @@ export default function AdminPage() {
   const [paperPreview, setPaperPreview] = useState<any>(null);
   const [dbHealthMessage, setDbHealthMessage] = useState("");
 
+  // Every secondary panel fetch (health, spend, quota, metrics, users,
+  // evaluations, papers, db info, logs, settings, tickets) used to swallow
+  // its own failure with .catch(() => {}) — a widget that failed to load
+  // rendered identically to a widget with genuinely zero data (a "0" stat,
+  // an empty table), leaving the admin no way to tell the two apart. Each
+  // fetch below now records its own failure by label instead.
+  const [loadErrors, setLoadErrors] = useState<Set<string>>(new Set());
+  const markLoadError = (label: string) =>
+    setLoadErrors((prev) => new Set(prev).add(label));
+  const clearLoadError = (label: string) =>
+    setLoadErrors((prev) => {
+      if (!prev.has(label)) return prev;
+      const next = new Set(prev);
+      next.delete(label);
+      return next;
+    });
+
   // 1. Initial auth check
 
   const fetchStats = async () => {
@@ -142,9 +159,10 @@ export default function AdminPage() {
     fetch("/api/admin/tickets/stats")
       .then((r) => r.json())
       .then((d) => {
-        if (d.success) setTicketStats(d.stats);
+        if (d.success) { setTicketStats(d.stats); clearLoadError("ticketStats"); }
+        else markLoadError("ticketStats");
       })
-      .catch(() => {});
+      .catch(() => markLoadError("ticketStats"));
   };
 
   const fetchTickets = (
@@ -165,9 +183,12 @@ export default function AdminPage() {
           setTickets(d.tickets || []);
           setTicketsTotal(d.total || 0);
           setTicketsPage(d.page || 1);
+          clearLoadError("tickets");
+        } else {
+          markLoadError("tickets");
         }
       })
-      .catch(() => {});
+      .catch(() => markLoadError("tickets"));
   };
 
   useEffect(() => {
@@ -189,29 +210,29 @@ export default function AdminPage() {
   const fetchHealth = () => {
     fetch("/api/admin/health")
       .then((r) => r.json())
-      .then(setHealth)
-      .catch(() => {});
+      .then((d) => { setHealth(d); clearLoadError("health"); })
+      .catch(() => markLoadError("health"));
   };
 
   const fetchSpend = () => {
     fetch("/api/admin/spend")
       .then((r) => r.json())
-      .then(setSpend)
-      .catch(() => {});
+      .then((d) => { setSpend(d); clearLoadError("spend"); })
+      .catch(() => markLoadError("spend"));
   };
 
   const fetchQuota = () => {
     fetch("/api/admin/quota")
       .then((r) => r.json())
-      .then(setQuota)
-      .catch(() => {});
+      .then((d) => { setQuota(d); clearLoadError("quota"); })
+      .catch(() => markLoadError("quota"));
   };
 
   const fetchMetrics = () => {
     fetch("/api/admin/metrics")
       .then((r) => r.json())
-      .then(setMetrics)
-      .catch(() => {});
+      .then((d) => { setMetrics(d); clearLoadError("metrics"); })
+      .catch(() => markLoadError("metrics"));
   };
 
   const fetchUsers = (page = 1, search = usersSearch) => {
@@ -221,8 +242,9 @@ export default function AdminPage() {
         setUsers(d.users || []);
         setUsersTotal(d.total || 0);
         setUsersPage(d.page || 1);
+        clearLoadError("users");
       })
-      .catch(() => {});
+      .catch(() => markLoadError("users"));
   };
 
   const fetchEvaluations = (page = 1, search = evalsSearch) => {
@@ -232,8 +254,9 @@ export default function AdminPage() {
         setEvaluations(d.evaluations || []);
         setEvalsTotal(d.total || 0);
         setEvalsPage(d.page || 1);
+        clearLoadError("evaluations");
       })
-      .catch(() => {});
+      .catch(() => markLoadError("evaluations"));
   };
 
   const fetchPapers = (page = 1, search = papersSearch) => {
@@ -243,15 +266,16 @@ export default function AdminPage() {
         setPapers(d.papers || []);
         setPapersTotal(d.total || 0);
         setPapersPage(d.page || 1);
+        clearLoadError("papers");
       })
-      .catch(() => {});
+      .catch(() => markLoadError("papers"));
   };
 
   const fetchDbInfo = () => {
     fetch("/api/admin/db")
       .then((r) => r.json())
-      .then(setDbInfo)
-      .catch(() => {});
+      .then((d) => { setDbInfo(d); clearLoadError("dbInfo"); })
+      .catch(() => markLoadError("dbInfo"));
   };
 
   const fetchLogs = (page = 1, type = logType, search = logsSearch) => {
@@ -261,15 +285,16 @@ export default function AdminPage() {
         setLogs(d.logs || []);
         setLogsTotal(d.total || 0);
         setLogsPage(d.page || 1);
+        clearLoadError("logs");
       })
-      .catch(() => {});
+      .catch(() => markLoadError("logs"));
   };
 
   const fetchSettings = () => {
     fetch("/api/admin/settings")
       .then((r) => r.json())
-      .then(setSysSettings)
-      .catch(() => {});
+      .then((d) => { setSysSettings(d); clearLoadError("settings"); })
+      .catch(() => markLoadError("settings"));
   };
 
   useEffect(() => {
@@ -386,6 +411,29 @@ export default function AdminPage() {
     );
   }
 
+  // `authenticated` was set but never actually read past this point — the
+  // dashboard shell rendered unconditionally after the spinner, so a failed
+  // /api/admin/stats call (session revoked mid-session, transient DB error)
+  // showed the full admin UI with every panel silently empty instead of
+  // telling the admin their session/request failed.
+  if (!authenticated) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center max-w-sm px-6">
+          <AlertTriangle className="w-10 h-10 text-red-500 mx-auto mb-3" />
+          <p className="text-ink font-semibold mb-1">Couldn&apos;t load the admin dashboard</p>
+          <p className="text-graphite text-sm mb-5">Your session may have expired, or the request failed. Try refreshing, or sign in again.</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="inline-flex items-center gap-2 bg-ink text-paper font-semibold px-5 py-2.5 rounded-xl hover:opacity-90 transition-opacity text-sm"
+          >
+            <RefreshCw className="w-4 h-4" /> Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   // 3. Render Admin Layout & Dashboard
   return (
     <div className="min-h-screen bg-gray-50 text-ink flex flex-col">
@@ -411,6 +459,13 @@ export default function AdminPage() {
           Logout
         </button>
       </header>
+
+      {loadErrors.size > 0 && (
+        <div className="bg-red-50 border-b border-red-200 text-red-700 text-xs px-6 py-2 flex items-center gap-2 shrink-0">
+          <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />
+          Couldn&apos;t load: {Array.from(loadErrors).join(", ")}. Some panels may show stale or empty data — try refreshing.
+        </div>
+      )}
 
       {/* Workspace container */}
       <div className="flex-1 flex overflow-hidden">

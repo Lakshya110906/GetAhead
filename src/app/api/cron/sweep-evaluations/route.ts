@@ -21,7 +21,7 @@ const BATCH_SIZE = 2;
 
 function isAuthorized(request: NextRequest): boolean {
   const secret = process.env.CRON_SECRET;
-  if (!secret) return true; // not configured in this environment — allow
+  if (!secret) return false; // unset — fail closed, do not allow unauthenticated cron calls
   return request.headers.get("authorization") === `Bearer ${secret}`;
 }
 

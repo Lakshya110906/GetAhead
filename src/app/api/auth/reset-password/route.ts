@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
+import { reportApiError } from "@/lib/apiError";
 
 const resetPasswordSchema = z.object({
   token: z.string().min(1, "Token is required"),
@@ -77,7 +78,6 @@ export async function POST(request: NextRequest) {
       message: "Your password has been successfully reset.",
     });
   } catch (error) {
-    console.error("Reset password API error:", error);
-    return NextResponse.json({ error: "Failed to reset password." }, { status: 500 });
+    return reportApiError({ code: "AUTH_REQUEST_FAILED", error, route: "POST /api/auth/reset-password" });
   }
 }

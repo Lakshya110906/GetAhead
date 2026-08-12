@@ -32,6 +32,10 @@ export const ErrorCodes = {
   TUTOR_TIMEOUT: "The AI tutor took too long to respond.",
   UPLOAD_AUTH_FAILED: "Couldn't authorize this file upload.",
   DB_MIGRATION_DRIFT: "A database schema problem is blocking this request.",
+  TICKET_FETCH_FAILED: "Couldn't load support tickets.",
+  TICKET_ACTION_FAILED: "Couldn't complete that action on this ticket.",
+  TICKET_CREATE_FAILED: "Couldn't submit your support ticket.",
+  AUTH_REQUEST_FAILED: "Something went wrong processing that request.",
   UNKNOWN: "Something went wrong on our end.",
 } as const;
 

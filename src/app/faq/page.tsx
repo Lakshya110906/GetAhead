@@ -5,7 +5,6 @@ import { useState } from "react";
 import { ChevronDown, ArrowRight, HelpCircle } from "lucide-react";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
-import { SUPPORT_EMAIL } from "@/lib/siteConfig";
 
 const faqCategories = [
   {
@@ -55,7 +54,7 @@ const faqCategories = [
     faqs: [
       {
         q: "Is my exam data private?",
-        a: "Yes. Your uploaded answer sheets and evaluation data are stored securely in your account and never shared with third parties. We do not use your exam content to train external AI models.",
+        a: "Yes. Your uploaded answer sheets and evaluation data are stored securely in your account. We never sell your data, and only share it with the specific sub-processors that run the service — Google's Gemini API for grading, Aiven for database hosting, Resend for transactional email, Vercel for hosting, and Sentry for error tracking — never with anyone else. We do not use your exam content to train external AI models. See our privacy policy for the full sub-processor list.",
       },
       {
         q: "Where is my data stored?",
@@ -197,7 +196,7 @@ const faqCategories = [
       },
       {
         q: "How can I suggest a feature?",
-        a: `Use the Contact page to submit a feature request. We actively read every submission and prioritise based on user demand. You can also reach us at ${SUPPORT_EMAIL}.`,
+        a: "Use the Contact page to submit a feature request. We actively read every submission and prioritise based on user demand.",
       },
       {
         q: "Will GetAhead AI always be free?",

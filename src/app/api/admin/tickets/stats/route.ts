@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/requireAdmin";
 import { prisma } from "@/lib/prisma";
+import { reportApiError } from "@/lib/apiError";
 
 export async function GET() {
   try {
@@ -124,7 +125,6 @@ export async function GET() {
       },
     });
   } catch (error) {
-    console.error("Admin ticket stats API error:", error);
-    return NextResponse.json({ error: "Failed to load ticket analytics stats" }, { status: 500 });
+    return reportApiError({ code: "TICKET_FETCH_FAILED", error, route: "GET /api/admin/tickets/stats" });
   }
 }

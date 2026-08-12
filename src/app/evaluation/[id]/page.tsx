@@ -29,7 +29,22 @@ import {
   Target,
 } from "lucide-react";
 
-const AiTutor = dynamic(() => import("@/components/tutor/AiTutor").then((m) => m.AiTutor), { ssr: false });
+// Without a `loading` component, the tutor panel's chunk-load window (the
+// gap between this page mounting and the tutor JS actually arriving) had
+// nothing on screen at all — no launcher button, no indication anything
+// was coming. This mirrors the same launcher button's fixed position so
+// nothing shifts once the real component takes over.
+const AiTutor = dynamic(() => import("@/components/tutor/AiTutor").then((m) => m.AiTutor), {
+  ssr: false,
+  loading: () => (
+    <div
+      className="fixed right-6 bottom-6 z-40 bg-ink text-paper p-4 rounded-full shadow-xl flex items-center gap-2 no-print opacity-70"
+      aria-label="Loading AI tutor"
+    >
+      <div className="w-5 h-5 border-2 border-paper/40 border-t-paper rounded-full animate-spin" />
+    </div>
+  ),
+});
 
 interface EvaluationData {
   id: string;
@@ -83,6 +98,12 @@ export default function EvaluationPage() {
   const router = useRouter();
   const [data, setData] = useState<EvaluationData | null>(null);
   const [loading, setLoading] = useState(true);
+  // A fetch failure (network drop, 500) and a genuine 404/permission
+  // denial both leave `data` null — but they are not the same thing, and
+  // "does not exist or you do not have permission" is actively wrong copy
+  // to show for a transient network failure. Tracked separately so the
+  // two cases render distinct messages.
+  const [loadError, setLoadError] = useState(false);
 
   // Saved, share and print states
   const [isSaved, setIsSaved] = useState(false);
@@ -114,9 +135,11 @@ export default function EvaluationPage() {
             subjectMismatch: d.subjectMismatch || null,
             gradeMismatch: d.gradeMismatch || null,
           });
+        } else {
+          setLoadError(true);
         }
       })
-      .catch(() => {})
+      .catch(() => setLoadError(true))
       .finally(() => setLoading(false));
 
     // Fetch save status
@@ -229,16 +252,18 @@ export default function EvaluationPage() {
           <AlertTriangle className="w-8 h-8 text-red-500" />
         </div>
         <h2 className="text-xl font-bold text-ink" style={{ fontFamily: "var(--font-display)" }}>
-          Evaluation not found
+          {loadError ? "Couldn't load this evaluation" : "Evaluation not found"}
         </h2>
         <p className="text-graphite text-sm mt-2 mb-6">
-          The evaluation report you are trying to access does not exist or you do not have permission to view it.
+          {loadError
+            ? "Something went wrong loading this report — try refreshing the page."
+            : "The evaluation report you are trying to access does not exist or you do not have permission to view it."}
         </p>
         <button
-          onClick={() => router.push("/dashboard")}
+          onClick={() => (loadError ? window.location.reload() : router.push("/dashboard"))}
           className="inline-flex items-center gap-2 bg-ink text-paper font-semibold px-6 py-3 rounded-xl hover:opacity-90 transition-opacity text-sm shadow-md"
         >
-          <ArrowLeft className="w-4 h-4" /> Back to dashboard
+          <ArrowLeft className="w-4 h-4" /> {loadError ? "Retry" : "Back to dashboard"}
         </button>
       </div>
     );
@@ -595,16 +620,20 @@ export default function EvaluationPage() {
               Strengths
             </h2>
           </div>
-          <ul className="space-y-3">
-            {(data.strengths || []).map((s, i) => (
-              <li key={i} className="flex items-start gap-2.5">
-                <span className="w-5 h-5 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <span className="text-green-600 text-xs font-bold">✓</span>
-                </span>
-                <span className="text-sm text-ink">{s}</span>
-              </li>
-            ))}
-          </ul>
+          {(data.strengths || []).length > 0 ? (
+            <ul className="space-y-3">
+              {(data.strengths || []).map((s, i) => (
+                <li key={i} className="flex items-start gap-2.5">
+                  <span className="w-5 h-5 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <span className="text-green-600 text-xs font-bold">✓</span>
+                  </span>
+                  <span className="text-sm text-ink">{s}</span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-sm text-graphite italic">No specific strengths were identified for this evaluation.</p>
+          )}
         </div>
 
         <div className="bg-surface rounded-2xl border-l-4 border-amber-400 border border-rule card-shadow-md p-6">
@@ -614,16 +643,20 @@ export default function EvaluationPage() {
               Areas to improve
             </h2>
           </div>
-          <ul className="space-y-3">
-            {(data.weaknesses || []).map((w, i) => (
-              <li key={i} className="flex items-start gap-2.5">
-                <span className="w-5 h-5 bg-amber-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <span className="text-amber-600 text-xs">!</span>
-                </span>
-                <span className="text-sm text-ink">{w}</span>
-              </li>
-            ))}
-          </ul>
+          {(data.weaknesses || []).length > 0 ? (
+            <ul className="space-y-3">
+              {(data.weaknesses || []).map((w, i) => (
+                <li key={i} className="flex items-start gap-2.5">
+                  <span className="w-5 h-5 bg-amber-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <span className="text-amber-600 text-xs">!</span>
+                  </span>
+                  <span className="text-sm text-ink">{w}</span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-sm text-graphite italic">No specific areas to improve were identified for this evaluation.</p>
+          )}
         </div>
       </div>
 
@@ -650,19 +683,23 @@ export default function EvaluationPage() {
             Study recommendations
           </h2>
         </div>
-        <div className="grid sm:grid-cols-2 gap-3">
-          {(data.recommendations || []).map((rec, i) => (
-            <div
-              key={i}
-              className="flex items-start gap-3 bg-amber-50 rounded-xl p-3.5 border border-amber-100"
-            >
-              <span className="w-6 h-6 bg-amber-400 rounded-lg flex items-center justify-center text-white text-xs font-bold flex-shrink-0 mt-0.5">
-                {i + 1}
-              </span>
-              <p className="text-sm text-ink">{rec}</p>
-            </div>
-          ))}
-        </div>
+        {(data.recommendations || []).length > 0 ? (
+          <div className="grid sm:grid-cols-2 gap-3">
+            {(data.recommendations || []).map((rec, i) => (
+              <div
+                key={i}
+                className="flex items-start gap-3 bg-amber-50 rounded-xl p-3.5 border border-amber-100"
+              >
+                <span className="w-6 h-6 bg-amber-400 rounded-lg flex items-center justify-center text-white text-xs font-bold flex-shrink-0 mt-0.5">
+                  {i + 1}
+                </span>
+                <p className="text-sm text-ink">{rec}</p>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-sm text-graphite italic">No specific study recommendations were generated for this evaluation.</p>
+        )}
       </div>
 
       {/* Print-Only Layout CSS overrides */}

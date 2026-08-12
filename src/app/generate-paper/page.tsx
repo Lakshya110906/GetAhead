@@ -211,6 +211,12 @@ export default function GeneratePaperPage() {
   const [error, setError] = useState("");
   const [quotaResetsAt, setQuotaResetsAt] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  // Editing a question or metadata field autosaves in the background —
+  // failure used to be console.error only, so a user who edited a
+  // question, saw it update on screen, and closed the tab had no idea the
+  // edit never actually reached the database. Surfaced as a dismissible
+  // banner instead.
+  const [autosaveError, setAutosaveError] = useState(false);
 
   // Conflict resolution (structured field vs. parsed custom-instruction constraint)
   const [conflictInfo, setConflictInfo] = useState<ConflictInfo | null>(null);
@@ -660,7 +666,7 @@ export default function GeneratePaperPage() {
         }
       };
 
-      await fetch(`/api/questions/${paperDbId}`, {
+      const res = await fetch(`/api/questions/${paperDbId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -668,8 +674,11 @@ export default function GeneratePaperPage() {
           content: JSON.stringify(dbPayload)
         })
       });
+      if (!res.ok) throw new Error(`Autosave failed with status ${res.status}`);
+      setAutosaveError(false);
     } catch (err) {
       console.error("Failed to save paper edits to DB:", err);
+      setAutosaveError(true);
     }
   };
 
@@ -679,11 +688,30 @@ export default function GeneratePaperPage() {
     }
   };
 
+  // AI Refine used to hold its own long-lived SSE connection open against
+  // /api/questions/generate-stream — the exact architecture that produced
+  // the confirmed production timeout ("Task timed out after 120 seconds")
+  // on the main generate flow, just never migrated when that flow was fixed.
+  // It now creates a job and drives it through the same durable
+  // POST /api/papers + pollJob() machinery as handleGenerate, so a refine
+  // request gets the same stuck-job detection, backoff, and reconnect
+  // handling for free instead of a second, unmaintained copy of it. With
+  // this call site migrated, /api/questions/generate-stream had zero
+  // remaining callers and has been deleted, along with the equally-dead
+  // non-streaming /api/questions/generate.
   const handleAIRefine = async () => {
     if (!aiFeedback.trim() || !paper) return;
 
     setError("");
+    setQuotaRefunded(false);
+    setRetryWorthwhile(true);
+    setRepairAttemptLogs(null);
     setStatus("generating");
+    setJobId(null);
+    lastStepRef.current = null;
+    lastProgressRef.current = Date.now();
+    consecutivePollFailuresRef.current = 0;
+    pollAttemptCountRef.current = 0;
     setPlannerStatus("idle"); setGeneratorStatus("idle"); setReviewerStatus("idle");
     setPlannerLogs([]); setGeneratorLogs([]); setReviewerLogs([]);
 
@@ -700,97 +728,58 @@ ${JSON.stringify(paper, null, 2)}
     setAiFeedback("");
 
     try {
-      const res = await fetch("/api/questions/generate-stream", {
+      const res = await fetch("/api/papers", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          subject,
-          grade,
-          topic,
-          difficulty,
-          totalMarks,
-          questionTypes,
-          institutionName,
-          courseCode,
-          timeAllowed,
-          instructions,
+          subject, grade, topic, difficulty, totalMarks, questionTypes,
           customPrompt: refinementPrompt,
           studyMaterialText,
+          // The topic and structured fields were already settled by the
+          // generation being refined — re-running topic spellcheck or the
+          // implied-vs-field conflict gate against free-text revision
+          // feedback would surface a confirmation modal wired to
+          // handleGenerate, not this flow, and lose the refinement prompt.
+          topicResolution: "useOriginal",
+          conflictResolution: "useField",
         }),
       });
 
+      let body: Record<string, unknown> = {};
+      let bodyParseFailed = false;
+      try {
+        body = await res.json();
+      } catch {
+        bodyParseFailed = true;
+      }
+
       if (!res.ok) {
-        const body = await res.json().catch(() => ({}));
         if (body.quotaExceeded) {
-          setQuotaResetsAt(body.resetsAt || null);
+          setQuotaResetsAt((body.resetsAt as string) || null);
           setStatus("quota_exceeded");
-          setError(body.error || "Daily limit reached.");
+          setError((body.error as string) || "Daily limit reached.");
           return;
         }
         if (body.maintenance) {
           setStatus("maintenance");
-          setError(body.error || "Question generation is temporarily unavailable.");
+          setError((body.error as string) || "Question generation is temporarily unavailable.");
           return;
         }
-        throw new Error(body.error || "Failed to connect to generation service.");
-      }
-      if (!res.body) throw new Error("No response stream.");
-
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
-      let buffer = "";
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split("\n\n");
-        buffer = lines.pop() || "";
-        for (const line of lines) {
-          if (!line.startsWith("data: ")) continue;
-          try {
-            const payload = JSON.parse(line.slice(6));
-            const { event, agent, message, query } = payload;
-
-            if (event === "agent_start") {
-              if (agent === "planner") setPlannerStatus("active");
-              else if (agent === "generator") setGeneratorStatus("active");
-              else if (agent === "reviewer") setReviewerStatus("active");
-              if (message) addLog(agent, { type: "log", message });
-            } else if (event === "agent_log") {
-              if (message) addLog(agent, { type: "log", message });
-            } else if (event === "agent_tool_call") {
-              if (query) addLog(agent, { type: "tool_call", message: `Searching: "${query}"`, query });
-            } else if (event === "agent_tool_result") {
-              if (message) addLog(agent, { type: "tool_result", message });
-            } else if (event === "agent_done") {
-              if (agent === "planner") setPlannerStatus("done");
-              else if (agent === "generator") setGeneratorStatus("done");
-              else if (agent === "reviewer") setReviewerStatus("done");
-              if (message) addLog(agent, { type: "done", message });
-            } else if (event === "complete") {
-              const dbPaper = payload.paper;
-              setPaperDbId(dbPaper.id);
-              const results = JSON.parse(dbPaper.content);
-              setPaper(results.paper);
-              setPlannerPlan(results.plannerPlan);
-              setGeneratorDraft(results.generatorDraft);
-              setStatus("complete");
-            } else if (event === "error") {
-              if (payload.quotaRefunded) setQuotaRefunded(true);
-              if (payload.retryWorthwhile === false) setRetryWorthwhile(false);
-              if (payload.attemptLogs) setRepairAttemptLogs(payload.attemptLogs);
-              throw new Error(payload.message || "Generation failed.");
-            }
-          } catch (parseErr) {
-            if (parseErr instanceof SyntaxError) continue;
-            throw parseErr;
-          }
+        if (bodyParseFailed) {
+          throw new Error(
+            `[HTTP_${res.status}] The server didn't respond in time to start the refinement (status ${res.status}). This usually means the request was still starting up when it got cut off — try again.`
+          );
         }
+        const code = body.code ? ` [${body.code}]` : "";
+        const devDetail = body.devMessage ? ` — ${body.devMessage}` : "";
+        throw new Error(`${(body.error as string) || "Failed to start refinement."}${code}${devDetail}`);
       }
+
+      setJobId(body.jobId as string);
+      pollJob(body.jobId as string);
     } catch (err) {
       console.error(err);
-      const msg = err instanceof Error ? err.message : "The refinement didn't finish. Check your connection and try again.";
+      const msg = err instanceof Error ? err.message : "Could not start the refinement. Check your connection and try again.";
       setError(msg);
       setStatus("error");
     }
@@ -1421,6 +1410,16 @@ ${JSON.stringify(paper, null, 2)}
       {/* Paper Presentation Screen */}
       {status === "complete" && paper && (
         <div className="space-y-6">
+          {autosaveError && (
+            <div className="flex items-start gap-3 bg-red-50 border border-red-200 text-red-700 p-4 rounded-2xl text-sm no-print">
+              <AlertTriangle className="w-5 h-5 flex-shrink-0 mt-0.5 text-red-600" />
+              <div>
+                <p className="font-semibold">Your last edit didn&apos;t save</p>
+                <p className="text-red-600 mt-0.5">Check your connection and try the edit again — this page still shows your change, but it wasn&apos;t written to the database.</p>
+              </div>
+            </div>
+          )}
+
           {/* Degraded-generation warning — shown when the AI pipeline hit a
               problem (usually a transient rate limit) and fell back to
               either an unreviewed draft or a fully generic placeholder.
@@ -1489,10 +1488,16 @@ ${JSON.stringify(paper, null, 2)}
             </div>
           </div>
 
-          {/* Clean printable exam container */}
+          {/* Clean printable exam container — a real exam paper on real paper
+              does not invert to dark mode any more than a printed page
+              would (see .paper-document overrides in globals.css, same
+              --fixed-* principle as MarkedAnswerSheet.tsx's homepage
+              mockup). bg-fixed-paper/border-fixed-rule instead of the
+              normal bg-surface/border-rule keeps this card literal paper
+              regardless of site theme. */}
           {viewMode !== "logs" ? (
             <>
-              <div className="bg-surface rounded-3xl border border-rule shadow-xl p-5 sm:p-10 md:p-14 print-content font-serif">
+              <div className="paper-document bg-fixed-paper rounded-3xl border border-fixed-rule shadow-xl p-5 sm:p-10 md:p-14 print-content font-serif">
               {/* Header Title */}
               <div className="text-center pb-2 no-print">
                 <input

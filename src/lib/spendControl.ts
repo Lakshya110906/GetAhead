@@ -90,14 +90,41 @@ export class SpendLimitReachedError extends Error {
   }
 }
 
+// The admin "Maintenance mode" toggle (src/app/api/admin/settings/route.ts)
+// used to write SystemSetting("maintenanceMode") and nothing ever read it —
+// an admin flipping it during an incident got a success toast and zero
+// actual effect on the running app. Both call sites of assertSpendGateOpen()
+// already catch SpendLimitReachedError and turn it into the same 503
+// { maintenance: true } response the frontend displays, so reusing that
+// error (rather than inventing a second maintenance-specific one) wires the
+// toggle in without touching either caller.
+export class MaintenanceModeError extends SpendLimitReachedError {
+  constructor(snapshot: SpendSnapshot) {
+    super(snapshot);
+    this.message = "The app is currently in maintenance mode. New evaluations and question papers are temporarily paused — please check back shortly.";
+    this.name = "MaintenanceModeError";
+  }
+}
+
+async function isMaintenanceModeOn(): Promise<boolean> {
+  const setting = await prisma.systemSetting.findUnique({ where: { key: "maintenanceMode" } });
+  return setting?.value === "true";
+}
+
 /**
  * The kill switch. Call before enqueueing any new evaluation or paper
- * generation job — throws if today's estimated spend has crossed the
- * threshold, which the caller should turn into a 503 "maintenance" response
- * rather than accepting the job.
+ * generation job — throws if maintenance mode is on, or if today's
+ * estimated spend has crossed the threshold, either of which the caller
+ * should turn into a 503 "maintenance" response rather than accepting the
+ * job.
  */
 export async function assertSpendGateOpen(): Promise<void> {
   const snapshot = await getTodaysSpend();
+
+  if (await isMaintenanceModeOn()) {
+    throw new MaintenanceModeError(snapshot);
+  }
+
   await maybeAlertHalfwayToThreshold(snapshot);
   if (snapshot.killSwitchActive) {
     throw new SpendLimitReachedError(snapshot);

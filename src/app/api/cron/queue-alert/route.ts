@@ -11,7 +11,7 @@ const QUEUE_DEPTH_ALERT_THRESHOLD = Number(process.env.QUEUE_DEPTH_ALERT_THRESHO
 
 function isAuthorized(request: NextRequest): boolean {
   const secret = process.env.CRON_SECRET;
-  if (!secret) return true;
+  if (!secret) return false; // unset — fail closed, do not allow unauthenticated cron calls
   return request.headers.get("authorization") === `Bearer ${secret}`;
 }
 

@@ -73,10 +73,10 @@ export default function CoachingCentersPage() {
               <h3 className="font-semibold text-gray-900 mb-4">Coaching center impact</h3>
               <div className="space-y-5">
                 {[
-                  { label: "Mock test evaluation time", before: "2–3 days", after: "Same day" },
+                  { label: "Mock test evaluation time", before: "2–3 days", after: "Much faster" },
                   { label: "Paper creation time", before: "3–4 hours", after: "Minutes" },
                   { label: "Feedback per student", before: "Generic / None", after: "AI-personalised" },
-                  { label: "Grading consistency", before: "Varies by faculty", after: "100% consistent" },
+                  { label: "Grading consistency", before: "Varies by faculty", after: "Same rubric, every paper" },
                 ].map((row) => (
                   <div key={row.label}>
                     <div className="flex justify-between items-center mb-1">

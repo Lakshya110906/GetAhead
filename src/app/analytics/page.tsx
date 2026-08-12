@@ -18,6 +18,10 @@ export default function AnalyticsPage() {
   const [total, setTotal] = useState(0);
   const [avgPct, setAvgPct] = useState(0);
   const [loading, setLoading] = useState(true);
+  // Distinct from `total === 0` — a fetch failure must not render as "no
+  // academic data yet", which tells the user something completely
+  // different (go complete an evaluation) than "we couldn't load this".
+  const [loadError, setLoadError] = useState(false);
 
   useEffect(() => {
     fetch("/api/analytics")
@@ -28,9 +32,11 @@ export default function AnalyticsPage() {
           setSubjects(d.subjectPerformance || []);
           setTotal(d.totalEvaluations ?? 0);
           setAvgPct(d.avgPercentage ?? 0);
+        } else {
+          setLoadError(true);
         }
       })
-      .catch(() => {})
+      .catch(() => setLoadError(true))
       .finally(() => setLoading(false));
   }, []);
 
@@ -41,6 +47,23 @@ export default function AnalyticsPage() {
       <div className="flex flex-col items-center justify-center gap-3 min-h-[60vh]">
         <Loader2 className="w-10 h-10 animate-spin text-blue-600" />
         <p className="text-sm text-graphite">Loading your analytics...</p>
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900" style={{ fontFamily: "var(--font-display)" }}>
+            Analytics
+          </h1>
+          <p className="text-graphite text-sm">Deep dive into your academic performance</p>
+        </div>
+
+        <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-sm max-w-lg">
+          Couldn&apos;t load your analytics. Try refreshing the page.
+        </div>
       </div>
     );
   }

@@ -117,6 +117,12 @@ describe("looksMismatched", () => {
   it("is case-insensitive", () => {
     expect(looksMismatched("chemistry", "CHEMISTRY")).toBe(false);
   });
+  it("flags a mismatch even when one word is a raw substring of the other", () => {
+    // Plain .includes() would treat "Biochemistry" as containing
+    // "Chemistry" and silently pass — these are different subjects.
+    expect(looksMismatched("Biochemistry", "Chemistry")).toBe(true);
+    expect(looksMismatched("Trigonometry", "Geometry")).toBe(true);
+  });
 });
 
 // ── Grounded overall feedback — built in code from real per-question grades,

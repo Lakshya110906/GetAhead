@@ -3,7 +3,7 @@ import Link from "next/link";
 import { ChevronRight, FileText } from "lucide-react";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
-import { LEGAL_EMAIL, SUPPORT_EMAIL, SITE_URL } from "@/lib/siteConfig";
+import { SITE_URL } from "@/lib/siteConfig";
 
 export const metadata: Metadata = {
   title: "Terms of service",
@@ -100,7 +100,7 @@ export default function TermsPage() {
             <ul className="list-disc pl-6 space-y-2 text-ink">
               <li>Maintaining the confidentiality of your password.</li>
               <li>All activity that occurs under your account.</li>
-              <li>Notifying us immediately of any unauthorised access to your account at <a href={`mailto:${SUPPORT_EMAIL}`} className="text-blue-600 hover:underline">{SUPPORT_EMAIL}</a>.</li>
+              <li>Notifying us immediately of any unauthorised access to your account via our <Link href="/contact" className="text-blue-600 hover:underline">Contact page</Link>.</li>
             </ul>
             <p className="text-ink leading-relaxed mt-4">You may not share your account credentials with others or allow multiple individuals to use a single account. Each person must have their own account.</p>
           </section>
@@ -250,9 +250,7 @@ export default function TermsPage() {
             <p className="text-ink leading-relaxed mb-4">For questions about these Terms:</p>
             <div className="bg-gray-50 rounded-2xl border border-rule p-6 space-y-2">
               <p className="text-ink"><strong>GetAhead AI</strong></p>
-              <p className="text-ink">Legal enquiries: <a href={`mailto:${LEGAL_EMAIL}`} className="text-blue-600 hover:underline">{LEGAL_EMAIL}</a></p>
-              <p className="text-ink">General support: <a href={`mailto:${SUPPORT_EMAIL}`} className="text-blue-600 hover:underline">{SUPPORT_EMAIL}</a></p>
-              <p className="text-ink">Contact form: <Link href="/contact" className="text-blue-600 hover:underline">{SITE_URL.replace(/^https?:\/\//, "")}/contact</Link></p>
+              <p className="text-ink">Legal enquiries and general support: use our <Link href="/contact" className="text-blue-600 hover:underline">Contact page</Link> ({SITE_URL.replace(/^https?:\/\//, "")}/contact) — we don&apos;t currently support email.</p>
             </div>
           </section>
 

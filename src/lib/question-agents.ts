@@ -19,6 +19,19 @@ export function isGeminiConfigured(): boolean {
   return !!apiKey && apiKey !== "your-gemini-api-key-here" && !apiKey.startsWith("your-gemini");
 }
 
+// Mock papers are fabricated content — fine for local dev with no key
+// configured, but silently saving them to the DB as if AI-generated in
+// production (e.g. after a rotated or typo'd key) is a correctness/trust
+// issue with no marker distinguishing them from real output. Production
+// must fail loudly instead of falling back to mock data.
+export function shouldUseMockQuestionPaper(): boolean {
+  if (isGeminiConfigured()) return false;
+  if (process.env.NODE_ENV === "production") {
+    throw new Error("AI service not configured");
+  }
+  return true;
+}
+
 export function getGenAI(): GoogleGenerativeAI {
   if (!isGeminiConfigured()) throw new Error("Gemini API key not configured");
   return new GoogleGenerativeAI(apiKey!);
@@ -194,8 +207,8 @@ export interface PaperConfig {
   // questionTypes are already the FINAL, conflict-resolved values — any
   // disagreement between the structured fields and parsed free-text
   // constraints must have already been surfaced to the user and resolved
-  // by the caller (see /api/questions/generate-stream/route.ts and
-  // paperConstraintParser.ts). This module does not re-derive or silently
+  // by the caller (see /api/papers/route.ts and paperConstraintParser.ts).
+  // This module does not re-derive or silently
   // override either value; it treats them as ground truth to validate against.
   totalMarks: number;
   questionTypes: string[]; // e.g. ["MCQ", "Short Answer", "Long Answer"]
@@ -831,7 +844,7 @@ export async function generateQuestionPaper(config: PaperConfig): Promise<{
   generatorDraft: unknown;
   repairAttempts: RepairAttemptLog[];
 }> {
-  if (!apiKey || apiKey === "your-gemini-api-key-here" || apiKey.startsWith("your-gemini")) {
+  if (shouldUseMockQuestionPaper()) {
     console.log("⚠️  Gemini API key not configured/placeholder — running simulated multi-agent pipeline");
     await new Promise((resolve) => setTimeout(resolve, 3000));
     const paper = getMockQuestionPaper(config);
@@ -843,7 +856,7 @@ export async function generateQuestionPaper(config: PaperConfig): Promise<{
     };
   }
 
-  const genAI = new GoogleGenerativeAI(apiKey);
+  const genAI = getGenAI();
   const rawPlan = await withRetry(() => runPlannerAgent(genAI, config), "Planner Agent");
   const plannerPlan = correctPlanMarks(filterPlanToRequestedTypes(rawPlan, config.questionTypes), config.totalMarks);
   const { paper: validated, attemptLogs } = await generateValidatedPaper(genAI, config, plannerPlan);
@@ -863,7 +876,7 @@ export async function generateQuestionPaperStreamed(
   repairAttempts: RepairAttemptLog[];
 }> {
   // ── Mock mode when no API key ──────────────────────────────────────────────
-  if (!apiKey || apiKey === "your-gemini-api-key-here" || apiKey.startsWith("your-gemini")) {
+  if (shouldUseMockQuestionPaper()) {
     emit("agent_start", { agent: "planner", message: "Planner Agent activated. Reading exam requirements..." });
     await delay(700);
     if (config.studyMaterialText) {
@@ -916,7 +929,7 @@ export async function generateQuestionPaperStreamed(
   }
 
   // ── Live AI mode ────────────────────────────────────────────────────────────
-  const genAI = new GoogleGenerativeAI(apiKey);
+  const genAI = getGenAI();
 
   // --- Planner ---
   emit("agent_start", { agent: "planner", message: "Planner Agent activated. Reading exam requirements..." });

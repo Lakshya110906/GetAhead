@@ -24,13 +24,3 @@ function resolveSiteUrl(): string {
 }
 
 export const SITE_URL = resolveSiteUrl();
-
-// getahead.ai email addresses cannot receive mail — the domain isn't owned
-// by this project (see above). These currently point at that non-working
-// domain by default so nothing silently breaks further, but every page that
-// tells a user to email support is making a promise that can't be kept
-// until NEXT_PUBLIC_CONTACT_DOMAIN is set to a domain actually owned here.
-const CONTACT_DOMAIN = process.env.NEXT_PUBLIC_CONTACT_DOMAIN || "getahead.ai";
-export const SUPPORT_EMAIL = `support@${CONTACT_DOMAIN}`;
-export const PRIVACY_EMAIL = `privacy@${CONTACT_DOMAIN}`;
-export const LEGAL_EMAIL = `legal@${CONTACT_DOMAIN}`;

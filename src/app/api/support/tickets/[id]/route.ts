@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { reportApiError } from "@/lib/apiError";
 
 type RouteParams = { params: Promise<{ id: string }> };
 
@@ -45,8 +46,7 @@ export async function GET(_req: NextRequest, { params }: RouteParams) {
 
     return NextResponse.json({ success: true, ticket });
   } catch (error) {
-    console.error("Fetch support ticket detail API error:", error);
-    return NextResponse.json({ error: "Failed to retrieve ticket" }, { status: 500 });
+    return reportApiError({ code: "TICKET_FETCH_FAILED", error, route: "GET /api/support/tickets/[id]" });
   }
 }
 
@@ -111,7 +111,6 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
 
     return NextResponse.json({ success: true, reply });
   } catch (error) {
-    console.error("User reply support ticket API error:", error);
-    return NextResponse.json({ error: "Failed to post reply" }, { status: 500 });
+    return reportApiError({ code: "TICKET_ACTION_FAILED", error, route: "POST /api/support/tickets/[id]" });
   }
 }

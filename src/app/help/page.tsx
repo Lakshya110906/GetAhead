@@ -19,7 +19,6 @@ import {
 } from "lucide-react";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
-import { SUPPORT_EMAIL } from "@/lib/siteConfig";
 
 const categories = [
   {
@@ -36,7 +35,7 @@ const categories = [
       },
       {
         title: "How to change your name or profile details",
-        content: `Go to Settings from the dashboard sidebar. Under "Profile", you can update your display name. Click "Save Changes" when done. Email addresses cannot currently be changed — contact ${SUPPORT_EMAIL} if you need to update your email.`,
+        content: `Go to Settings from the dashboard sidebar. Under "Profile", you can update your display name. Click "Save Changes" when done. Email addresses cannot currently be changed — contact support via the Contact page if you need to update your email.`,
       },
       {
         title: "How to delete your account",
@@ -62,7 +61,7 @@ const categories = [
       },
       {
         title: "My password reset link isn't working",
-        content: `Reset links expire after 1 hour. If the link expired, go to the login page and request a new one. If the link still doesn't work, try: copying and pasting the full URL from the email into your browser, clearing browser cache, or using a different browser. If problems persist, contact ${SUPPORT_EMAIL}.`,
+        content: `Reset links expire after 1 hour. If the link expired, go to the login page and request a new one. If the link still doesn't work, try: copying and pasting the full URL from the email into your browser, clearing browser cache, or using a different browser. If problems persist, contact support via the Contact page.`,
       },
       {
         title: "I'm getting 'Invalid credentials' on login",
@@ -202,11 +201,11 @@ const categories = [
       },
       {
         title: "Page not loading or showing blank content",
-        content: `Try: hard refresh (Cmd+Shift+R on Mac / Ctrl+Shift+R on Windows), clear browser cache and cookies, try a different browser, disable browser extensions temporarily. If using a VPN, try disabling it — some VPNs block cloud DB connections. If the problem persists, contact ${SUPPORT_EMAIL} with a screenshot and your browser/OS details.`,
+        content: `Try: hard refresh (Cmd+Shift+R on Mac / Ctrl+Shift+R on Windows), clear browser cache and cookies, try a different browser, disable browser extensions temporarily. If using a VPN, try disabling it — some VPNs block cloud DB connections. If the problem persists, contact support via the Contact page with a screenshot and your browser/OS details.`,
       },
       {
         title: "How to report a bug",
-        content: `We take bugs seriously. To report a bug: go to the Contact page and select "Bug Report". Describe what you were doing, what you expected to happen, and what actually happened. Include a screenshot if possible. Alternatively email ${SUPPORT_EMAIL} with "BUG:" in the subject line. We aim to respond within 24 hours on weekdays.`,
+        content: `We take bugs seriously. To report a bug: go to the Contact page and select "Bug Report". Describe what you were doing, what you expected to happen, and what actually happened. Include a screenshot if possible. We aim to respond within 24 hours on weekdays.`,
       },
     ],
   },

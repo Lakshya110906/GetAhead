@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import crypto from "crypto";
 import { sendPasswordResetEmail } from "@/lib/email";
+import { captureException } from "@/lib/errorTracking";
+import { reportApiError } from "@/lib/apiError";
 
 // Rate limit: 3 password reset requests per hour per IP
 async function checkForgotPasswordRateLimit(ip: string): Promise<boolean> {
@@ -88,6 +90,7 @@ export async function POST(request: NextRequest) {
       });
     } catch (emailErr) {
       console.error("Failed to send reset password email:", emailErr);
+      captureException(emailErr, { route: "POST /api/auth/forgot-password", stage: "send-email" });
       return NextResponse.json(
         { error: "Failed to send reset email. Please try again later." },
         { status: 500 }
@@ -99,7 +102,6 @@ export async function POST(request: NextRequest) {
       message: "If an account exists with that email, a password reset link has been sent.",
     });
   } catch (error) {
-    console.error("Forgot password API error:", error);
-    return NextResponse.json({ error: "Failed to process forgot password request" }, { status: 500 });
+    return reportApiError({ code: "AUTH_REQUEST_FAILED", error, route: "POST /api/auth/forgot-password" });
   }
 }

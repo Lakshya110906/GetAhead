@@ -73,7 +73,7 @@ export default function TeachersPage() {
               </h3>
               <div className="space-y-4">
                 {[
-                  { label: "Manual grading (30 sheets)", old: "4–6 hours", new: "30 minutes" },
+                  { label: "Manual grading (30 sheets)", old: "4–6 hours", new: "Minutes, not hours" },
                   { label: "Paper creation", old: "1–2 hours", new: "Minutes" },
                   { label: "Feedback writing", old: "2–3 hours", new: "Auto-generated" },
                 ].map((row) => (
@@ -87,8 +87,8 @@ export default function TeachersPage() {
                 ))}
               </div>
               <div className="mt-4 bg-teal-50 rounded-xl p-4 border border-teal-100">
-                <p className="text-sm font-semibold text-teal-800">Save 5–10 hours every week</p>
-                <p className="text-xs text-teal-600 mt-1">That&apos;s 20–40 hours per month you can reinvest in teaching.</p>
+                <p className="text-sm font-semibold text-teal-800">Save hours every week</p>
+                <p className="text-xs text-teal-600 mt-1">Time you&apos;d otherwise spend marking, back in your hands for teaching.</p>
               </div>
             </div>
           </div>
@@ -140,7 +140,7 @@ export default function TeachersPage() {
             {
               icon: FileText,
               title: "Detailed marks breakdown",
-              description: "Every evaluation includes a per-question breakdown with the AI's reasoning — so you can review and override if needed.",
+              description: "Every evaluation includes a per-question breakdown with the AI's reasoning — so you can review it against what a student wrote.",
               color: "from-indigo-500 to-indigo-600",
             },
           ].map((item) => {
@@ -198,7 +198,7 @@ export default function TeachersPage() {
                 "Same rubric applied to every student, every time",
                 "No unconscious bias based on student history or handwriting neatness",
                 "Marks breakdown visible and auditable — not a black box",
-                "You can always override the AI marks if you disagree",
+                "Manual override of AI marks is on our roadmap, not available yet",
               ].map((item) => (
                 <div key={item} className="flex items-start gap-3">
                   <CheckCircle className="w-5 h-5 text-teal-500 flex-shrink-0 mt-0.5" />

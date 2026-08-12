@@ -57,6 +57,11 @@ export default function DashboardPage() {
     recentEvaluations: [],
   });
   const [loading, setLoading] = useState(true);
+  // A fetch failure must not render identically to "no evaluations yet" —
+  // those mean very different things to a user deciding whether to trust
+  // the zeros on screen. Tracked separately from `data` so a failed
+  // request never silently masquerades as a genuinely empty account.
+  const [loadError, setLoadError] = useState(false);
 
   useEffect(() => {
     fetch("/api/analytics")
@@ -64,9 +69,11 @@ export default function DashboardPage() {
       .then((d) => {
         if (!d.error && d.totalEvaluations !== undefined) {
           setData(d);
+        } else {
+          setLoadError(true);
         }
       })
-      .catch(() => {})
+      .catch(() => setLoadError(true))
       .finally(() => setLoading(false));
   }, []);
 
@@ -124,6 +131,12 @@ export default function DashboardPage() {
         </Link>
       </div>
 
+      {loadError && (
+        <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-sm">
+          Couldn&apos;t load your dashboard data. The numbers below may be stale or incomplete — try refreshing the page.
+        </div>
+      )}
+
       {/* Stats Grid */}
       <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {statsCards.map((stat) => (
@@ -155,7 +168,11 @@ export default function DashboardPage() {
             Performance trend
           </h2>
           <div className="h-52">
-            {data.completedEvaluations === 0 ? (
+            {loading ? (
+              <div className="h-full flex items-center justify-center">
+                <Loader2 className="w-6 h-6 animate-spin text-gray-300" />
+              </div>
+            ) : data.completedEvaluations === 0 ? (
               <div className="h-full flex flex-col items-center justify-center text-center bg-gray-50/50 rounded-2xl border border-dashed border-gray-200 p-4">
                 <TrendingUp className="w-8 h-8 text-gray-300 mb-2" />
                 <p className="text-graphite text-sm font-medium">No evaluation data yet</p>
@@ -190,7 +207,11 @@ export default function DashboardPage() {
             Subject performance
           </h2>
           <div className="h-52">
-            {data.completedEvaluations === 0 ? (
+            {loading ? (
+              <div className="h-full flex items-center justify-center">
+                <Loader2 className="w-6 h-6 animate-spin text-gray-300" />
+              </div>
+            ) : data.completedEvaluations === 0 ? (
               <div className="h-full flex flex-col items-center justify-center text-center bg-gray-50/50 rounded-2xl border border-dashed border-gray-200 p-4">
                 <BarChart className="w-8 h-8 text-gray-300 mb-2" />
                 <p className="text-graphite text-sm font-medium">No evaluation data yet</p>

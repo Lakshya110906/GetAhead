@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
+import { reportApiError } from "@/lib/apiError";
 
 const signupSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
@@ -58,10 +59,6 @@ export async function POST(request: NextRequest) {
       { status: 201 }
     );
   } catch (error) {
-    console.error("Signup error:", error);
-    return NextResponse.json(
-      { error: "Failed to create account. Please try again." },
-      { status: 500 }
-    );
+    return reportApiError({ code: "AUTH_REQUEST_FAILED", error, route: "POST /api/auth/signup" });
   }
 }

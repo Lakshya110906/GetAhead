@@ -1,4 +1,7 @@
 import type { Metadata } from "next";
+import { getServerSession } from "next-auth";
+import { redirect } from "next/navigation";
+import { authOptions } from "@/lib/auth";
 
 export const metadata: Metadata = {
   title: "Create your account",
@@ -19,6 +22,10 @@ export const metadata: Metadata = {
   },
 };
 
-export default function SignupLayout({ children }: { children: React.ReactNode }) {
+// Same as /login: an already-signed-in visitor shouldn't see the signup
+// form — send them to the dashboard instead.
+export default async function SignupLayout({ children }: { children: React.ReactNode }) {
+  const session = await getServerSession(authOptions);
+  if (session) redirect("/dashboard");
   return children;
 }

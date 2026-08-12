@@ -199,7 +199,16 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
           return;
         }
 
-        // Real Gemini stream setup
+        // Real Gemini stream setup. Deliberately NOT temperature: 0, unlike
+        // every other Gemini call site in this app (grading, extraction,
+        // paper generation) — those must be reproducible so a repair loop
+        // or a re-grade of the same answer sheet produces the same result,
+        // which is a correctness property for scoring. The tutor is a
+        // conversational chat, not a scored artifact: the same question
+        // asked twice getting a differently-worded (but still grounded, see
+        // the isPlaceholder guard above) answer is expected chat behavior,
+        // not a bug. Left at Gemini's default rather than 0 on purpose —
+        // this is the one call site where determinism isn't the goal.
         const genAI = new GoogleGenerativeAI(apiKey);
         const model = genAI.getGenerativeModel({
           model: TUTOR_MODEL_ID,

@@ -3,6 +3,8 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { sendTicketConfirmationEmail } from "@/lib/email";
+import { captureException } from "@/lib/errorTracking";
+import { reportApiError } from "@/lib/apiError";
 
 // Rate limiting check helper: 5 submissions per hour per IP
 async function checkTicketRateLimit(ip: string): Promise<boolean> {
@@ -95,6 +97,7 @@ export async function POST(req: NextRequest) {
       );
     } catch (emailError) {
       console.error("Failed to send ticket confirmation email:", emailError);
+      captureException(emailError, { route: "POST /api/support/tickets", stage: "send-confirmation-email", ticketId: ticket.id });
     }
 
     return NextResponse.json({
@@ -103,8 +106,7 @@ export async function POST(req: NextRequest) {
       ticketNumber: ticket.ticketNumber,
     });
   } catch (error) {
-    console.error("Ticket submission API error:", error);
-    return NextResponse.json({ error: "Failed to submit ticket" }, { status: 500 });
+    return reportApiError({ code: "TICKET_CREATE_FAILED", error, route: "POST /api/support/tickets" });
   }
 }
 
@@ -124,7 +126,6 @@ export async function GET() {
 
     return NextResponse.json({ success: true, tickets });
   } catch (error) {
-    console.error("Fetch support tickets API error:", error);
-    return NextResponse.json({ error: "Failed to retrieve tickets" }, { status: 500 });
+    return reportApiError({ code: "TICKET_FETCH_FAILED", error, route: "GET /api/support/tickets" });
   }
 }

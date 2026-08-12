@@ -261,7 +261,20 @@ export function AiTutor({ evaluationId }: AiTutorProps) {
   };
 
   if (loading) {
-    return null; // Silent load (lazy rendering handled at parent level if needed)
+    // The chunk-load gap is covered by the dynamic() `loading` option in
+    // evaluation/[id]/page.tsx — this is the second, separate gap: the
+    // component itself has mounted but is still fetching chat history.
+    // That comment used to claim the parent handled this; it didn't, and
+    // this returned null the entire time, so the panel just never
+    // appeared until the fetch resolved.
+    return (
+      <div
+        className="fixed right-6 bottom-6 z-40 bg-ink text-paper p-4 rounded-full shadow-xl flex items-center gap-2 no-print opacity-70"
+        aria-label="Loading AI tutor"
+      >
+        <div className="w-5 h-5 border-2 border-paper/40 border-t-paper rounded-full animate-spin" />
+      </div>
+    );
   }
 
   return (

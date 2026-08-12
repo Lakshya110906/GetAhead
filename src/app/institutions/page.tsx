@@ -187,7 +187,7 @@ export default function InstitutionsPage() {
               <Shield className="w-12 h-12 text-purple-500 mb-4" />
               <h3 className="text-xl font-bold text-gray-900 mb-3">Data belongs to you</h3>
               <p className="text-graphite mb-4 leading-relaxed text-sm">
-                Your students&apos; answer sheet content is not stored permanently by GetAhead AI beyond your account records. We do not sell or share your data with third parties.
+                Your students&apos; answer sheet content (OCR-extracted text) is retained in your account for as long as it&apos;s active, so evaluation reports stay available in the dashboard — see our <Link href="/privacy" className="text-purple-600 hover:underline">privacy policy</Link> for the full retention schedule. We do not sell your data, and never share it beyond the sub-processors disclosed there.
               </p>
               <p className="text-graphite mb-6 leading-relaxed text-sm">
                 You can delete your account and all associated data at any time from Settings. Deletion is permanent and cannot be undone.

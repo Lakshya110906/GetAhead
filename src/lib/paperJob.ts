@@ -2,7 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { refundQuota } from "@/lib/quota";
 import {
   getGenAI,
-  isGeminiConfigured,
+  shouldUseMockQuestionPaper,
   getMockQuestionPaper,
   runPlannerAgent,
   runGeneratorAgent,
@@ -100,7 +100,7 @@ export async function processJobStep(jobId: string): Promise<void> {
   const agentStates: AgentStates = JSON.parse(job.agentStates);
 
   try {
-    if (!isGeminiConfigured()) {
+    if (shouldUseMockQuestionPaper()) {
       // Local dev without credentials — resolve the whole job synchronously
       // with the existing mock, same as the old pipeline's no-key fallback.
       const paper = getMockQuestionPaper(config);
