@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { processSpecificJob } from "@/lib/evaluationWorker";
 import { reportApiError } from "@/lib/apiError";
 import { logger } from "@/lib/logger";
+import { NOT_AN_ANSWER_SHEET_MESSAGE } from "@/lib/answerSheetGrading";
 
 export const maxDuration = 60;
 
@@ -33,12 +34,22 @@ export async function GET(
       return NextResponse.json({ error: "Evaluation not found" }, { status: 404 });
     }
 
+    // PaperGenerationJob has retryWorthwhile; Evaluation never did, so
+    // every failure — including "this file genuinely isn't an answer
+    // sheet," which will fail identically no matter how many times it's
+    // retried with the same file — showed the same "Retry evaluation"
+    // button as a transient failure. Derived from the persisted lastError
+    // text since that's all a FAILED row retains (the original Error
+    // instance is gone by the time this polls).
+    const retryWorthwhile = job.lastError !== NOT_AN_ANSWER_SHEET_MESSAGE;
+
     const base = {
       id: job.id,
       status: job.status,
       attempts: job.attempts,
       maxAttempts: job.maxAttempts,
       lastError: job.status === "FAILED" || job.status === "QUEUED" ? job.lastError : null,
+      retryWorthwhile: job.status === "FAILED" ? retryWorthwhile : true,
       queuedAt: job.queuedAt,
       startedAt: job.startedAt,
       finishedAt: job.finishedAt,
@@ -147,6 +158,17 @@ export async function PATCH(
       if (job.status !== "FAILED") {
         return NextResponse.json(
           { error: "Only an evaluation that has failed can be retried." },
+          { status: 409 }
+        );
+      }
+      // Retry reprocesses the SAME stored file — for a file that genuinely
+      // isn't an answer sheet, that will fail identically every time, no
+      // matter how many attempts. Refused server-side, not just hidden in
+      // the UI, so a stale page or a direct API call can't still burn a
+      // quota unit and a Gemini call on a deterministically doomed retry.
+      if (job.lastError === NOT_AN_ANSWER_SHEET_MESSAGE) {
+        return NextResponse.json(
+          { error: "This file doesn't look like an answer sheet, so retrying won't produce a different result. Upload a different file instead." },
           { status: 409 }
         );
       }

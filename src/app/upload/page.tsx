@@ -56,6 +56,12 @@ export default function UploadPage() {
   const [quotaResetsAt, setQuotaResetsAt] = useState<string | null>(null);
   const [attempts, setAttempts] = useState(0);
   const [maxAttempts, setMaxAttempts] = useState(3);
+  // A failure whose cause is the uploaded file itself (not an answer sheet
+  // at all) will fail identically no matter how many times it's retried
+  // with that same file — the "Retry evaluation" button must not be
+  // offered as if it might work this time. Matches paper generation's
+  // retryWorthwhile, which this evaluation flow never had.
+  const [retryWorthwhile, setRetryWorthwhile] = useState(true);
 
   const pollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pollIndexRef = useRef(0);
@@ -104,6 +110,7 @@ export default function UploadPage() {
           if (data.status === "FAILED") {
             setStatus("failed");
             setError(data.lastError || "The evaluation failed after multiple attempts.");
+            setRetryWorthwhile(data.retryWorthwhile ?? true);
             return;
           }
           if (data.status === "CANCELLED") {
@@ -462,7 +469,7 @@ export default function UploadPage() {
                   <AlertTriangle className="w-4 h-4 text-red-500 mt-0.5 flex-shrink-0" />
                   <div>
                     <p className="text-sm font-semibold text-red-800">
-                      {attempts >= maxAttempts ? `Evaluation failed after ${maxAttempts} attempts` : "Evaluation failed"}
+                      {!retryWorthwhile ? "This file can't be evaluated" : attempts >= maxAttempts ? `Evaluation failed after ${maxAttempts} attempts` : "Evaluation failed"}
                     </p>
                     <p className="text-sm text-red-700 mt-0.5">{error}</p>
                   </div>
@@ -516,15 +523,21 @@ export default function UploadPage() {
               </div>
             ) : status === "failed" ? (
               <div className="space-y-2">
-                <button
-                  onClick={handleRetry}
-                  className="w-full bg-ink text-paper font-semibold py-3 rounded-xl hover:opacity-90 transition-opacity"
-                >
-                  Retry evaluation
-                </button>
+                {retryWorthwhile && (
+                  <button
+                    onClick={handleRetry}
+                    className="w-full bg-ink text-paper font-semibold py-3 rounded-xl hover:opacity-90 transition-opacity"
+                  >
+                    Retry evaluation
+                  </button>
+                )}
                 <button
                   onClick={handleStartOver}
-                  className="w-full border border-gray-200 text-graphite font-semibold py-3 rounded-xl hover:bg-gray-50 transition-colors"
+                  className={`w-full font-semibold py-3 rounded-xl transition-colors ${
+                    retryWorthwhile
+                      ? "border border-gray-200 text-graphite hover:bg-gray-50"
+                      : "bg-ink text-paper hover:opacity-90"
+                  }`}
                 >
                   Upload a different file
                 </button>

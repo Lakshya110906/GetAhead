@@ -28,9 +28,16 @@ export class NoQuestionsFoundError extends Error {
     this.name = "NoQuestionsFoundError";
   }
 }
+// Exported as a constant (not just embedded in the constructor below) so
+// the one other place that needs to recognize this exact failure — the
+// retry-worthiness check in GET /api/evaluations/[id], which only has the
+// persisted `lastError` string to go on, not the original Error instance —
+// can match against it without duplicating the literal text and risking
+// drift between the two.
+export const NOT_AN_ANSWER_SHEET_MESSAGE = "This doesn't look like an exam answer sheet — no questions, answers, or marks were found on it.";
 export class NotAnAnswerSheetError extends Error {
   constructor() {
-    super("This doesn't look like an exam answer sheet — no questions, answers, or marks were found on it.");
+    super(NOT_AN_ANSWER_SHEET_MESSAGE);
     this.name = "NotAnAnswerSheetError";
   }
 }
