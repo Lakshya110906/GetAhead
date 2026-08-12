@@ -5,6 +5,7 @@ import { useState } from "react";
 import { ChevronDown, ArrowRight, HelpCircle } from "lucide-react";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
+import { SupportResponseNote } from "@/components/SupportResponseNote";
 
 const faqCategories = [
   {
@@ -310,9 +311,8 @@ export default function FAQPage() {
           <h2 className="text-2xl font-bold text-gray-900 mb-3" style={{ fontFamily: "var(--font-display)" }}>
             Still have questions?
           </h2>
-          <p className="text-graphite mb-6">
-            Our support team responds within 24 hours on weekdays. You can also browse the help center for detailed guides.
-          </p>
+          <SupportResponseNote className="text-graphite" />
+          <p className="text-graphite mb-6">You can also browse the help center for detailed guides.</p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
             <Link href="/contact" className="inline-flex items-center gap-2 bg-ink text-paper font-semibold px-6 py-3 rounded-xl hover:opacity-90 transition-opacity">
               Contact support <ArrowRight className="w-4 h-4" />

@@ -169,7 +169,7 @@ export default function CoachingCentersPage() {
               { step: "Q1", title: "Conduct mock test", desc: "Students write answers on paper under exam conditions." },
               { step: "Q2", title: "Faculty scans sheets", desc: "Each faculty scans or photographs student answer sheets using their phone." },
               { step: "Q3", title: "Upload one by one", desc: "Upload each student's sheet to GetAhead. Select subject and exam type. Takes about a minute per student." },
-              { step: "Q4", title: "AI evaluates instantly", desc: "Each sheet is evaluated in under a minute, with marks, breakdown, and personalised feedback." },
+              { step: "Q4", title: "AI evaluates in under a minute", desc: "Each sheet is evaluated in under a minute, with marks, breakdown, and personalised feedback." },
               { step: "Q5", title: "Download reports", desc: "Download PDF reports per student. Compile class performance data from analytics." },
               { step: "Q6", title: "Share with students and parents", desc: "Hand or email PDF reports. Students see exactly where they lost marks and what to improve." },
               { step: "Q7", title: "Generate follow-up paper", desc: "Use the question paper generator to create a targeted revision paper covering weak areas identified in the evaluation." },

@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
+import { SupportResponseNote } from "@/components/SupportResponseNote";
 
 const contactTypes = [
   { id: "general", label: "General question", icon: MessageSquare },
@@ -76,9 +77,10 @@ export default function ContactPage() {
           <h2 className="text-2xl font-bold text-gray-900 mb-3" style={{ fontFamily: "var(--font-display)" }}>
             Ticket registered!
           </h2>
-          <p className="text-graphite mb-6">
-            Thanks for reaching out. We have successfully registered your support request as ticket <strong>#TKT-{ticketNumber}</strong>. We&apos;ll get back to you at <strong>{formData.email}</strong> within 24 hours on weekdays.
+          <p className="text-graphite mb-2">
+            Thanks for reaching out. We have successfully registered your support request as ticket <strong>#TKT-{ticketNumber}</strong>. We&apos;ll get back to you at <strong>{formData.email}</strong>.
           </p>
+          <SupportResponseNote className="text-graphite mb-6 text-sm" />
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Link href="/" className="inline-flex items-center gap-2 bg-ink text-paper font-semibold px-5 py-2.5 rounded-xl hover:opacity-90 transition-opacity">
               Back to home
@@ -126,7 +128,7 @@ export default function ContactPage() {
                   <Clock className="w-5 h-5 text-teal-600" />
                 </div>
                 <h3 className="font-semibold text-gray-900 mb-1">Response time</h3>
-                <p className="text-sm text-ink">Within 24 hours</p>
+                <SupportResponseNote className="text-sm text-ink" />
                 <p className="text-xs text-graphite mt-1">Monday – Friday, 9am – 6pm IST. Weekends may be slower.</p>
               </div>
 

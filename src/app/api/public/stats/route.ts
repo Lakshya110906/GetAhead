@@ -41,11 +41,35 @@ export async function GET() {
       averagePercentage = Math.round(sumPercentage / totalEvaluations);
     }
 
+    // Backs the "responds within N hours" claim on contact/faq/help — that
+    // used to be a flat, unmeasured "24 hours" promise with nothing in the
+    // code computing or checking it. Same standard as the homepage's
+    // accuracy figure: a real measurement, gated on a minimum sample size
+    // so a handful of early tickets can't produce a misleading published
+    // average, and null (shown as nothing, not a guess) until there's
+    // enough real data.
+    const repliedTickets = await prisma.supportTicket.findMany({
+      select: {
+        createdAt: true,
+        replies: { where: { senderType: "ADMIN" }, orderBy: { createdAt: "asc" }, take: 1, select: { createdAt: true } },
+      },
+      where: { replies: { some: { senderType: "ADMIN" } } },
+    });
+    let avgSupportResponseHours: number | null = null;
+    if (repliedTickets.length >= 10) {
+      const totalMs = repliedTickets.reduce((sum, t) => {
+        const firstReply = t.replies[0];
+        return firstReply ? sum + Math.max(0, firstReply.createdAt.getTime() - t.createdAt.getTime()) : sum;
+      }, 0);
+      avgSupportResponseHours = Math.round((totalMs / repliedTickets.length / (1000 * 60 * 60)) * 10) / 10;
+    }
+
     return NextResponse.json({
       totalUsers,
       totalEvaluations,
       averageTimeSeconds,
-      averagePercentage
+      averagePercentage,
+      avgSupportResponseHours
     });
   } catch (error) {
     console.error("Public stats API error:", error);
@@ -53,7 +77,8 @@ export async function GET() {
       totalUsers: 0,
       totalEvaluations: 0,
       averageTimeSeconds: null,
-      averagePercentage: null
+      averagePercentage: null,
+      avgSupportResponseHours: null
     });
   }
 }

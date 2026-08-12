@@ -36,7 +36,7 @@ export const metadata: Metadata = {
     template: "%s | GetAhead",
   },
   description:
-    "Upload your answer sheets and get instant AI-powered evaluation with detailed marks breakdown, subject-wise analytics, and performance insights.",
+    "Upload your answer sheets and get AI-powered evaluation in under a minute, with detailed marks breakdown, subject-wise analytics, and performance insights.",
   keywords: [
     "exam evaluation",
     "AI grading",
