@@ -70,6 +70,21 @@ function backoffMs(attempt: number): number {
   return Math.min(30_000, 1000 * Math.pow(2, attempt)); // 1s, 2s, 4s... capped at 30s
 }
 
+// Every write in processJobStep() is a plain update-by-id with no status
+// guard in the WHERE clause. That's fine for writes that happen right after
+// the terminal-status check at the top of the function, but a real Gemini
+// call (several seconds) sits between reading `job` and several of the
+// writes below — long enough for DELETE /api/papers/[id] (cancel) to land
+// in between. Without this check, the write after an in-flight call
+// completes would silently resurrect an already-cancelled job instead of
+// leaving it cancelled, wasting further quota on a job the user explicitly
+// stopped. Called after each of the four Gemini calls, before persisting
+// their result.
+async function isCancelled(jobId: string): Promise<boolean> {
+  const current = await prisma.paperGenerationJob.findUnique({ where: { id: jobId }, select: { status: true } });
+  return !current || current.status === "cancelled";
+}
+
 /**
  * Attempts to advance a job by exactly one step. Safe to call repeatedly
  * and concurrently — a fresh, unexpired lock means another caller is
@@ -128,6 +143,13 @@ export async function processJobStep(jobId: string): Promise<void> {
       await prisma.paperGenerationJob.update({ where: { id: jobId }, data: { agentStates: JSON.stringify(agentStates) } });
 
       const rawPlan = await withRetry(() => runPlannerAgent(genAI, config), "Planner Agent", 1);
+      // A Gemini call can take several real seconds — long enough for a
+      // user to cancel while this was in flight. Every write in this
+      // function is a plain update-by-id with no status guard, so writing
+      // a "generator" step transition here without re-checking would
+      // silently resurrect an already-cancelled job. Bail before persisting
+      // anything if that happened.
+      if (await isCancelled(jobId)) return;
       const plan = correctPlanMarks(filterPlanToRequestedTypes(rawPlan, config.questionTypes), config.totalMarks);
       agentStates.planner = { status: "done", startedAt: agentStates.planner.startedAt, finishedAt: new Date().toISOString() };
 
@@ -152,6 +174,7 @@ export async function processJobStep(jobId: string): Promise<void> {
       await prisma.paperGenerationJob.update({ where: { id: jobId }, data: { agentStates: JSON.stringify(agentStates) } });
 
       const draft = await withRetry(() => runGeneratorAgent(genAI, config, plan), "Generator Agent", 1);
+      if (await isCancelled(jobId)) return;
       agentStates.generator = { status: "done", startedAt: agentStates.generator.startedAt, finishedAt: new Date().toISOString() };
 
       await prisma.paperGenerationJob.update({
@@ -175,6 +198,7 @@ export async function processJobStep(jobId: string): Promise<void> {
       await prisma.paperGenerationJob.update({ where: { id: jobId }, data: { agentStates: JSON.stringify(agentStates) } });
 
       const reviewed = await withRetry(() => runReviewerAgent(genAI, config, draft), "Reviewer Agent", 1);
+      if (await isCancelled(jobId)) return;
       agentStates.reviewer = { status: "done", startedAt: agentStates.reviewer.startedAt, finishedAt: new Date().toISOString() };
 
       await prisma.paperGenerationJob.update({
@@ -319,6 +343,7 @@ export async function processJobStep(jobId: string): Promise<void> {
       const violations = attemptLogs[attemptLogs.length - 1]?.violations ?? [];
 
       const repaired = await withRetry(() => runRepairAgent(genAI, config, plan, draft, violations), "Repair Agent", 1);
+      if (await isCancelled(jobId)) return;
 
       await prisma.paperGenerationJob.update({
         where: { id: jobId },
