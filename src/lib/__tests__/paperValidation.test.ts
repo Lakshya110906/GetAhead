@@ -156,11 +156,11 @@ describe("validatePaper", () => {
     }
   });
 
-  // Test case 18: prompt-injection robustness — off-topic drift must be caught.
-  // Checked against topicAddressed now, not question prose — a genuinely
-  // off-topic question also self-reports an off-topic topicAddressed
-  // (nothing here asks the model to lie about what it wrote).
-  it("flags gross off-topic drift (prompt-injection redirect to an unrelated subject)", () => {
+  // Test case 18: prompt-injection robustness — off-topic drift must still
+  // be caught, but as a warning, never a hard gate (see the "four rounds of
+  // incidents" comment on the topic check in paperValidation.ts — this
+  // heuristic isn't trustworthy enough to block a delivery on its own).
+  it("warns on gross off-topic drift (prompt-injection redirect to an unrelated subject), but still delivers the paper", () => {
     const offTopic = paper({
       sections: [
         {
@@ -174,11 +174,12 @@ describe("validatePaper", () => {
       ],
     });
     const result = validatePaper(offTopic, baseCtx);
-    expect(result.valid).toBe(false);
-    expect(result.violations.some((v) => v.includes("don't address the requested topic"))).toBe(true);
+    expect(result.valid).toBe(true);
+    expect(result.violations).toEqual([]);
+    expect(result.warnings.some((w) => w.includes("didn't clearly match"))).toBe(true);
   });
 
-  it("does not flag on-topic questions even with only partial keyword overlap per question", () => {
+  it("does not warn on on-topic questions even with only partial keyword overlap per question", () => {
     const onTopic = paper({
       sections: [
         {
@@ -192,16 +193,16 @@ describe("validatePaper", () => {
       ],
     });
     const result = validatePaper(onTopic, baseCtx);
-    expect(result.violations.some((v) => v.includes("don't address the requested topic"))).toBe(false);
+    expect(result.warnings).toEqual([]);
   });
 
-  // Regression test for the real, confirmed-live incident this fix was for:
-  // topic "trignometry and geometry" (typo — missing the "o"), 15 genuinely
-  // correct trigonometry/geometry questions, rejected on all 3 attempts
-  // because none of them contained the literal misspelled substring. Must
-  // now pass: topicAddressed is checked, and the keyword set includes the
+  // Regression test for a real, confirmed-live incident: topic "trignometry
+  // and geometry" (typo — missing the "o"), 15 genuinely correct
+  // trigonometry/geometry questions, rejected on all 3 attempts because none
+  // of them contained the literal misspelled substring. Must not warn:
+  // topicAddressed is checked, and the keyword set includes the
   // spellcheck-corrected "trigonometry" even though the raw topic wasn't changed.
-  it("does not reject genuinely on-topic questions because the user's topic input has a typo", () => {
+  it("does not warn on genuinely on-topic questions because the user's topic input has a typo", () => {
     const trigCtx = {
       targetTotalMarks: 30,
       allowedQuestionTypes: ["Short Answer"],
@@ -233,20 +234,18 @@ describe("validatePaper", () => {
       ],
     });
     const result = validatePaper(trigPaper, trigCtx);
-    expect(result.violations.some((v) => v.includes("don't address the requested topic"))).toBe(false);
+    expect(result.warnings).toEqual([]);
   });
 
-  // Regression case for the other half of the bug class this fix addresses:
-  // literal substring matching fails not just on typos but on any question
-  // that genuinely tests a topic without ever using the topic's own word.
-  // A right-triangle/Pythagorean question is real trigonometry-adjacent
+  // Regression case for the other half of the original bug class: literal
+  // substring matching fails not just on typos but on any question that
+  // genuinely tests a topic without ever using the topic's own word. A
+  // right-triangle/Pythagorean question is real trigonometry-adjacent
   // geometry content even though its topicAddressed field says neither
-  // "trigonometry" nor "geometry" verbatim. This passes today because the
-  // check tolerates a MINORITY of such questions (gross-drift detection,
-  // not a per-question keyword mandate) — this test is honest about that:
-  // it's one such question alongside one that does contain a keyword, not
-  // a claim that the checker understands topical relevance on its own.
-  it("does not reject a question that genuinely tests the topic without naming it, as long as it's not the majority", () => {
+  // "trigonometry" nor "geometry" verbatim. Passes without a warning
+  // because the check tolerates a MINORITY of such questions (gross-drift
+  // detection, not a per-question keyword mandate).
+  it("does not warn on a question that genuinely tests the topic without naming it, as long as it's not the majority", () => {
     const trigCtx = {
       targetTotalMarks: 30,
       allowedQuestionTypes: ["Short Answer"],
@@ -262,9 +261,6 @@ describe("validatePaper", () => {
             q({
               number: 1,
               question: "Prove that (1 - cos^2 A) / (1 - sin^2 A) = tan^2 A.",
-              // Must literally contain "trigonometry" (not just
-              // "trigonometric") — the check is still substring matching,
-              // that's exactly the fragility this pair of tests documents.
               topicAddressed: "trigonometry — identities",
               marks: 15,
               markScheme: [{ point: "p", marks: 15 }],
@@ -284,19 +280,27 @@ describe("validatePaper", () => {
       ],
     });
     const result = validatePaper(trigPaper, trigCtx);
-    expect(result.violations.some((v) => v.includes("don't address the requested topic"))).toBe(false);
+    expect(result.warnings).toEqual([]);
   });
 
-  // ── Regression suite for the "geometry" / "trigonometry " incident
-  // (2026-08-12). Root cause (confirmed by replaying validatePaper() itself
-  // against the real persisted job data from both failed runs — see
-  // conversation record, not inferred): the generator's own prompt told the
-  // model topicAddressed could honestly omit the topic's exact word, while
-  // this check requires literal containment — a self-contradiction, not a
-  // bug in the matching logic itself. Fixed by making the generator/repair
-  // prompts require topicAddressed to always name the topic explicitly.
-  // These tests lock in every case from that incident report so it cannot
-  // regress silently a fourth time.
+  // ── Regression suite for the topic-check incidents (2026-08-12,
+  // 2026-08-16). Two separate root causes, fixed at different times:
+  //   1. (2026-08-12) The generator's own prompt told the model
+  //      topicAddressed could honestly omit the topic's exact word, while
+  //      this check required literal containment — a self-contradiction.
+  //      Fixed by requiring the prompt to always name the topic explicitly.
+  //   2. (2026-08-16) Even with (1) fixed, plain substring containment is
+  //      blind to English noun/adjective suffix pairs: "trigonometry" is
+  //      not a substring of "trigonometric", nor "geometry" of "geometric"
+  //      — so a live "trigonometry" generation still failed, 11 of 12
+  //      genuinely on-topic questions rejected, because the model's own
+  //      natural phrasing ("Trigonometric ratios...") used the adjective.
+  //      Fixed with a shared-prefix fallback match (fuzzyKeywordMatch) AND,
+  //      independently, by making the whole check non-blocking — a warning
+  //      can never again stop a user from getting an on-topic paper, no
+  //      matter what future gap the matching heuristic still has.
+  // These tests lock in every case from both incident reports so neither
+  // can regress silently again.
   function topicCtx(topic: string, overrides: Partial<typeof baseCtx> = {}) {
     return { targetTotalMarks: 30, allowedQuestionTypes: ["Short Answer"], topic, parsedConstraints: parseCustomInstructions(""), ...overrides };
   }
@@ -315,38 +319,47 @@ describe("validatePaper", () => {
     });
   }
 
-  it("passes for topic \"geometry\" — the real incident's exact topic, minimal case", () => {
+  it("passes for topic \"geometry\" — minimal case", () => {
     const result = validatePaper(geometryPaper(["Geometry — properties of similar triangles"]), topicCtx("geometry"));
     expect(result.valid).toBe(true);
     expect(result.violations).toEqual([]);
+    expect(result.warnings).toEqual([]);
   });
 
-  it("passes for topic \"trigonometry\" (no whitespace)", () => {
-    const result = validatePaper(geometryPaper(["Trigonometry — angle of elevation"]), topicCtx("trigonometry"));
-    expect(result.violations.some((v) => v.includes("don't address the requested topic"))).toBe(false);
+  it("passes for topic \"trigonometry\" using the model's natural adjective phrasing (no whitespace)", () => {
+    // Deliberately does NOT contain the literal noun "trigonometry" — this
+    // is the exact shape of the 2026-08-16 live incident.
+    const result = validatePaper(geometryPaper(["Trigonometric ratios — angle of elevation"]), topicCtx("trigonometry"));
+    expect(result.valid).toBe(true);
+    expect(result.warnings).toEqual([]);
   });
 
   it("passes for topic \"trigonometry \" (trailing space)", () => {
-    const result = validatePaper(geometryPaper(["Trigonometry — angle of elevation"]), topicCtx("trigonometry "));
-    expect(result.violations.some((v) => v.includes("don't address the requested topic"))).toBe(false);
+    const result = validatePaper(geometryPaper(["Trigonometric ratios — angle of elevation"]), topicCtx("trigonometry "));
+    expect(result.warnings).toEqual([]);
   });
 
   it("passes for topic \" trigonometry\" (leading space)", () => {
-    const result = validatePaper(geometryPaper(["Trigonometry — angle of elevation"]), topicCtx(" trigonometry"));
-    expect(result.violations.some((v) => v.includes("don't address the requested topic"))).toBe(false);
+    const result = validatePaper(geometryPaper(["Trigonometric ratios — angle of elevation"]), topicCtx(" trigonometry"));
+    expect(result.warnings).toEqual([]);
   });
 
   it("passes for topic \"Trigonometry\" (capitalized)", () => {
-    const result = validatePaper(geometryPaper(["Trigonometry — angle of elevation"]), topicCtx("Trigonometry"));
-    expect(result.violations.some((v) => v.includes("don't address the requested topic"))).toBe(false);
+    const result = validatePaper(geometryPaper(["Trigonometric ratios — angle of elevation"]), topicCtx("Trigonometry"));
+    expect(result.warnings).toEqual([]);
   });
 
-  it("passes for topic \"trigonometry and geometry\" (multi-word topic)", () => {
+  it("passes for topic \"trigonometry and geometry\" (multi-word topic, adjective phrasing for both)", () => {
     const result = validatePaper(
-      geometryPaper(["Trigonometry — identities", "Geometry — circle tangents"]),
+      geometryPaper(["Trigonometric identities", "Geometric properties of circle tangents"]),
       topicCtx("trigonometry and geometry")
     );
-    expect(result.violations.some((v) => v.includes("don't address the requested topic"))).toBe(false);
+    expect(result.warnings).toEqual([]);
+  });
+
+  it("passes for topic \"algebra\" — the noun happens to be a literal prefix of its own adjective (\"algebraic\")", () => {
+    const result = validatePaper(geometryPaper(["Algebraic expressions and identities"]), topicCtx("algebra"));
+    expect(result.warnings).toEqual([]);
   });
 
   it("passes for a misspelled topic (\"trignometry\") when the model correctly spells it in topicAddressed", () => {
@@ -355,34 +368,35 @@ describe("validatePaper", () => {
     // case where the user declined that suggestion and generation proceeded
     // with the misspelled topic as-is. Must never burn a repair cycle over
     // a spelling difference the model itself already corrected.
-    const result = validatePaper(geometryPaper(["Trigonometry — standard angle ratios"]), topicCtx("trignometry"));
-    expect(result.violations.some((v) => v.includes("don't address the requested topic"))).toBe(false);
+    const result = validatePaper(geometryPaper(["Trigonometric ratios — standard angles"]), topicCtx("trignometry"));
+    expect(result.warnings).toEqual([]);
   });
 
-  it("passes a genuinely on-topic question that tests geometry without the word \"geometry\" (minority case)", () => {
+  it("does not warn on a genuinely on-topic question that tests geometry without the word \"geometry\" (minority case)", () => {
     const result = validatePaper(
       geometryPaper(["Geometry — coordinate distance formula", "Properties and angle sums of triangles"]),
       topicCtx("geometry")
     );
-    expect(result.violations.some((v) => v.includes("don't address the requested topic"))).toBe(false);
+    expect(result.warnings).toEqual([]);
   });
 
-  it("still correctly rejects a genuinely off-topic paper for topic \"geometry\"", () => {
+  it("still flags a genuinely off-topic paper for topic \"geometry\" — as a warning, and still delivers it", () => {
     const offTopicPaper = geometryPaper([
       "Photosynthesis and cellular respiration",
       "The French Revolution's causes",
       "Basic supply and demand economics",
     ]);
     const result = validatePaper(offTopicPaper, topicCtx("geometry"));
-    expect(result.violations.some((v) => v.includes("don't address the requested topic"))).toBe(true);
+    expect(result.valid).toBe(true);
+    expect(result.violations).toEqual([]);
+    expect(result.warnings.some((w) => w.includes("didn't clearly match"))).toBe(true);
   });
 
-  // Direct replay of the real incident's persisted data (job
+  // Direct replay of a real incident's persisted data (job
   // cmsq46gvx0003ie04puwp73et, 2026-08-12): 12 questions, every
-  // topicAddressed genuinely contains "geometry" or "Geometry". This must
-  // always pass — if it doesn't, something regressed the matching logic
-  // itself, not just the generator prompt.
-  it("passes the real incident's exact 12-question topicAddressed set", () => {
+  // topicAddressed genuinely contains "geometry" or "Geometry". Must always
+  // pass cleanly — if it doesn't, something regressed the matching logic.
+  it("passes the 2026-08-12 incident's exact 12-question topicAddressed set", () => {
     const realTopicAddresseds = [
       "Ratio of areas of similar triangles (Geometry)",
       "Definition and properties of a tangent to a circle (Geometry)",
@@ -400,6 +414,46 @@ describe("validatePaper", () => {
     const result = validatePaper(geometryPaper(realTopicAddresseds), topicCtx("geometry"));
     expect(result.valid).toBe(true);
     expect(result.violations).toEqual([]);
+    expect(result.warnings).toEqual([]);
+  });
+
+  // Direct replay of the 2026-08-16 live incident: a real "trigonometry"
+  // generation (gemini-2.5-flash, live API call, not a fixture) produced
+  // these exact 12 topicAddressed values. 11 of 12 used the natural
+  // adjective "trigonometric" rather than the noun "trigonometry", and were
+  // rejected outright by the old plain-substring check. Must now pass
+  // cleanly via fuzzyKeywordMatch's shared-prefix fallback — if this
+  // regresses, the noun/adjective bug is back.
+  it("passes the 2026-08-16 incident's exact 12-question topicAddressed set (real Gemini output)", () => {
+    const realTopicAddresseds = [
+      "Trigonometric ratios of acute angles",
+      "Trigonometric identities (basic)",
+      "Values of trigonometric ratios for specific angles (0, 30, 45, 60, 90 degrees)",
+      "Values of trigonometric ratios for specific angles (0, 30, 45, 60, 90 degrees)",
+      "Trigonometric identities (basic)",
+      "Trigonometric ratios of acute angles",
+      "Applications of trigonometric identities",
+      "Solving problems involving trigonometric ratios",
+      "Complementary angles in trigonometry",
+      "Solving problems involving trigonometric ratios",
+      "Proofs of trigonometric identities",
+      "Heights and Distances (basic applications)",
+    ];
+    const result = validatePaper(geometryPaper(realTopicAddresseds), topicCtx("trigonometry"));
+    expect(result.valid).toBe(true);
+    expect(result.violations).toEqual([]);
+    // Q12 ("Heights and Distances") shares no meaningful prefix with
+    // "trigonometry" — 1/12 is below the >50% threshold, so this correctly
+    // produces no warning at all, not just a non-blocking one.
+    expect(result.warnings).toEqual([]);
+  });
+
+  it("fuzzyKeywordMatch's shared-prefix fallback does not create false positives between unrelated similar-looking words", () => {
+    // "geology" and "geometry" share only a "geo" prefix before diverging —
+    // must NOT match. If this regresses, the fuzzy fallback has become too
+    // permissive.
+    const result = validatePaper(geometryPaper(["Geological rock formations", "Plate tectonics"]), topicCtx("geometry"));
+    expect(result.warnings.some((w) => w.includes("didn't clearly match"))).toBe(true);
   });
 });
 

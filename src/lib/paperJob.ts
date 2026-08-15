@@ -10,6 +10,7 @@ import {
   runRepairAgent,
   correctPlanMarks,
   filterPlanToRequestedTypes,
+  conformDraftToPlan,
   finalizePaper,
   buildValidationContext,
   withRetry,
@@ -173,8 +174,9 @@ export async function processJobStep(jobId: string): Promise<void> {
       agentStates.generator = { status: "running", startedAt: new Date().toISOString() };
       await prisma.paperGenerationJob.update({ where: { id: jobId }, data: { agentStates: JSON.stringify(agentStates) } });
 
-      const draft = await withRetry(() => runGeneratorAgent(genAI, config, plan), "Generator Agent", 1);
+      const rawDraft = await withRetry(() => runGeneratorAgent(genAI, config, plan), "Generator Agent", 1);
       if (await isCancelled(jobId)) return;
+      const draft = conformDraftToPlan(rawDraft, plan, config.questionTypes);
       agentStates.generator = { status: "done", startedAt: agentStates.generator.startedAt, finishedAt: new Date().toISOString() };
 
       await prisma.paperGenerationJob.update({
@@ -192,13 +194,19 @@ export async function processJobStep(jobId: string): Promise<void> {
 
     if (job.step === "reviewer") {
       if (!job.plannerPlan || !job.draftPaper) throw new Error("Job reached the reviewer step with no draft persisted");
+      const plan: PlannerPlan = JSON.parse(job.plannerPlan);
       const draft: GeneratedPaperShape = JSON.parse(job.draftPaper);
 
       agentStates.reviewer = { status: "running", startedAt: new Date().toISOString() };
       await prisma.paperGenerationJob.update({ where: { id: jobId }, data: { agentStates: JSON.stringify(agentStates) } });
 
-      const reviewed = await withRetry(() => runReviewerAgent(genAI, config, draft), "Reviewer Agent", 1);
+      const rawReviewed = await withRetry(() => runReviewerAgent(genAI, config, draft), "Reviewer Agent", 1);
       if (await isCancelled(jobId)) return;
+      // Reviewer's own prompt also says not to change question count/marks —
+      // same non-enforcement risk as the generator step, so the same
+      // deterministic trim applies here too. A no-op (draft already
+      // conformed) unless the reviewer itself introduced drift.
+      const reviewed = conformDraftToPlan(rawReviewed, plan, config.questionTypes);
       agentStates.reviewer = { status: "done", startedAt: agentStates.reviewer.startedAt, finishedAt: new Date().toISOString() };
 
       await prisma.paperGenerationJob.update({
@@ -225,21 +233,19 @@ export async function processJobStep(jobId: string): Promise<void> {
       const attemptLogs: RepairAttemptLog[] = job.repairAttempts ? JSON.parse(job.repairAttempts) : [];
       const attemptNumber = job.validationAttempt + 1;
       const previousAttempt = attemptLogs[attemptLogs.length - 1];
-      // The off-topic violation embeds a live "X/Y questions" count
-      // (paperValidation.ts's topic check) that moves attempt to attempt
-      // even when the check is failing for the same underlying reason every
-      // time — confirmed live: topic "geometry" produced "11/12", then
-      // "8/12", then "12/12" across three attempts, each byte-different, so
-      // the identical-consecutive-failure abort below never fired and the
-      // job burned a full 3rd repair+validate cycle it had no realistic
-      // chance of passing, then reported retryWorthwhile: true on a
-      // deterministic failure. Normalizing that one volatile count out of
-      // the comparison (and ONLY that one — every other violation kind,
-      // e.g. marks-sum-mismatch, keeps exact-text comparison, since a
-      // change in ITS embedded number can mean genuine incremental
-      // progress worth a further attempt) makes two "still off-topic"
-      // attempts in a row register as unchanged, same as the trigonometry
-      // incident this abort was originally built for.
+      // Historical note: the topic check used to contribute a "most
+      // questions (X/Y)" violation whose embedded count moved attempt to
+      // attempt even when failing for the same underlying reason — the
+      // identical-consecutive-failure abort below never fired, and a job
+      // burned a full 3rd repair+validate cycle it had no chance of
+      // passing (confirmed live: topic "geometry" produced "11/12", then
+      // "8/12", then "12/12" across three attempts). The topic check is now
+      // a non-blocking warning (see paperValidation.ts) and can no longer
+      // produce a violations entry at all, so this specific regex is dead
+      // for that case — left in place since the normalize-then-compare
+      // pattern is general (applies to whatever violation kinds exist) and
+      // a future violation type with its own volatile count would need the
+      // same treatment.
       const normalizeViolation = (v: string) => v.replace(/^most questions \(\d+\/\d+\)/, "most questions (N/M)");
       const violationsKey = (v: string[]) => [...v].map(normalizeViolation).sort().join("|");
       const outputChanged = !previousAttempt || violationsKey(previousAttempt.violations) !== violationsKey(validation.violations);
@@ -255,6 +261,14 @@ export async function processJobStep(jobId: string): Promise<void> {
       if (validation.valid) {
         const finalPaper = finalizePaper(candidate, config.totalMarks);
         finalPaper.repairAttempts = attemptLogs;
+        if (validation.warnings.length > 0) {
+          // [TopicNotice] is a distinct prefix from finalizePaper()'s own
+          // [Warning] (which the UI specifically labels "wasn't fully
+          // AI-reviewed" — a different, incorrect claim for this case: the
+          // paper WAS fully reviewed, the topic-match heuristic is just
+          // uncertain). See generate-paper/page.tsx for the matching banner.
+          finalPaper.reviewNotes = [...(finalPaper.reviewNotes ?? []), ...validation.warnings.map((w) => `[TopicNotice] ${w}`)];
+        }
         await prisma.paperGenerationJob.update({
           where: { id: jobId },
           data: {
@@ -292,7 +306,7 @@ export async function processJobStep(jobId: string): Promise<void> {
           where: { id: jobId },
           data: {
             status: "failed",
-            error: buildUserFacingValidationMessage(validation.violations, config.topic),
+            error: buildUserFacingValidationMessage(validation.violations),
             internalError: message,
             repairAttempts: JSON.stringify(attemptLogs),
             validationAttempt: attemptNumber,
@@ -309,7 +323,7 @@ export async function processJobStep(jobId: string): Promise<void> {
           where: { id: jobId },
           data: {
             status: "failed",
-            error: buildUserFacingValidationMessage(validation.violations, config.topic),
+            error: buildUserFacingValidationMessage(validation.violations),
             internalError: `Paper failed validation after ${attemptNumber} attempts: ${validation.violations.join("; ")}`,
             repairAttempts: JSON.stringify(attemptLogs),
             validationAttempt: attemptNumber,
@@ -342,8 +356,9 @@ export async function processJobStep(jobId: string): Promise<void> {
       const attemptLogs: RepairAttemptLog[] = JSON.parse(job.repairAttempts);
       const violations = attemptLogs[attemptLogs.length - 1]?.violations ?? [];
 
-      const repaired = await withRetry(() => runRepairAgent(genAI, config, plan, draft, violations), "Repair Agent", 1);
+      const rawRepaired = await withRetry(() => runRepairAgent(genAI, config, plan, draft, violations), "Repair Agent", 1);
       if (await isCancelled(jobId)) return;
+      const repaired = conformDraftToPlan(rawRepaired, plan, config.questionTypes);
 
       await prisma.paperGenerationJob.update({
         where: { id: jobId },

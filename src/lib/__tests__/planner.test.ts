@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { correctPlanMarks, planTotal, filterPlanToRequestedTypes } from "@/lib/question-agents";
-import type { PlannerPlan } from "@/lib/questionPaperSchema";
+import { correctPlanMarks, planTotal, filterPlanToRequestedTypes, conformDraftToPlan } from "@/lib/question-agents";
+import type { PlannerPlan, GeneratedPaperShape } from "@/lib/questionPaperSchema";
 
 function section(overrides: Partial<PlannerPlan["sections"][number]> = {}) {
   return {
@@ -103,5 +103,106 @@ describe("filterPlanToRequestedTypes", () => {
     const filtered = filterPlanToRequestedTypes(plan, ["Short Answer"]);
     expect(filtered.sections.length).toBeGreaterThan(0);
     expect(filtered.sections[0].questionType).toBe("Short");
+  });
+});
+
+function draftQuestion(overrides: Partial<GeneratedPaperShape["sections"][number]["questions"][number]> = {}) {
+  return {
+    number: 1,
+    type: "MCQ" as const,
+    question: "q",
+    options: ["a", "b", "c", "d"],
+    answer: "a",
+    markScheme: [{ point: "p", marks: 1 }],
+    marks: 1,
+    topicAddressed: "topic",
+    ...overrides,
+  };
+}
+
+function draftSection(questions: ReturnType<typeof draftQuestion>[]) {
+  return { title: "Section A: X", description: "desc", questions };
+}
+
+describe("conformDraftToPlan", () => {
+  // Direct reproduction of the real, live-observed incident (2026-08-16):
+  // a 20-mark, MCQ + Short Answer request came back from the generator with
+  // 30 questions summing to 70 marks, several of a disallowed type.
+  it("trims a generator over-generation down to exactly what the plan asked for", () => {
+    const plan: PlannerPlan = {
+      sections: [
+        { title: "Section A", description: "desc", questionType: "MCQ", marksPerQuestion: 1, questionCount: 6, topicsCovered: ["t"] },
+        { title: "Section B", description: "desc", questionType: "Short", marksPerQuestion: 2, questionCount: 4, topicsCovered: ["t"] },
+      ],
+    };
+    // Generator returned 10 MCQs (plan asked for 6) and 4 Short (matches).
+    const overGenerated: GeneratedPaperShape = {
+      title: "t", subject: "s", grade: "g", difficulty: "Medium", totalMarks: 999,
+      sections: [
+        draftSection(Array.from({ length: 10 }, (_, i) => draftQuestion({ number: i + 1, type: "MCQ", marks: 1 }))),
+        draftSection(Array.from({ length: 4 }, (_, i) => draftQuestion({ number: 11 + i, type: "Short", marks: 2 }))),
+      ],
+    };
+    const conformed = conformDraftToPlan(overGenerated, plan, ["MCQ", "Short Answer"]);
+    expect(conformed.sections[0].questions).toHaveLength(6);
+    expect(conformed.sections[1].questions).toHaveLength(4);
+    const allQuestions = conformed.sections.flatMap((s) => s.questions);
+    expect(allQuestions.reduce((sum, q) => sum + q.marks, 0)).toBe(6 * 1 + 4 * 2);
+  });
+
+  it("drops questions of a disallowed type entirely, even if that leaves a section short", () => {
+    const plan: PlannerPlan = {
+      sections: [{ title: "Section A", description: "desc", questionType: "MCQ", marksPerQuestion: 1, questionCount: 6, topicsCovered: ["t"] }],
+    };
+    // 6 MCQ as planned, plus a whole extra Long Answer section that was never requested.
+    const overGenerated: GeneratedPaperShape = {
+      title: "t", subject: "s", grade: "g", difficulty: "Medium", totalMarks: 999,
+      sections: [
+        draftSection(Array.from({ length: 6 }, (_, i) => draftQuestion({ number: i + 1, type: "MCQ", marks: 1 }))),
+        draftSection([draftQuestion({ number: 7, type: "Long", marks: 5 })]),
+      ],
+    };
+    // Only one section in the plan, so the extra section is dropped outright.
+    const conformed = conformDraftToPlan(overGenerated, plan, ["MCQ"]);
+    expect(conformed.sections).toHaveLength(1);
+    expect(conformed.sections[0].questions).toHaveLength(6);
+    expect(conformed.sections[0].questions.every((q) => q.type === "MCQ")).toBe(true);
+  });
+
+  it("renumbers sequentially after trimming so the delivered paper has no gaps", () => {
+    const plan: PlannerPlan = {
+      sections: [{ title: "Section A", description: "desc", questionType: "MCQ", marksPerQuestion: 1, questionCount: 2, topicsCovered: ["t"] }],
+    };
+    const overGenerated: GeneratedPaperShape = {
+      title: "t", subject: "s", grade: "g", difficulty: "Medium", totalMarks: 999,
+      sections: [draftSection(Array.from({ length: 5 }, (_, i) => draftQuestion({ number: i + 1, type: "MCQ", marks: 1 })))],
+    };
+    const conformed = conformDraftToPlan(overGenerated, plan, ["MCQ"]);
+    expect(conformed.sections[0].questions.map((q) => q.number)).toEqual([1, 2]);
+  });
+
+  it("never adds questions back when a section is short — leaves it for the repair loop", () => {
+    const plan: PlannerPlan = {
+      sections: [{ title: "Section A", description: "desc", questionType: "MCQ", marksPerQuestion: 1, questionCount: 6, topicsCovered: ["t"] }],
+    };
+    const underGenerated: GeneratedPaperShape = {
+      title: "t", subject: "s", grade: "g", difficulty: "Medium", totalMarks: 999,
+      sections: [draftSection(Array.from({ length: 3 }, (_, i) => draftQuestion({ number: i + 1, type: "MCQ", marks: 1 })))],
+    };
+    const conformed = conformDraftToPlan(underGenerated, plan, ["MCQ"]);
+    expect(conformed.sections[0].questions).toHaveLength(3);
+  });
+
+  it("is a no-op on a draft that already matches the plan exactly", () => {
+    const plan: PlannerPlan = {
+      sections: [{ title: "Section A", description: "desc", questionType: "MCQ", marksPerQuestion: 1, questionCount: 3, topicsCovered: ["t"] }],
+    };
+    const exact: GeneratedPaperShape = {
+      title: "t", subject: "s", grade: "g", difficulty: "Medium", totalMarks: 3,
+      sections: [draftSection(Array.from({ length: 3 }, (_, i) => draftQuestion({ number: i + 1, type: "MCQ", marks: 1 })))],
+    };
+    const conformed = conformDraftToPlan(exact, plan, ["MCQ"]);
+    expect(conformed.sections[0].questions).toHaveLength(3);
+    expect(conformed.sections[0].questions.map((q) => q.number)).toEqual([1, 2, 3]);
   });
 });

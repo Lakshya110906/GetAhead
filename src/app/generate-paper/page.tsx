@@ -1292,7 +1292,7 @@ ${JSON.stringify(paper)}
                 <p key={a.attempt}>
                   {/* Never render a.violations directly — those are repair-prompt
                       instructions aimed at the model, not user copy. */}
-                  Attempt {a.attempt}: {a.violations.length === 0 ? "passed" : buildUserFacingValidationMessage(a.violations, topic)}
+                  Attempt {a.attempt}: {a.violations.length === 0 ? "passed" : buildUserFacingValidationMessage(a.violations)}
                 </p>
               ))}
             </div>
@@ -1431,6 +1431,24 @@ ${JSON.stringify(paper)}
                 <p className="font-semibold">This paper wasn&apos;t fully AI-reviewed</p>
                 <p className="text-amber-700 mt-0.5">
                   {paper.reviewNotes!.find((n) => n.startsWith("[Warning]"))?.replace(/^\[Warning\]\s*/, "")}
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Topic-match notice — the topic-vs-topicAddressed keyword check
+              (paperValidation.ts) is a heuristic over free-form model text,
+              not a guarantee, and is deliberately never a hard gate: a false
+              positive here must never block a paper that's actually
+              on-topic. This is the check flagging low confidence, not an
+              error — the paper was still fully generated and reviewed. */}
+          {(paper.reviewNotes || []).some((n) => n.startsWith("[TopicNotice]")) && (
+            <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 text-amber-800 p-4 rounded-2xl text-sm no-print">
+              <AlertTriangle className="w-5 h-5 flex-shrink-0 mt-0.5 text-amber-600" />
+              <div>
+                <p className="font-semibold">Worth a quick check</p>
+                <p className="text-amber-700 mt-0.5">
+                  {paper.reviewNotes!.find((n) => n.startsWith("[TopicNotice]"))?.replace(/^\[TopicNotice\]\s*/, "")}
                 </p>
               </div>
             </div>
@@ -1850,7 +1868,7 @@ ${JSON.stringify(paper)}
                   </h3>
                   <ul className="mt-3 space-y-2">
                     {(paper.reviewNotes || []).map((note, idx) => {
-                      const isWarning = note.startsWith("[Warning]");
+                      const isWarning = note.startsWith("[Warning]") || note.startsWith("[TopicNotice]");
                       return (
                         <li
                           key={idx}
@@ -1863,7 +1881,7 @@ ${JSON.stringify(paper)}
                           ) : (
                             <CheckCircle className="w-4 h-4 text-green-600 flex-shrink-0 mt-0.5" />
                           )}
-                          <span>{isWarning ? note.replace(/^\[Warning\]\s*/, "") : note}</span>
+                          <span>{isWarning ? note.replace(/^\[Warning\]\s*/, "").replace(/^\[TopicNotice\]\s*/, "") : note}</span>
                         </li>
                       );
                     })}

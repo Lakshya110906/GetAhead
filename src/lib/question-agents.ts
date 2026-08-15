@@ -506,6 +506,43 @@ export function planTotal(plan: PlannerPlan): number {
   return Math.round(plan.sections.reduce((sum, s) => sum + s.marksPerQuestion * s.questionCount, 0));
 }
 
+/**
+ * The generator prompt says "follow the exact questionCount and
+ * marksPerQuestion for every section — do not add, drop, or resize
+ * questions" — the reviewer's prompt repeats the same constraint. Same
+ * lesson as filterPlanToRequestedTypes above: a prompt instruction is not
+ * enforcement. Confirmed live: a 20-mark, MCQ + Short Answer request came
+ * back from the generator with 30 questions summing to 70 marks, several
+ * of a disallowed type. Trimming what's safely trimmable in code — an
+ * excess question or a disallowed-type question, dropped whole, never
+ * risks corrupting a KEPT question's own markScheme/marks — means the
+ * repair loop (validatePaper + runRepairAgent), if it's still needed at
+ * all, is fixing at most a marks shortfall rather than undoing a large
+ * structural over-generation, which is a far more reliable single-model-call
+ * task. Never adds questions back if a section is short — there's no
+ * content to add without another generation call, so that stays a
+ * validatePaper violation for the repair loop to resolve, same as today.
+ * Renumbers sequentially afterward so a dropped section never leaves a gap
+ * like Q1..Q6, Q13..Q16 in the delivered paper.
+ */
+export function conformDraftToPlan(draft: GeneratedPaperShape, plan: PlannerPlan, allowedTypes: string[]): GeneratedPaperShape {
+  const allowedSchemaTypes = new Set(
+    allowedTypes.map((t) => (t === "Short Answer" ? "Short" : t === "Long Answer" ? "Long" : t))
+  );
+  const sections = draft.sections.slice(0, plan.sections.length).map((section, i) => ({
+    ...section,
+    questions: section.questions
+      .filter((q) => allowedSchemaTypes.has(q.type))
+      .slice(0, plan.sections[i].questionCount)
+      .map((q) => ({ ...q })),
+  }));
+  let number = 1;
+  for (const section of sections) {
+    for (const q of section.questions) q.number = number++;
+  }
+  return { ...draft, sections };
+}
+
 const SCHEMA_TYPE_TO_LABEL: Record<string, string> = { MCQ: "MCQ", Short: "Short Answer", Long: "Long Answer" };
 
 /**
