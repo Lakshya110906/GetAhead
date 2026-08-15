@@ -1,18 +1,29 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, Fraunces, IBM_Plex_Mono } from "next/font/google";
+import { Archivo, Newsreader, IBM_Plex_Mono, Kalam, Caveat } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/Providers";
 import { SITE_URL } from "@/lib/siteConfig";
 
-const inter = Inter({
+// Design system: five faces, each with one job.
+//   Archivo      — body and UI text. Quiet by design.
+//   Newsreader   — display/headings/question text. Set with real intent.
+//   IBM Plex Mono — every number, without exception.
+//   Kalam        — student handwriting. Only for student-written content.
+//   Caveat       — examiner's pen. Only for marking and annotation.
+// Previously Inter/Fraunces were loaded under these same CSS variable names
+// (--body-font/--display-font) — Inter specifically is the default body
+// font of the generic AI-product look this product is deliberately not
+// converging on. Kalam/Caveat did not exist in the codebase at all.
+const archivo = Archivo({
   subsets: ["latin"],
   variable: "--body-font",
   display: "swap",
 });
 
-const fraunces = Fraunces({
+const newsreader = Newsreader({
   subsets: ["latin"],
   weight: ["500", "600", "700", "800"],
+  style: ["normal", "italic"],
   variable: "--display-font",
   display: "swap",
 });
@@ -21,6 +32,20 @@ const plexMono = IBM_Plex_Mono({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
   variable: "--mono-font",
+  display: "swap",
+});
+
+const kalam = Kalam({
+  subsets: ["latin"],
+  weight: ["400", "700"],
+  variable: "--handwriting-font",
+  display: "swap",
+});
+
+const caveat = Caveat({
+  subsets: ["latin"],
+  weight: ["500", "600", "700"],
+  variable: "--pen-font",
   display: "swap",
 });
 
@@ -78,7 +103,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${inter.variable} ${fraunces.variable} ${plexMono.variable}`} data-scroll-behavior="smooth" suppressHydrationWarning>
+    <html lang="en" className={`${archivo.variable} ${newsreader.variable} ${plexMono.variable} ${kalam.variable} ${caveat.variable}`} data-scroll-behavior="smooth" suppressHydrationWarning>
       <head>
         {/* Blocking, runs before first paint — applies the saved (or
             system-preferred, on a first visit) theme synchronously so there's

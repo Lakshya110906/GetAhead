@@ -52,7 +52,7 @@ export function TutorInput({ onSend, isStreaming, disabled = false }: InputProps
           placeholder="Ask GetAhead AI Tutor..."
           disabled={disabled}
           maxLength={4000}
-          className="flex-1 max-h-40 min-h-[36px] bg-transparent border-0 outline-none focus:ring-0 text-sm text-ink placeholder-gray-400 dark:placeholder-gray-500 p-2 resize-none leading-relaxed"
+          className="flex-1 max-h-40 min-h-[36px] bg-transparent border-0 outline-none focus:ring-0 text-sm text-ink placeholder-gray-400 p-2 resize-none leading-relaxed"
         />
 
         <div className="flex items-center gap-2 pr-1.5 pb-1">
@@ -68,7 +68,7 @@ export function TutorInput({ onSend, isStreaming, disabled = false }: InputProps
             className={`w-8 h-8 rounded-xl flex items-center justify-center transition-all ${
               input.trim() && !isStreaming && !disabled
                 ? "bg-blue-600 hover:bg-blue-700 text-white cursor-pointer shadow-sm hover:scale-105"
-                : "bg-surface-2 text-graphite dark:text-graphite cursor-not-allowed"
+                : "bg-surface-2 text-graphite cursor-not-allowed"
             }`}
             title="Send message"
           >

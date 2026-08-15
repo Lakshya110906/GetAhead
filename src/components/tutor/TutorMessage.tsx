@@ -65,7 +65,7 @@ export function TutorMessageComponent({ message, isLast, onRegenerate, isStreami
         </div>
 
         {/* Footer info (Timestamp & Actions) */}
-        <div className={`flex items-center gap-3 mt-1.5 text-[10px] text-graphite dark:text-graphite ${
+        <div className={`flex items-center gap-3 mt-1.5 text-[10px] text-graphite ${
           isUser ? "justify-end" : "justify-start"
         }`}>
           <span>{formatTime(message.createdAt)}</span>
@@ -74,7 +74,7 @@ export function TutorMessageComponent({ message, isLast, onRegenerate, isStreami
             <div className="flex items-center gap-2">
               <button
                 onClick={handleCopy}
-                className="hover:text-blue-500 dark:hover:text-blue-400 transition-colors flex items-center gap-0.5"
+                className="hover:text-blue-500 transition-colors flex items-center gap-0.5"
                 title="Copy response"
               >
                 {copied ? <Check className="w-3 h-3 text-green-500" /> : <Copy className="w-3 h-3" />}
@@ -84,7 +84,7 @@ export function TutorMessageComponent({ message, isLast, onRegenerate, isStreami
               {isLast && onRegenerate && !isStreaming && (
                 <button
                   onClick={onRegenerate}
-                  className="hover:text-blue-500 dark:hover:text-blue-400 transition-colors flex items-center gap-0.5"
+                  className="hover:text-blue-500 transition-colors flex items-center gap-0.5"
                   title="Regenerate response"
                 >
                   <RotateCcw className="w-3 h-3" />

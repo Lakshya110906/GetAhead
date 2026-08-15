@@ -319,6 +319,12 @@
   --font-body: var(--body-font), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--mono-font), ui-monospace, "SFMono-Regular", monospace;
   --font-sans: var(--body-font), ui-sans-serif, system-ui, sans-serif;
+  /* text-handwriting / text-pen — the identity faces. Only for content that
+     is literally what they claim: text-handwriting on a student's own
+     written answer, text-pen on an examiner's mark or annotation. Never
+     decorative, never on UI chrome. */
+  --font-handwriting: var(--handwriting-font), cursive;
+  --font-pen: var(--pen-font), cursive;
 }
 
 /* ===== Base Reset ===== */

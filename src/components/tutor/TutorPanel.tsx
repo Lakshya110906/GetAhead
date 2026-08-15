@@ -124,7 +124,7 @@ export function TutorPanel({
                 />
                 <button
                   onClick={handleRenameSubmit}
-                  className="p-1 rounded-md text-green-600 hover:bg-green-50 dark:hover:bg-green-950/20"
+                  className="p-1 rounded-md text-green-600 hover:bg-green-50"
                 >
                   <Check className="w-4 h-4" />
                 </button>
@@ -139,7 +139,7 @@ export function TutorPanel({
                 </h2>
                 <button
                   onClick={startEditing}
-                  className="p-1 rounded-md text-graphite hover:text-blue-500 hover:bg-paper dark:hover:bg-gray-900 opacity-0 group-hover:opacity-100 transition-opacity"
+                  className="p-1 rounded-md text-graphite hover:text-blue-500 hover:bg-paper opacity-0 group-hover:opacity-100 transition-opacity"
                   title="Rename session"
                 >
                   <Edit2 className="w-3 h-3" />
@@ -151,14 +151,14 @@ export function TutorPanel({
           <div className="flex items-center gap-1.5">
             <button
               onClick={onClearChat}
-              className="p-2 rounded-xl text-graphite hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 transition-all"
+              className="p-2 rounded-xl text-graphite hover:text-red-500 hover:bg-red-50 transition-all"
               title="Clear chat"
             >
               <Trash2 className="w-4 h-4" />
             </button>
             <button
               onClick={onToggle}
-              className="p-2 rounded-xl text-graphite hover:text-graphite dark:hover:text-gray-200 hover:bg-paper dark:hover:bg-gray-900 transition-all"
+              className="p-2 rounded-xl text-graphite hover:text-graphite hover:bg-paper transition-all"
               title="Collapse tutor"
             >
               {window.innerWidth < 768 ? <X className="w-4 h-4" /> : <PanelRightClose className="w-4 h-4" />}

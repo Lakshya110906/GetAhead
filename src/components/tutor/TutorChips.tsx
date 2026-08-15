@@ -33,16 +33,16 @@ export function TutorChips({ onChipClick, breakdownCount = 0 }: ChipsProps) {
 
   return (
     <div className="border-t border-rule bg-gray-50/50 p-3">
-      <div className="flex items-center gap-1 mb-2 text-xs font-semibold text-graphite dark:text-graphite">
+      <div className="flex items-center gap-1 mb-2 text-xs font-semibold text-graphite">
         <Sparkles className="w-3.5 h-3.5 text-blue-500" />
-        <span>Smart Suggested Actions</span>
+        <span>Suggested questions</span>
       </div>
       <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none snap-x touch-pan-x">
         {allChips.map((chip, idx) => (
           <button
             key={idx}
             onClick={() => onChipClick(chip)}
-            className="flex-shrink-0 snap-start bg-surface hover:bg-blue-50 dark:hover:bg-blue-900/30 border border-rule/60 hover:border-blue-200 dark:hover:border-blue-800 text-ink hover:text-blue-600 dark:hover:text-blue-400 text-xs px-3 py-1.5 rounded-full transition-all cursor-pointer shadow-sm"
+            className="flex-shrink-0 snap-start bg-surface hover:bg-blue-50 border border-rule/60 hover:border-blue-200 text-ink hover:text-blue-600 text-xs px-3 py-1.5 rounded-full transition-all cursor-pointer shadow-sm"
           >
             {chip}
           </button>

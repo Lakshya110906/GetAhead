@@ -252,10 +252,10 @@ export default function UploadPage() {
   return (
     <div className="max-w-4xl mx-auto">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-1" style={{ fontFamily: "var(--font-display)" }}>
+        <h1 className="text-2xl sm:text-3xl font-bold text-ink mb-1" style={{ fontFamily: "var(--font-display)" }}>
           New evaluation
         </h1>
-        <p className="text-graphite">Upload your answer sheet and let AI evaluate it</p>
+        <p className="text-graphite">See exactly where every mark is won or lost — upload a sheet to begin.</p>
       </div>
 
       <div className="grid lg:grid-cols-5 gap-6">
@@ -263,7 +263,7 @@ export default function UploadPage() {
         <div className="lg:col-span-3 space-y-5">
           {/* Dropzone */}
           <div className="bg-surface rounded-2xl border border-rule card-shadow-md p-6">
-            <h2 className="text-lg font-bold text-gray-900 mb-4" style={{ fontFamily: "var(--font-display)" }}>
+            <h2 className="text-lg font-bold text-ink mb-4" style={{ fontFamily: "var(--font-display)" }}>
               Upload answer sheet
             </h2>
 
@@ -291,14 +291,15 @@ export default function UploadPage() {
                   <FileText className="w-6 h-6 text-blue-500" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-gray-900 text-sm truncate">{file.name}</p>
-                  <p className="text-graphite text-xs mt-0.5 font-mono">
+                  <p className="font-semibold text-ink text-sm truncate">{file.name}</p>
+                  <p className="text-graphite text-xs mt-0.5 font-mono tabular-nums">
                     {(file.size / 1024 / 1024).toFixed(2)} MB
                   </p>
                 </div>
                 {!isBusy && (
                   <button
                     onClick={() => setFile(null)}
+                    aria-label="Remove file"
                     className="w-8 h-8 bg-surface rounded-lg flex items-center justify-center text-gray-400 hover:text-red-500 transition-colors shadow-sm"
                   >
                     <X className="w-4 h-4" />
@@ -310,7 +311,7 @@ export default function UploadPage() {
 
           {/* Settings */}
           <div className="bg-surface rounded-2xl border border-rule card-shadow-md p-6 space-y-5">
-            <h2 className="text-lg font-bold text-gray-900" style={{ fontFamily: "var(--font-display)" }}>
+            <h2 className="text-lg font-bold text-ink" style={{ fontFamily: "var(--font-display)" }}>
               Evaluation settings
             </h2>
 
@@ -372,11 +373,12 @@ export default function UploadPage() {
         {/* Status Panel */}
         <div className="lg:col-span-2">
           <div className="bg-surface rounded-2xl border border-rule card-shadow-md p-6 sticky top-6">
-            <h2 className="text-lg font-bold text-gray-900 mb-5" style={{ fontFamily: "var(--font-display)" }}>
+            <h2 className="text-lg font-bold text-ink mb-5" style={{ fontFamily: "var(--font-display)" }}>
               Evaluation status
             </h2>
 
-            {/* Steps */}
+            {/* Steps — same circled-mark convention as the report's margin
+                marks: a mono numeral until a step resolves, then a tick. */}
             <div className="space-y-4 mb-6">
               {[
                 {
@@ -397,12 +399,12 @@ export default function UploadPage() {
               ].map((step, i) => (
                 <div key={step.label} className="flex items-center gap-3">
                   <div
-                    className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 ${
+                    className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-mono font-bold flex-shrink-0 border ${
                       step.done
-                        ? "bg-green-100 text-green-600"
+                        ? "bg-green-100 text-green-600 border-transparent"
                         : step.active
-                        ? "bg-ink text-paper"
-                        : "bg-surface-2 text-gray-400"
+                        ? "bg-ink text-paper border-transparent"
+                        : "bg-transparent text-gray-400 border-gray-200"
                     }`}
                   >
                     {step.done ? <CheckCircle className="w-4 h-4" /> : step.active ? <Loader2 className="w-3 h-3 animate-spin" /> : i + 1}
@@ -422,8 +424,8 @@ export default function UploadPage() {
             {status === "uploading" && (
               <div className="mb-5">
                 <div className="flex justify-between text-xs text-graphite mb-1.5">
-                  <span>Uploading to storage...</span>
-                  <span className="font-mono">{uploadProgress}%</span>
+                  <span>Uploading...</span>
+                  <span className="font-mono tabular-nums">{uploadProgress}%</span>
                 </div>
                 <div className="h-2 bg-surface-2 rounded-full overflow-hidden">
                   <div
@@ -451,7 +453,10 @@ export default function UploadPage() {
                 <div>
                   <p className="text-sm text-blue-700 font-medium">AI is reading and grading your answer sheet...</p>
                   {attempts > 1 && (
-                    <p className="text-xs text-blue-600 mt-0.5">Retrying (attempt {attempts} of {maxAttempts})</p>
+                    <p className="text-xs text-blue-600 mt-0.5">
+                      Retrying — attempt <span className="font-mono tabular-nums">{attempts}</span> of{" "}
+                      <span className="font-mono tabular-nums">{maxAttempts}</span>
+                    </p>
                   )}
                 </div>
               </div>

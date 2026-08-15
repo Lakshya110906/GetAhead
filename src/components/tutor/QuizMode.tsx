@@ -17,7 +17,7 @@ export function QuizMode({ question, options, onSelect }: QuizModeProps) {
   };
 
   return (
-    <div className="bg-blue-50/50 dark:bg-blue-950/20 border border-blue-100 dark:border-blue-900/40 rounded-2xl p-4 mt-3 max-w-full">
+    <div className="bg-blue-50/50 border border-blue-100 rounded-2xl p-4 mt-3 max-w-full">
       <p className="font-semibold text-ink mb-4 text-sm leading-relaxed">
         {question}
       </p>
@@ -33,7 +33,7 @@ export function QuizMode({ question, options, onSelect }: QuizModeProps) {
               className={`w-full text-left px-4 py-3 rounded-xl text-xs font-medium border transition-all flex items-center justify-between gap-3 ${
                 isSelected
                   ? "bg-blue-600 border-blue-600 text-white shadow-sm"
-                  : "bg-surface border-rule text-ink hover:bg-paper dark:hover:bg-gray-800/60"
+                  : "bg-surface border-rule text-ink hover:bg-paper"
               }`}
             >
               <span className="flex-1 leading-normal">

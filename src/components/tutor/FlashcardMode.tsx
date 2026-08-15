@@ -34,8 +34,8 @@ export function FlashcardMode({ cards }: FlashcardModeProps) {
   };
 
   return (
-    <div className="bg-indigo-50/50 dark:bg-indigo-950/10 border border-indigo-100 dark:border-indigo-900/40 rounded-2xl p-4 mt-3 max-w-full">
-      <div className="flex items-center justify-between mb-3 text-xs font-semibold text-indigo-600 dark:text-indigo-400">
+    <div className="bg-indigo-50/50 border border-indigo-100 rounded-2xl p-4 mt-3 max-w-full">
+      <div className="flex items-center justify-between mb-3 text-xs font-semibold text-indigo-600">
         <span>FLASHCARD INDEX</span>
         <span>{index + 1} of {cards.length}</span>
       </div>
@@ -85,7 +85,7 @@ export function FlashcardMode({ cards }: FlashcardModeProps) {
         <button
           onClick={handlePrev}
           disabled={cards.length <= 1}
-          className="w-8 h-8 rounded-full border border-rule bg-surface flex items-center justify-center hover:bg-paper dark:hover:bg-gray-800 text-graphite dark:text-graphite disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          className="w-8 h-8 rounded-full border border-rule bg-surface flex items-center justify-center hover:bg-paper text-graphite disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
           <ChevronLeft className="w-4 h-4" />
         </button>
@@ -93,7 +93,7 @@ export function FlashcardMode({ cards }: FlashcardModeProps) {
         <button
           onClick={handleNext}
           disabled={cards.length <= 1}
-          className="w-8 h-8 rounded-full border border-rule bg-surface flex items-center justify-center hover:bg-paper dark:hover:bg-gray-800 text-graphite dark:text-graphite disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          className="w-8 h-8 rounded-full border border-rule bg-surface flex items-center justify-center hover:bg-paper text-graphite disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
           <ChevronRight className="w-4 h-4" />
         </button>
