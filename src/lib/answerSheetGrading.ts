@@ -18,6 +18,19 @@ import { withRetry } from "@/lib/question-agents";
 import { hashOf, readReplay, writeReplay, type ReplayOptions } from "@/lib/geminiFixtureCache";
 
 const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY || process.env.GEMINI_API_KEY;
+
+// Two different failures, two different fixes — conflating them sends
+// debugging in the wrong direction. `replay` present means the caller
+// opted into replay-only mode (a test harness): a cache miss there means a
+// recording is missing, which `npm run fixtures:live` fixes, not an API
+// key. `replay` absent means a real production call: a missing key is
+// exactly what it says.
+function replayMissError(bucket: string, cacheKey: string, replay?: ReplayOptions): string {
+  if (replay) {
+    return `No recording for this input (fixtures/gemini-cache/${bucket}/${cacheKey}.json) and no API key configured to make a live call. Run \`npm run fixtures:live\` and commit the result.`;
+  }
+  return "Gemini API key is not configured.";
+}
 export const MODEL_ID = "gemini-2.5-flash";
 
 // ─── Errors — every one of these must surface honestly, never be caught and
@@ -210,7 +223,7 @@ export async function extractAnswerSheet(
   const cached = readReplay<ExtractionResult>("extraction", cacheKey, replay);
   if (cached) return cached;
 
-  if (!apiKey) throw new Error("Gemini API key is not configured.");
+  if (!apiKey) throw new Error(replayMissError("extraction", cacheKey, replay));
   const genAI = new GoogleGenerativeAI(apiKey);
   const model = genAI.getGenerativeModel({
     model: modelId,
@@ -288,7 +301,8 @@ async function gradeQuestionOnce(
   const cached = readReplay<QuestionGrade>("grading", cacheKey, replay);
   if (cached) return cached;
 
-  const genAI = new GoogleGenerativeAI(apiKey!);
+  if (!apiKey) throw new Error(replayMissError("grading", cacheKey, replay));
+  const genAI = new GoogleGenerativeAI(apiKey);
   const model = genAI.getGenerativeModel({
     model: modelId,
     generationConfig: {
@@ -372,7 +386,8 @@ async function gradeQuestionsBatched(
   const cached = readReplay<QuestionGrade[]>("grading-batched", cacheKey, replay);
   if (cached) return cached;
 
-  const genAI = new GoogleGenerativeAI(apiKey!);
+  if (!apiKey) throw new Error(replayMissError("grading-batched", cacheKey, replay));
+  const genAI = new GoogleGenerativeAI(apiKey);
   const model = genAI.getGenerativeModel({
     model: modelId,
     generationConfig: {
@@ -581,9 +596,14 @@ export async function gradeAnswerSheetFromFile(
   // be overridden independently. Both default to the production model.
   modelOverrides?: { extraction?: string; grading?: string }
 ): Promise<{ extraction: ExtractionResult; result: GradedAnswerSheet; usage: UsageAccumulator }> {
-  if (!apiKey || apiKey === "your-gemini-api-key-here") {
-    throw new Error("Gemini API key is not configured.");
-  }
+  // No key check here — it used to run unconditionally at this point, before
+  // `replay` was ever consulted, which meant a replay-mode caller with every
+  // recording present still needed a real API key just to pass the check.
+  // extractAnswerSheet() and the grading functions below each already check
+  // the cache (readReplay) FIRST and only require a key on an actual cache
+  // miss — that's the single source of truth for "is a real call needed
+  // right now," so it belongs there, not duplicated (and un-replay-aware)
+  // up here.
   const usage = new UsageAccumulator();
 
   const extraction = await extractAnswerSheet(fileBytes, mimeType, usage, meta, replay, modelOverrides?.extraction);
