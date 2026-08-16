@@ -25,7 +25,9 @@ export async function GET(
     }
 
     if (paper.userId !== userId) {
-      return NextResponse.json({ error: "Unauthorized access to resource" }, { status: 403 });
+      // 404, not 403 — same convention as reports/save: never confirm to the
+      // caller that a resource with this id exists at all if it isn't theirs.
+      return NextResponse.json({ error: "Question paper not found" }, { status: 404 });
     }
 
     return NextResponse.json({
@@ -60,7 +62,9 @@ export async function DELETE(
     }
 
     if (paper.userId !== userId) {
-      return NextResponse.json({ error: "Unauthorized access to resource" }, { status: 403 });
+      // 404, not 403 — same convention as reports/save: never confirm to the
+      // caller that a resource with this id exists at all if it isn't theirs.
+      return NextResponse.json({ error: "Question paper not found" }, { status: 404 });
     }
 
     await prisma.questionPaper.delete({
@@ -101,7 +105,9 @@ export async function PUT(
     }
 
     if (paper.userId !== userId) {
-      return NextResponse.json({ error: "Unauthorized access to resource" }, { status: 403 });
+      // 404, not 403 — same convention as reports/save: never confirm to the
+      // caller that a resource with this id exists at all if it isn't theirs.
+      return NextResponse.json({ error: "Question paper not found" }, { status: 404 });
     }
 
     const updated = await prisma.questionPaper.update({

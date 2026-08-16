@@ -113,6 +113,23 @@ export async function POST(request: NextRequest) {
       throw err;
     }
 
+    // fileUrl is client-supplied and, until here, only validated as "is a
+    // URL" (zod's .url()) — fetching it server-side with no further check
+    // is an SSRF primitive: a client could point it at an internal-only
+    // address instead of an actual uploaded file. Every real fileUrl comes
+    // from POST /api/uploads's handleUpload() call, which only ever hands
+    // back a *.public.blob.vercel-storage.com URL (see @vercel/blob's own
+    // docs), so anything else is never a legitimate upload.
+    let fileHost: string;
+    try {
+      fileHost = new URL(fileUrl).hostname;
+    } catch {
+      return NextResponse.json({ error: "That file URL isn't valid. Try uploading again." }, { status: 400 });
+    }
+    if (!fileHost.endsWith(".public.blob.vercel-storage.com")) {
+      return NextResponse.json({ error: "That file URL isn't valid. Try uploading again." }, { status: 400 });
+    }
+
     // Download once, use for both the magic-byte check and (for PDFs) the
     // page-count check below — never trust the extension or the
     // client-supplied Content-Type for what a file actually is.

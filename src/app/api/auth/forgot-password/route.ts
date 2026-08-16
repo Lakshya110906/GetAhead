@@ -4,39 +4,14 @@ import crypto from "crypto";
 import { sendPasswordResetEmail } from "@/lib/email";
 import { captureException } from "@/lib/errorTracking";
 import { reportApiError } from "@/lib/apiError";
-
-// Rate limit: 3 password reset requests per hour per IP
-async function checkForgotPasswordRateLimit(ip: string): Promise<boolean> {
-  const key = `forgot-password:${ip}`;
-  const now = new Date();
-  const resetAt = new Date(now.getTime() + 60 * 60 * 1000); // 1 hour window
-
-  try {
-    const existing = await prisma.rateLimit.findUnique({ where: { key } });
-    if (!existing) {
-      await prisma.rateLimit.create({ data: { key, count: 1, resetAt } });
-      return true;
-    }
-    if (existing.resetAt < now) {
-      await prisma.rateLimit.update({ where: { key }, data: { count: 1, resetAt } });
-      return true;
-    }
-    if (existing.count >= 3) {
-      return false;
-    }
-    await prisma.rateLimit.update({ where: { key }, data: { count: { increment: 1 } } });
-    return true;
-  } catch {
-    return true; // Fail open to not block users on database glitches
-  }
-}
+import { checkRateLimit } from "@/lib/rateLimit";
 
 export async function POST(request: NextRequest) {
   try {
     const ip = request.headers.get("x-forwarded-for") || request.headers.get("x-real-ip") || "127.0.0.1";
-    
-    // Check Rate Limit
-    const isAllowed = await checkForgotPasswordRateLimit(ip);
+
+    // 3 password reset requests per hour per IP
+    const isAllowed = await checkRateLimit(`forgot-password:${ip}`, 3, 60 * 60 * 1000);
     if (!isAllowed) {
       return NextResponse.json(
         { error: "Too many password reset requests. Please try again in an hour." },
