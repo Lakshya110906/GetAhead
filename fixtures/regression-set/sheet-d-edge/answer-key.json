@@ -1,14 +1,14 @@
 {
   "id": "sheet-d-edge",
-  "totalMarks": 11,
+  "totalMarks": 14,
   "expectedObtainedMarks": 11,
   "questions": [
     {
       "questionNumber": 1,
       "expectedMarks": 0,
       "expectedMaxMarks": 3,
-      "errorType": "unreadable",
-      "plantedError": "Left blank — extraction correctly marks this unreadable (not 'readable but blank'), so it is excluded from both the numerator and the denominator entirely, per gradeAnswerSheetFromFile's own documented design. totalMarks above (11) is therefore the sum of only the two readable questions (6+5), not the nominal 14 across all three.",
+      "errorType": "blank",
+      "plantedError": "Left blank — scores zero and counts toward the total, unlike a genuinely illegible answer.",
       "keywords": []
     },
     {

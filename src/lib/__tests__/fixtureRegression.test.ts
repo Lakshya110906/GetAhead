@@ -60,11 +60,23 @@ beforeAll(() => {
 });
 
 describe("fixture regression: chem-sheet", () => {
-  // Band re-baselined against the real live grading run (was 19-22, an
-  // untested design estimate — the first live run of this exact content
-  // scored 15/25 in both per-question and batched modes, within 1 point of
-  // each other; see the Section 2(b) batched-vs-per-question decision).
-  it("totals 15/25 (band 13-17), Q1 and Q5 exact, and names all three planted errors", async () => {
+  // Restored to the original 19-22 band (2026-08-16). The narrower 13-17
+  // band that briefly replaced it was fit to a real, confirmed prompt bug,
+  // not a corrected estimate: a live regrade (twice, reproduced both times)
+  // showed Q4 — "missing 2HCl", structurally the same class of error as
+  // Q2's "missing/wrong H2 coefficient" — scored 0/5 with an EMPTY
+  // correctPoints list, while Q2's equivalent error kept 2/4. Same model,
+  // same response, same error class, wildly different treatment. Fixed at
+  // the source: GRADE_BATCH_PROMPT/GRADE_QUESTION_PROMPT now explicitly say
+  // a method_error is not automatically zero, and that two errors of the
+  // same kind and severity on the same paper must not score very
+  // differently. NOT yet re-verified against a fresh live run — the
+  // project's daily Gemini quota (RPD) was exhausted while re-recording the
+  // other fixtures during this fix. Run `npm run fixtures:live` once it
+  // resets (midnight Pacific) and confirm this band still holds; if Q4
+  // still zeroes out after the prompt fix, that's a new finding, not this
+  // comment being wrong.
+  it("totals 21/25 (band 19-22), Q1 and Q5 exact, and names all three planted errors", async () => {
     const { meta, fileBytes } = loadFixture("chem-sheet");
     const { replay, realCalls } = replayOnly();
     const { result } = await gradeAnswerSheetFromFile(fileBytes, meta.mimeType, { subject: meta.subject, grade: meta.grade, examType: meta.examType }, undefined, replay);
@@ -72,8 +84,8 @@ describe("fixture regression: chem-sheet", () => {
     expect(realCalls(), "chem-sheet has no recording for this exact input — run `npm run fixtures:live` and commit the result").toBe(0);
 
     expect(result.totalMarks).toBe(25);
-    expect(result.obtainedMarks).toBeGreaterThanOrEqual(13);
-    expect(result.obtainedMarks).toBeLessThanOrEqual(17);
+    expect(result.obtainedMarks).toBeGreaterThanOrEqual(19);
+    expect(result.obtainedMarks).toBeLessThanOrEqual(22);
 
     const byNumber = new Map(result.questionGrades.map((g) => [g.questionNumber, g]));
     expect(byNumber.get(1)?.marksAwarded).toBe(5); // Q1: fully correct, exact
@@ -104,7 +116,14 @@ describe("fixture regression: sheet-b-errors", () => {
   // Band re-baselined against a real live grading run (was 5-8, an untested
   // design estimate — the model is more generous with partial credit for
   // an arithmetic slip than originally guessed, scoring 10/15, while still
-  // naming all three planted mistakes exactly).
+  // naming all three planted mistakes exactly). Checked this one for the
+  // same class of bug as chem-sheet's Q4 (2026-08-16): all three questions
+  // here are the same error shape (correct method/setup, one arithmetic
+  // slip), and the model's per-question marks (3/5, 4/5, 3/5 — recorded
+  // output) are proportionate and consistent with each other, unlike
+  // chem-sheet's Q4 outlier. No bug found; keeping this band. Not yet
+  // re-verified against the current prompt (daily Gemini quota exhausted
+  // during this fix), but there's no evidence this one needs it.
   it("scores 8-12 and names its three planted mistakes", async () => {
     const { meta, fileBytes } = loadFixture("sheet-b-errors");
     const { replay, realCalls } = replayOnly();
@@ -134,29 +153,40 @@ describe("fixture regression: sheet-c-injection", () => {
 });
 
 describe("fixture regression: sheet-d-edge", () => {
-  // Re-baselined against a real live grading run. Original design intent was
-  // "blank Q1 scores 0 out of its 3 marks, landing at ~11/14" — but a real
-  // run showed extraction correctly marks a genuinely blank answer
-  // UNREADABLE, not "readable but blank", and gradeAnswerSheetFromFile
-  // deliberately excludes unreadable questions from BOTH the numerator and
-  // the denominator (see answerSheetGrading.ts: "unreadable questions'
-  // marks are excluded rather than counted as available-but-lost") — so
-  // totalMarks is correctly 11 (6+5, the two readable questions), not 14.
-  // This is the app's own intentional scoring design, not a bug to work
-  // around; the assertions below match it.
-  it("scores 11/11 on the readable questions: unreadable Q1 is excluded from the total (not scored 0/3), the unusual valid method (Q2) is not penalised", async () => {
+  // Restored to the original design intent (2026-08-16): blank Q1 scores 0
+  // out of its 3 marks and COUNTS toward the total (14), the same way it
+  // would on a real marked script. The "unreadable Q1, excluded from the
+  // total, 11/11" version that briefly replaced this was a real, confirmed
+  // live grading-integrity bug rationalized as intentional design — checked
+  // the code directly: gradeAnswerSheetFromFile had exactly one boolean
+  // (`readable`) and one hardcoded errorType ("unreadable") for BOTH a
+  // genuinely blank answer and a genuinely illegible one, so a student who
+  // skipped a question got it silently dropped from the denominator instead
+  // of scored zero against it — a materially better outcome than a wrong
+  // answer, for every incomplete real paper. Fixed at the source:
+  // extractedQuestion now reports answerStatus: "readable" | "blank" |
+  // "unreadable" (not a boolean), and gradeAnswerSheetFromFile gives each
+  // its own path — blank scores 0 and counts toward totalMarks, unreadable
+  // stays excluded from both numerator and denominator. NOT yet
+  // re-verified against a fresh live run — the project's daily Gemini quota
+  // (RPD) was exhausted while re-recording the other fixtures during this
+  // fix (extraction's own prompt/schema changed, so every fixture's
+  // recording is stale, not just this one). Run `npm run fixtures:live`
+  // once it resets (midnight Pacific).
+  it("scores ~11/14: blank Q1 counts toward the total and scores zero, the unusual valid method (Q2) is not penalised", async () => {
     const { meta, fileBytes } = loadFixture("sheet-d-edge");
     const { replay, realCalls } = replayOnly();
     const { result } = await gradeAnswerSheetFromFile(fileBytes, meta.mimeType, { subject: meta.subject, grade: meta.grade, examType: meta.examType }, undefined, replay);
 
     expect(realCalls(), "sheet-d-edge has no recording for this exact input — run `npm run fixtures:live` and commit the result").toBe(0);
-    expect(result.totalMarks).toBe(11);
-    expect(result.obtainedMarks).toBe(11);
+    expect(result.totalMarks).toBe(14);
+    expect(result.obtainedMarks).toBeGreaterThanOrEqual(10);
+    expect(result.obtainedMarks).toBeLessThanOrEqual(12);
 
     const byNumber = new Map(result.questionGrades.map((g) => [g.questionNumber, g]));
-    expect(byNumber.get(1)?.marksAwarded).toBe(0); // unreadable Q1 contributes zero
-    expect(byNumber.get(1)?.errorType).toBe("unreadable");
-    expect(result.unreadableQuestions).toContain(1);
+    expect(byNumber.get(1)?.marksAwarded).toBe(0); // blank Q1 is zero
+    expect(byNumber.get(1)?.errorType).toBe("blank");
+    expect(result.unreadableQuestions).not.toContain(1); // blank, not unreadable — still in the denominator
     expect(byNumber.get(2)?.marksAwarded).toBe(6); // unusual-but-valid method: full marks, not penalised
     expect(byNumber.get(3)?.marksAwarded).toBe(5);
   });

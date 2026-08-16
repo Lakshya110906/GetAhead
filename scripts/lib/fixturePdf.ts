@@ -79,10 +79,18 @@ export async function buildFixturePdf(spec: FixtureSheetSpec): Promise<Buffer> {
     ensureSpace(1);
     page.drawText("Answer:", { x: marginX, y, size: 11, font: boldFont });
     y -= lineHeight;
-    for (const line of wrapText(q.studentAnswer, 95)) {
-      ensureSpace(1);
-      page.drawText(line, { x: marginX, y, size: 11, font });
-      y -= lineHeight;
+    // An empty studentAnswer means a genuinely blank answer — render
+    // literal empty space, not placeholder text. A page that visibly PRINTS
+    // "[left blank]" is not blank; it's a page with legible text on it that
+    // happens to describe blankness, which a real vision model reads as
+    // readable content, not absence. (Confirmed live: this is exactly what
+    // sheet-d-edge's Q1 rendered as before this fix.)
+    if (q.studentAnswer.trim().length > 0) {
+      for (const line of wrapText(q.studentAnswer, 95)) {
+        ensureSpace(1);
+        page.drawText(line, { x: marginX, y, size: 11, font });
+        y -= lineHeight;
+      }
     }
     y -= lineHeight;
   }

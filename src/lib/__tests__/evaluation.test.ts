@@ -17,7 +17,7 @@ function makeQuestion(overrides: Partial<ExtractedQuestion> = {}): ExtractedQues
     questionText: "Balance the equation: N2 + H2 -> NH3",
     marksAvailable: 5,
     studentAnswer: "N2 + 3H2 -> 2NH3. This is balanced because nitrogen and hydrogen atoms match on both sides.",
-    readable: true,
+    answerStatus: "readable",
     ...overrides,
   };
 }
@@ -84,7 +84,7 @@ describe("validateQuestionGrade", () => {
   });
 
   it("does not require a groundingQuote for blank or unreadable answers", () => {
-    const q = makeQuestion({ readable: false, studentAnswer: "" });
+    const q = makeQuestion({ answerStatus: "unreadable", studentAnswer: "" });
     const g = makeGrade({ errorType: "unreadable", groundingQuote: "", marksAwarded: 0 });
     expect(validateQuestionGrade(g, q)).toEqual([]);
   });
@@ -134,7 +134,7 @@ describe("buildOverallFeedback", () => {
       makeGrade({ questionNumber: 2, errorType: "method_error", incorrectPoints: ["Used the wrong formula entirely"] }),
       makeGrade({ questionNumber: 3, errorType: "arithmetic_slip", incorrectPoints: ["Correct method, dropped a minus sign"] }),
     ];
-    const feedback = buildOverallFeedback(grades, 0);
+    const feedback = buildOverallFeedback(grades);
     expect(feedback).toContain("Q1");
     expect(feedback).toContain("Q2");
     expect(feedback).toContain("method error");
@@ -145,8 +145,25 @@ describe("buildOverallFeedback", () => {
 
   it("mentions unreadable question count when present", () => {
     const grades = [makeGrade({ questionNumber: 1, errorType: "unreadable", groundingQuote: "" })];
-    const feedback = buildOverallFeedback(grades, 1);
+    const feedback = buildOverallFeedback(grades);
     expect(feedback).toMatch(/1 question.*unreadable/i);
+  });
+
+  // Regression: blank and unreadable share an errorType-driven code path in
+  // buildOverallFeedback, but must produce distinct messages — a blank
+  // answer counts toward the total, an unreadable one is excluded from it,
+  // and conflating the two in the summary text would misreport the total
+  // the same way the scoring bug this fixes did.
+  it("mentions blank question count separately from unreadable, and says it counts toward the total", () => {
+    const grades = [
+      makeGrade({ questionNumber: 1, errorType: "blank", groundingQuote: "", marksAwarded: 0 }),
+      makeGrade({ questionNumber: 2, errorType: "unreadable", groundingQuote: "", marksAwarded: 0 }),
+    ];
+    const feedback = buildOverallFeedback(grades);
+    expect(feedback).toMatch(/1 question.*blank/i);
+    expect(feedback.toLowerCase()).toContain("counted toward the total");
+    expect(feedback).toMatch(/1 question.*unreadable/i);
+    expect(feedback.toLowerCase()).toContain("excluded from the total");
   });
 });
 

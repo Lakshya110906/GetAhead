@@ -17,7 +17,15 @@ export const extractedQuestionSchema = z.object({
   // live in the working, not just the final answer, so truncating to "the
   // answer" loses exactly what grading needs.
   studentAnswer: z.string(),
-  readable: z.boolean(),
+  // Three distinct situations, not two: a genuinely blank answer scores
+  // zero and still counts toward the total (the student attempted the
+  // paper and chose not to answer this one) — it is not the same as an
+  // answer that exists but can't be read, which is excluded from the total
+  // entirely (extraction, not the student, failed). Collapsing these into
+  // one boolean was a real, live scoring bug: every skipped question was
+  // silently dropped from the denominator instead of scored against it,
+  // inflating the percentage of every incomplete paper.
+  answerStatus: z.enum(["readable", "blank", "unreadable"]),
 });
 export type ExtractedQuestion = z.infer<typeof extractedQuestionSchema>;
 
@@ -46,9 +54,9 @@ export const GEMINI_EXTRACTION_RESPONSE_SCHEMA: Schema = {
           questionText: { type: SchemaType.STRING },
           marksAvailable: { type: SchemaType.NUMBER },
           studentAnswer: { type: SchemaType.STRING },
-          readable: { type: SchemaType.BOOLEAN },
+          answerStatus: { type: SchemaType.STRING, format: "enum", enum: ["readable", "blank", "unreadable"] },
         },
-        required: ["questionNumber", "questionText", "marksAvailable", "studentAnswer", "readable"],
+        required: ["questionNumber", "questionText", "marksAvailable", "studentAnswer", "answerStatus"],
       },
     },
   },

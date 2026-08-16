@@ -73,7 +73,10 @@ For every question you find on the sheet, extract:
 - questionText: the question exactly as printed
 - marksAvailable: the marks allocated to this question, as printed (look for "[5]", "(5 marks)", a marks column, etc. — if truly not stated anywhere on the paper, make your best reasonable estimate based on the question's apparent scope, but never invent a suspiciously round total)
 - studentAnswer: the student's COMPLETE written answer, transcribed verbatim, including all working, crossed-out attempts, and diagrams described in words — not just their final answer. Marks are mostly in the working; do not summarize or truncate it.
-- readable: false if the answer is blank, illegible, or you cannot make out enough to grade it; true otherwise
+- answerStatus: exactly one of three values — these are NOT interchangeable, look carefully before choosing:
+  - "blank": the space for this answer is empty or contains nothing but the question itself — the student did not attempt it. This is a genuine, common exam outcome, not a defect in the scan.
+  - "unreadable": the student wrote something, but it's illegible, too faint, cut off, or otherwise impossible to make out enough to grade — a scanning/handwriting problem, not the student's choice.
+  - "readable": there is a gradeable attempt, however short or wrong.
 
 Also report, if you can genuinely tell from the paper itself (its header, its content, or its vocabulary) — do not guess if you can't:
 - detectedSubject: the subject this paper actually appears to be
@@ -102,6 +105,7 @@ const GRADE_QUESTION_PROMPT = ({
 Grading rubric:
 - Award marks strictly for what is demonstrated in the student's own working — do not award marks for a correct final answer reached via invalid or absent working, where working is expected.
 - Award partial credit: a correct method with a computational/arithmetic slip is NOT zero — distinguish a method error (the underlying approach is wrong) from a slip (the approach is right, an arithmetic step is wrong) in errorType and in your feedback. Say explicitly which one it is.
+- Zero marks (and an empty correctPoints list) means literally nothing in the answer was correct. A method_error is not automatically zero: if the overall approach, setup, or reasoning was right and only one specific step is wrong (e.g. one missing or incorrect coefficient in an otherwise correctly balanced and structured equation), that correct setup still earns credit — award marks proportional to what was actually right.
 - A fully correct answer receives full marks — never shave marks off correct work for style.
 - feedback must name the SPECIFIC error (e.g. "the hydrogen is unbalanced — this should be 4H2, not 3H2"), never a generic statement like "review this topic."
 - groundingQuote must be an exact, verbatim substring of the student's answer below — the specific line your judgement rests on. If the answer is blank or unreadable, leave groundingQuote empty and set errorType to "blank" or "unreadable" with marksAwarded 0.
@@ -122,7 +126,7 @@ Output the grade via the structured schema you've been given.`;
 
 export const EXTRACTION_PROMPT_VERSION = createHash("sha256").update(EXTRACTION_PROMPT).digest("hex").slice(0, 16);
 export const GRADE_PROMPT_VERSION = createHash("sha256")
-  .update(GRADE_QUESTION_PROMPT({ subject: "{{S}}", grade: "{{G}}", examType: "{{E}}", question: { questionNumber: 1, questionText: "{{Q}}", marksAvailable: 1, studentAnswer: "{{A}}", readable: true } }))
+  .update(GRADE_QUESTION_PROMPT({ subject: "{{S}}", grade: "{{G}}", examType: "{{E}}", question: { questionNumber: 1, questionText: "{{Q}}", marksAvailable: 1, studentAnswer: "{{A}}", answerStatus: "readable" } }))
   .digest("hex")
   .slice(0, 16);
 
@@ -147,6 +151,7 @@ const GRADE_BATCH_PROMPT = ({
 Grading rubric (applies to every question):
 - Award marks strictly for what is demonstrated in the student's own working — do not award marks for a correct final answer reached via invalid or absent working, where working is expected.
 - Award partial credit: a correct method with a computational/arithmetic slip is NOT zero — distinguish a method error (the underlying approach is wrong) from a slip (the approach is right, an arithmetic step is wrong) in errorType and in your feedback. Say explicitly which one it is.
+- Zero marks (and an empty correctPoints list) means literally nothing in the answer was correct. A method_error is not automatically zero: if the overall approach, setup, or reasoning was right and only one specific step is wrong (e.g. one missing or incorrect coefficient in an otherwise correctly balanced and structured equation), that correct setup still earns credit — award marks proportional to what was actually right, the same way you would for a comparable slip elsewhere on this same paper. Two errors of the same kind and severity on the same paper must not receive very different marks.
 - A fully correct answer receives full marks — never shave marks off correct work for style.
 - feedback must name the SPECIFIC error for that question (e.g. "the hydrogen is unbalanced — this should be 4H2, not 3H2"), never a generic statement like "review this topic."
 - groundingQuote must be an exact, verbatim substring of THAT question's own student answer below — the specific line your judgement rests on. If an answer is blank or unreadable, leave groundingQuote empty and set errorType to "blank" or "unreadable" with marksAwarded 0.
@@ -171,7 +176,7 @@ export const GRADE_BATCH_PROMPT_VERSION = createHash("sha256")
       subject: "{{S}}",
       grade: "{{G}}",
       examType: "{{E}}",
-      questions: [{ questionNumber: 1, questionText: "{{Q}}", marksAvailable: 1, studentAnswer: "{{A}}", readable: true }],
+      questions: [{ questionNumber: 1, questionText: "{{Q}}", marksAvailable: 1, studentAnswer: "{{A}}", answerStatus: "readable" }],
     })
   )
   .digest("hex")
@@ -547,9 +552,11 @@ export function looksMismatched(declared: string, detected: string | undefined):
   return !containsWholeWord(d, x) && !containsWholeWord(x, d);
 }
 
-export function buildOverallFeedback(grades: QuestionGrade[], unreadableCount: number): string {
+export function buildOverallFeedback(grades: QuestionGrade[]): string {
   const notable = grades.filter((g) => g.errorType === "method_error" || g.errorType === "arithmetic_slip");
   const correct = grades.filter((g) => g.errorType === "correct");
+  const blankCount = grades.filter((g) => g.errorType === "blank").length;
+  const unreadableCount = grades.filter((g) => g.errorType === "unreadable").length;
   const parts: string[] = [];
   if (correct.length > 0) {
     parts.push(`Full marks on Q${correct.map((g) => g.questionNumber).join(", Q")}.`);
@@ -558,6 +565,9 @@ export function buildOverallFeedback(grades: QuestionGrade[], unreadableCount: n
     const label = g.errorType === "method_error" ? "method error" : "arithmetic slip";
     const detail = g.incorrectPoints[0] || g.feedback;
     parts.push(`Q${g.questionNumber} (${label}): ${detail}`);
+  }
+  if (blankCount > 0) {
+    parts.push(`${blankCount} question(s) were left blank — scored zero, counted toward the total.`);
   }
   if (unreadableCount > 0) {
     parts.push(`${unreadableCount} question(s) were unreadable and excluded from the total — see below.`);
@@ -620,13 +630,13 @@ export async function gradeAnswerSheetFromFile(
     : null;
 
   const unreadableQuestions: number[] = [];
-  const unreadableGrades: QuestionGrade[] = [];
+  const excludedGrades: QuestionGrade[] = [];
   const readableQuestions: ExtractedQuestion[] = [];
 
   for (const q of extraction.questions) {
-    if (!q.readable) {
+    if (q.answerStatus === "unreadable") {
       unreadableQuestions.push(q.questionNumber);
-      unreadableGrades.push({
+      excludedGrades.push({
         questionNumber: q.questionNumber,
         marksAwarded: 0,
         marksAvailable: q.marksAvailable,
@@ -635,6 +645,21 @@ export async function gradeAnswerSheetFromFile(
         errorType: "unreadable",
         groundingQuote: "",
         feedback: "This question's answer could not be read clearly enough to grade — excluded from the total.",
+      });
+    } else if (q.answerStatus === "blank") {
+      // Distinct from unreadable: the student attempted the paper and chose
+      // not to answer this one. Scored zero, but — unlike unreadable — it
+      // still counts toward the total below, the same way it would on a
+      // real marked script.
+      excludedGrades.push({
+        questionNumber: q.questionNumber,
+        marksAwarded: 0,
+        marksAvailable: q.marksAvailable,
+        correctPoints: [],
+        incorrectPoints: [],
+        errorType: "blank",
+        groundingQuote: "",
+        feedback: "No answer was given for this question.",
       });
     } else {
       readableQuestions.push(q);
@@ -659,13 +684,14 @@ export async function gradeAnswerSheetFromFile(
 
   // Preserve original question order regardless of which path graded what.
   const gradesByNumber = new Map<number, QuestionGrade>();
-  for (const g of [...unreadableGrades, ...readableGrades]) gradesByNumber.set(g.questionNumber, g);
+  for (const g of [...excludedGrades, ...readableGrades]) gradesByNumber.set(g.questionNumber, g);
   const questionGrades: QuestionGrade[] = extraction.questions.map((q) => gradesByNumber.get(q.questionNumber)!);
 
-  // Total is always the sum of what was actually graded — never a fixed or
-  // externally-declared denominator, and unreadable questions' marks are
-  // excluded rather than counted as available-but-lost.
-  const gradableQuestions = extraction.questions.filter((q) => q.readable);
+  // Total is the sum of every question actually attempted — a blank answer
+  // still counts toward it (scored zero against it, same as a real marked
+  // script); only genuinely unreadable questions are excluded, because
+  // that's an extraction failure, not something the student did.
+  const gradableQuestions = extraction.questions.filter((q) => q.answerStatus !== "unreadable");
   const totalMarks = gradableQuestions.reduce((sum, q) => sum + q.marksAvailable, 0);
   const obtainedMarks = questionGrades.reduce((sum, g) => sum + g.marksAwarded, 0);
   const percentage = totalMarks > 0 ? Math.round((obtainedMarks / totalMarks) * 10000) / 100 : 0;
@@ -701,7 +727,7 @@ export async function gradeAnswerSheetFromFile(
     topicBreakdown,
     subjectMismatch,
     gradeMismatch,
-    overallFeedback: buildOverallFeedback(questionGrades, unreadableQuestions.length),
+    overallFeedback: buildOverallFeedback(questionGrades),
   };
 
   return { extraction, result, usage };

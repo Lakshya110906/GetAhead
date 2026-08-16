@@ -269,12 +269,12 @@ const FIXTURES: FixtureDef[] = [
   },
 
   // ── sheet-d-edge: blank Q1, an unusual-but-valid method on Q2 that must
-  // NOT be penalized, and a straightforward correct Q3. A real live run
-  // showed extraction correctly marks Q1 UNREADABLE (not "readable but
-  // blank"), and gradeAnswerSheetFromFile deliberately excludes unreadable
-  // questions from both the numerator and denominator — so the real total
-  // is 11 (6+5, the two readable questions), not the nominal 14 across all
-  // three. Re-baselined to match the app's own intentional scoring design.
+  // NOT be penalized, and a straightforward correct Q3. Blank Q1 scores
+  // zero and counts toward the total (14 = 3+6+5) — a blank answer is a
+  // real, common exam outcome, not the same as extraction failing to read
+  // something the student wrote (see answerStatus in answerSheetSchema.ts:
+  // "blank" and "unreadable" are separate outcomes with separate handling,
+  // fixed 2026-08-16 after they were briefly conflated into one boolean).
   {
     id: "sheet-d-edge",
     subject: "Physics",
@@ -288,7 +288,7 @@ const FIXTURES: FixtureDef[] = [
           questionNumber: 1,
           marksAvailable: 3,
           questionText: "A ball is dropped from a height of 20m. Find the time taken to reach the ground (g = 10 m/s^2).",
-          studentAnswer: "[left blank]",
+          studentAnswer: "",
         },
         {
           questionNumber: 2,
@@ -308,10 +308,10 @@ const FIXTURES: FixtureDef[] = [
     },
     answerKey: {
       id: "sheet-d-edge",
-      totalMarks: 11,
+      totalMarks: 14,
       expectedObtainedMarks: 11,
       questions: [
-        { questionNumber: 1, expectedMarks: 0, expectedMaxMarks: 3, errorType: "unreadable", plantedError: "Left blank — extraction correctly marks this unreadable, excluding it from both numerator and denominator entirely.", keywords: [] },
+        { questionNumber: 1, expectedMarks: 0, expectedMaxMarks: 3, errorType: "blank", plantedError: "Left blank — scores zero and counts toward the total, unlike a genuinely illegible answer.", keywords: [] },
         {
           questionNumber: 2,
           expectedMarks: 6,
