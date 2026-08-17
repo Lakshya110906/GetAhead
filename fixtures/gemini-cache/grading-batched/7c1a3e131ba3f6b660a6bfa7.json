@@ -1,0 +1,48 @@
+[
+  {
+    "questionNumber": 1,
+    "marksAwarded": 3,
+    "marksAvailable": 5,
+    "correctPoints": [
+      "Correctly set up the equation to isolate 2x",
+      "Correctly performed division based on their intermediate result"
+    ],
+    "incorrectPoints": [
+      "Arithmetic error in subtracting 6 from 14"
+    ],
+    "errorType": "arithmetic_slip",
+    "groundingQuote": "2x = 9",
+    "feedback": "You correctly set up the equation to isolate 2x, but made an arithmetic slip when subtracting 6 from 14. 14 - 6 equals 8, not 9. This led to an incorrect value for x."
+  },
+  {
+    "questionNumber": 2,
+    "marksAwarded": 4,
+    "marksAvailable": 5,
+    "correctPoints": [
+      "Correct formula for acceleration",
+      "Correctly identified final velocity (v)",
+      "Correctly identified initial velocity (u)"
+    ],
+    "incorrectPoints": [
+      "Incorrectly substituted time (t) as 5 seconds instead of 4 seconds"
+    ],
+    "errorType": "arithmetic_slip",
+    "groundingQuote": "(20 - 0) / 5",
+    "feedback": "You correctly identified the formula for acceleration and the values for initial and final velocity. However, you used 5 seconds for the time instead of the 4 seconds given in the question. This was an arithmetic slip in substituting the correct value for time."
+  },
+  {
+    "questionNumber": 3,
+    "marksAwarded": 3,
+    "marksAvailable": 5,
+    "correctPoints": [
+      "Correct formula for area of a circle",
+      "Correct substitution of pi and radius into the formula"
+    ],
+    "incorrectPoints": [
+      "Arithmetic error in calculating 7^2"
+    ],
+    "errorType": "arithmetic_slip",
+    "groundingQuote": "Since 7^2 = 14",
+    "feedback": "You correctly used the formula for the area of a circle and substituted the values for pi and the radius. However, you made an arithmetic slip when calculating 7 squared. 7^2 means 7 multiplied by 7, which is 49, not 14. This led to an incorrect final area."
+  }
+]

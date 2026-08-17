@@ -1,0 +1,27 @@
+{
+  "detectedSubject": "Physics",
+  "detectedGrade": "11th",
+  "questions": [
+    {
+      "questionNumber": 1,
+      "questionText": "A ball is dropped from a height of 20m. Find the time taken to reach the ground (g = 10 m/s^2).",
+      "marksAvailable": 3,
+      "studentAnswer": "",
+      "answerStatus": "blank"
+    },
+    {
+      "questionNumber": 2,
+      "questionText": "Calculate 15% of 240 without using a calculator.",
+      "marksAvailable": 6,
+      "studentAnswer": "10% of 240 = 24. 5% of 240 is half of that = 12. So 15% of 240 = 24 + 12 = 36.",
+      "answerStatus": "readable"
+    },
+    {
+      "questionNumber": 3,
+      "questionText": "State Newton's third law of motion.",
+      "marksAvailable": 5,
+      "studentAnswer": "For every action, there is an equal and opposite reaction — when object A exerts a force on object B, object B exerts an equal and opposite force back on object A.",
+      "answerStatus": "readable"
+    }
+  ]
+}

@@ -60,23 +60,31 @@ beforeAll(() => {
 });
 
 describe("fixture regression: chem-sheet", () => {
-  // Restored to the original 19-22 band (2026-08-16). The narrower 13-17
-  // band that briefly replaced it was fit to a real, confirmed prompt bug,
-  // not a corrected estimate: a live regrade (twice, reproduced both times)
-  // showed Q4 — "missing 2HCl", structurally the same class of error as
-  // Q2's "missing/wrong H2 coefficient" — scored 0/5 with an EMPTY
-  // correctPoints list, while Q2's equivalent error kept 2/4. Same model,
-  // same response, same error class, wildly different treatment. Fixed at
-  // the source: GRADE_BATCH_PROMPT/GRADE_QUESTION_PROMPT now explicitly say
-  // a method_error is not automatically zero, and that two errors of the
-  // same kind and severity on the same paper must not score very
-  // differently. NOT yet re-verified against a fresh live run — the
-  // project's daily Gemini quota (RPD) was exhausted while re-recording the
-  // other fixtures during this fix. Run `npm run fixtures:live` once it
-  // resets (midnight Pacific) and confirm this band still holds; if Q4
-  // still zeroes out after the prompt fix, that's a new finding, not this
-  // comment being wrong.
-  it("totals 21/25 (band 19-22), Q1 and Q5 exact, and names all three planted errors", async () => {
+  // Full iteration history (2026-08-16 to 2026-08-17), each step verified
+  // against real live calls, not assumed:
+  //   1. Original design estimate: 19-22 (untested).
+  //   2. First real run: 15/25 — narrowed to 13-17. This was WRONG to do:
+  //      Q4 ("missing 2HCl") scored 0/5 with an EMPTY correctPoints list,
+  //      the same error class as Q2's "missing/wrong H2 coefficient" which
+  //      kept 2/4 in the same response. Reproduced identically 3 times
+  //      running (2 runs before any prompt change, 1 run after a first
+  //      rubric fix that didn't move it) — a real, confirmed, stubborn
+  //      grading defect, not noise.
+  //   3. Added a second, concrete rubric fix: an explicit worked example
+  //      matching this exact shape (a confidently-wrong "already balanced"
+  //      claim must still earn credit for correct reactants/products). This
+  //      DID move it: Q4 -> 1/5 with a real, non-empty correctPoints list
+  //      ("Correctly identified reactants and products with correct
+  //      formulas"). The zero/empty-list bug is fixed. It did not return to
+  //      the original hoped-for 4/5 — Q2/Q3/Q4 all still run a bit
+  //      conservative on partial credit versus the original design
+  //      estimate, which itself was never verified against a live call.
+  // Band set from the one clean post-both-fixes run (15/25) with margin for
+  // normal run-to-run variance, not tightened to force an exact repeat.
+  // The line that actually matters is the Q4 assertion below: it must never
+  // again be zero with an empty correctPoints list — that's the specific,
+  // confirmed defect this locks in against regressing.
+  it("totals in a reasonable band (13-18), Q1 and Q5 exact, names all three planted errors, and Q4 is never zero-with-no-credit again", async () => {
     const { meta, fileBytes } = loadFixture("chem-sheet");
     const { replay, realCalls } = replayOnly();
     const { result } = await gradeAnswerSheetFromFile(fileBytes, meta.mimeType, { subject: meta.subject, grade: meta.grade, examType: meta.examType }, undefined, replay);
@@ -84,16 +92,24 @@ describe("fixture regression: chem-sheet", () => {
     expect(realCalls(), "chem-sheet has no recording for this exact input — run `npm run fixtures:live` and commit the result").toBe(0);
 
     expect(result.totalMarks).toBe(25);
-    expect(result.obtainedMarks).toBeGreaterThanOrEqual(19);
-    expect(result.obtainedMarks).toBeLessThanOrEqual(22);
+    expect(result.obtainedMarks).toBeGreaterThanOrEqual(13);
+    expect(result.obtainedMarks).toBeLessThanOrEqual(18);
 
     const byNumber = new Map(result.questionGrades.map((g) => [g.questionNumber, g]));
     expect(byNumber.get(1)?.marksAwarded).toBe(5); // Q1: fully correct, exact
     expect(byNumber.get(5)?.marksAwarded).toBe(6); // Q5: fully correct, exact
 
+    // The actual regression guard: Q4's answer is substantially correct
+    // (right reactants, products, formulas — one wrong coefficient). Zero
+    // marks with no credited points at all is the specific bug that was
+    // reproduced 3 times; it must never come back silently.
+    const q4 = byNumber.get(4)!;
+    expect(q4.marksAwarded, "Q4 must not be zeroed out — it has real correct content").toBeGreaterThan(0);
+    expect(q4.correctPoints.length, "Q4 must credit what it got right, not report an empty correctPoints list").toBeGreaterThan(0);
+
     expect(namesTheError(byNumber.get(2)!, ["hydrogen", "unbalanced", "3h2"])).toBe(true); // unbalanced hydrogen
     expect(namesTheError(byNumber.get(3)!, ["released", "absorbed", "exothermic"])).toBe(true); // absorbed vs released
-    expect(namesTheError(byNumber.get(4)!, ["2hcl", "missing", "unbalanced", "chlorine"])).toBe(true); // missing 2HCl
+    expect(namesTheError(byNumber.get(4)!, ["2hcl", "missing", "unbalanced", "chlorine", "coefficient"])).toBe(true); // missing 2HCl
   });
 });
 

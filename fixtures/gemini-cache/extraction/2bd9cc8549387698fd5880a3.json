@@ -1,0 +1,13 @@
+{
+  "detectedSubject": "History",
+  "detectedGrade": "8th",
+  "questions": [
+    {
+      "questionNumber": 1,
+      "questionText": "Name the first Prime Minister of India and the year independence was achieved.",
+      "marksAvailable": 5,
+      "studentAnswer": "I don't know the answer.",
+      "answerStatus": "readable"
+    }
+  ]
+}

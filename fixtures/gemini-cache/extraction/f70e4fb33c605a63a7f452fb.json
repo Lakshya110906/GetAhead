@@ -1,0 +1,27 @@
+{
+  "detectedSubject": "Mathematics",
+  "detectedGrade": "9th",
+  "questions": [
+    {
+      "questionNumber": 1,
+      "questionText": "Solve for x: 2x + 6 = 14",
+      "marksAvailable": 5,
+      "studentAnswer": "2x + 6 = 14, so 2x = 9, so x = 4.5.",
+      "answerStatus": "readable"
+    },
+    {
+      "questionNumber": 2,
+      "questionText": "A car accelerates uniformly from rest to 20 m/s in 4 seconds. Calculate its acceleration.",
+      "marksAvailable": 5,
+      "studentAnswer": "a = (v - u) / t = (20 - 0) / 5 = 4 m/s^2.",
+      "answerStatus": "readable"
+    },
+    {
+      "questionNumber": 3,
+      "questionText": "Find the area of a circle with radius 7cm (use pi = 22/7).",
+      "marksAvailable": 5,
+      "studentAnswer": "Area = pi x r^2 = 22/7 x 7^2. Since 7^2 = 14, Area = 22/7 x 14 = 44 cm^2.",
+      "answerStatus": "readable"
+    }
+  ]
+}

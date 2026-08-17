@@ -1,0 +1,27 @@
+{
+  "detectedSubject": "Mathematics",
+  "detectedGrade": "9th",
+  "questions": [
+    {
+      "questionNumber": 1,
+      "questionText": "Solve for x: 2x + 6 = 14",
+      "marksAvailable": 4,
+      "studentAnswer": "2x + 6 = 14, so 2x = 8, so x = 4. Check: 2(4) + 6 = 14. Correct.",
+      "answerStatus": "readable"
+    },
+    {
+      "questionNumber": 2,
+      "questionText": "Find the area of a rectangle with length 8cm and width 5cm.",
+      "marksAvailable": 5,
+      "studentAnswer": "Area = length x width = 8 x 5 = 40 cm^2.",
+      "answerStatus": "readable"
+    },
+    {
+      "questionNumber": 3,
+      "questionText": "Solve the quadratic equation: x^2 - 5x + 6 = 0",
+      "marksAvailable": 5,
+      "studentAnswer": "x^2 - 5x + 6 = 0. Factoring: (x - 2)(x - 3) = 0. So x = 2 or x = 3.",
+      "answerStatus": "readable"
+    }
+  ]
+}

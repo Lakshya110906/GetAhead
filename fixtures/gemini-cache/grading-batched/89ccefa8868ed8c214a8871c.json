@@ -1,0 +1,53 @@
+[
+  {
+    "questionNumber": 1,
+    "marksAwarded": 3,
+    "marksAvailable": 5,
+    "topic": "Linear Equations",
+    "correctPoints": [
+      "Correctly identified the need to subtract 6 from both sides",
+      "Correctly performed division based on their intermediate result"
+    ],
+    "incorrectPoints": [
+      "Arithmetic error in subtracting 6 from 14"
+    ],
+    "errorType": "arithmetic_slip",
+    "groundingQuote": "2x = 9",
+    "feedback": "You correctly started to isolate x by subtracting 6 from both sides, but made an arithmetic slip: 14 - 6 is 8, not 9. This led to an incorrect value for 2x."
+  },
+  {
+    "questionNumber": 2,
+    "marksAwarded": 4,
+    "marksAvailable": 5,
+    "topic": "Kinematics",
+    "correctPoints": [
+      "Correct formula for acceleration",
+      "Correctly identified initial velocity (u=0)",
+      "Correctly identified final velocity (v=20)",
+      "Correctly calculated acceleration based on their substituted values"
+    ],
+    "incorrectPoints": [
+      "Incorrectly substituted time (t=5 instead of t=4)"
+    ],
+    "errorType": "arithmetic_slip",
+    "groundingQuote": "(20 - 0) / 5",
+    "feedback": "You used the correct formula for acceleration and correctly identified the initial and final velocities. However, you made an arithmetic slip by incorrectly using 5 seconds for the time instead of the 4 seconds given in the question."
+  },
+  {
+    "questionNumber": 3,
+    "marksAwarded": 3,
+    "marksAvailable": 5,
+    "topic": "Area of a Circle",
+    "correctPoints": [
+      "Correct formula for the area of a circle",
+      "Correct substitution of pi and radius",
+      "Correctly performed multiplication based on their intermediate result"
+    ],
+    "incorrectPoints": [
+      "Arithmetic error in calculating 7 squared"
+    ],
+    "errorType": "arithmetic_slip",
+    "groundingQuote": "7^2 = 14",
+    "feedback": "You correctly used the formula for the area of a circle and substituted the given values for pi and the radius. However, you made an arithmetic slip when calculating 7 squared; 7 squared is 49, not 14."
+  }
+]
