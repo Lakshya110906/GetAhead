@@ -1,0 +1,12 @@
+[
+  {
+    "questionNumber": 1,
+    "marksAwarded": 0,
+    "marksAvailable": 5,
+    "correctPoints": [],
+    "incorrectPoints": [],
+    "errorType": "blank",
+    "groundingQuote": "I don't know the answer.",
+    "feedback": "The answer provided indicates a lack of knowledge for both parts of the question. No marks can be awarded."
+  }
+]
