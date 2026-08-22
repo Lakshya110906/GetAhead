@@ -5,6 +5,7 @@ import {
   EXTRACTION_PROMPT_VERSION,
   GRADE_PROMPT_VERSION,
   NotAnAnswerSheetError,
+  displayErrorCategory,
 } from "@/lib/answerSheetGrading";
 import { refundQuota } from "@/lib/quota";
 import { logger } from "@/lib/logger";
@@ -120,10 +121,13 @@ async function runJob(id: string): Promise<void> {
       .filter((g) => g.errorType === "correct")
       .map((g) => `Q${g.questionNumber}: ${g.feedback}`);
     const weaknesses = result.questionGrades
-      .filter((g) => g.errorType === "method_error" || g.errorType === "arithmetic_slip")
-      .map((g) => `Q${g.questionNumber} (${g.errorType === "method_error" ? "method error" : "arithmetic slip"}): ${g.feedback}`);
+      .filter((g) => g.errorType === "incorrect")
+      .map((g) => {
+        const category = displayErrorCategory(g);
+        return category ? `Q${g.questionNumber} (${category}): ${g.feedback}` : `Q${g.questionNumber}: ${g.feedback}`;
+      });
     const recommendations = result.questionGrades
-      .filter((g) => g.errorType === "method_error" || g.errorType === "arithmetic_slip")
+      .filter((g) => g.errorType === "incorrect")
       .map((g) => `Revisit ${g.topic || `Q${g.questionNumber}`}: ${g.incorrectPoints[0] || g.feedback}`);
 
     await prisma.evaluation.update({
@@ -138,8 +142,9 @@ async function runJob(id: string): Promise<void> {
         percentage: result.percentage,
         // aiResponse now holds the full GradedAnswerSheet: per-question
         // marks, correct/incorrect points, groundingQuote, errorType
-        // (method_error vs arithmetic_slip vs correct vs unreadable/blank),
-        // topic tags, and mismatch flags — not a topic-only rollup.
+        // (correct/incorrect/unreadable/blank) with a free-text
+        // errorCategory for the "incorrect" case, topic tags, and mismatch
+        // flags — not a topic-only rollup.
         aiResponse: JSON.stringify(result),
         marksBreakdown: result.topicBreakdown ? JSON.stringify(result.topicBreakdown) : null,
         aiFeedback: result.overallFeedback,

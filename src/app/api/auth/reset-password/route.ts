@@ -3,6 +3,8 @@ import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { reportApiError } from "@/lib/apiError";
+import { zodErrorResponse } from "@/lib/zodError";
+import { revokeAllUserSessions } from "@/lib/sessionRevocation";
 
 const resetPasswordSchema = z.object({
   token: z.string().min(1, "Token is required"),
@@ -15,10 +17,7 @@ export async function POST(request: NextRequest) {
     const parsed = resetPasswordSchema.safeParse(body);
 
     if (!parsed.success) {
-      return NextResponse.json(
-        { error: parsed.error.issues[0].message },
-        { status: 400 }
-      );
+      return zodErrorResponse(parsed.error);
     }
 
     const { token, password } = parsed.data;
@@ -61,6 +60,13 @@ export async function POST(request: NextRequest) {
         data: { used: true },
       }),
     ]);
+
+    // Same reasoning as change-password: if the account was compromised,
+    // the attacker's existing session must not survive the legitimate
+    // user's reset. Without this, a token minted before the reset stays
+    // "valid" (per the JWT session callback's revocation check) for its
+    // remaining natural lifetime.
+    await revokeAllUserSessions(user.id);
 
     // Record audit action
     const ip = request.headers.get("x-forwarded-for") || request.headers.get("x-real-ip") || "127.0.0.1";

@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { revokeAllUserSessions } from "@/lib/sessionRevocation";
 import { Prisma } from "@prisma/client";
 import bcrypt from "bcryptjs";
+import { reportApiError } from "@/lib/apiError";
 
 export async function GET(request: NextRequest) {
   const auth = await requireAdmin();
@@ -56,8 +57,8 @@ export async function GET(request: NextRequest) {
     }));
 
     return NextResponse.json({ users: formattedUsers, total, page, limit });
-  } catch {
-    return NextResponse.json({ error: "Failed to load users" }, { status: 500 });
+  } catch (error) {
+    return reportApiError({ code: "ADMIN_ACTION_FAILED", error, route: "GET /api/admin/users" });
   }
 }
 
@@ -115,7 +116,7 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json({ success: true });
-  } catch (err: unknown) {
-    return NextResponse.json({ error: err instanceof Error ? err.message : "Failed to perform user action" }, { status: 500 });
+  } catch (error) {
+    return reportApiError({ code: "ADMIN_ACTION_FAILED", error, route: "POST /api/admin/users" });
   }
 }

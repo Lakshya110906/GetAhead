@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/requireAdmin";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
+import { reportApiError } from "@/lib/apiError";
 
 export async function GET(request: NextRequest) {
   const auth = await requireAdmin();
@@ -50,7 +51,7 @@ export async function GET(request: NextRequest) {
       });
       return NextResponse.json({ logs, total, page, limit, type: "audit" });
     }
-  } catch {
-    return NextResponse.json({ error: "Failed to load logs" }, { status: 500 });
+  } catch (error) {
+    return reportApiError({ code: "ADMIN_ACTION_FAILED", error, route: "GET /api/admin/logs" });
   }
 }

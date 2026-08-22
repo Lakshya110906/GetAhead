@@ -1,8 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
+import { z } from "zod";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { reportApiError } from "@/lib/apiError";
+import { zodErrorResponse } from "@/lib/zodError";
+import { requireOwnership } from "@/lib/ownership";
+
+const ticketReplySchema = z.object({
+  content: z.string().trim().min(1, "Reply content cannot be empty").max(10_000),
+});
 
 type RouteParams = { params: Promise<{ id: string }> };
 
@@ -36,13 +43,10 @@ export async function GET(_req: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: "Ticket not found" }, { status: 404 });
     }
 
-    // Authorization: User must own the ticket or be an admin
     const isAdmin = userRole === "ADMIN";
     const isOwner = ticket.userId === userId || ticket.email.toLowerCase() === session.user.email?.toLowerCase();
-
-    if (!isOwner && !isAdmin) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
+    const denied = requireOwnership(isOwner || isAdmin, "Ticket not found");
+    if (denied) return denied;
 
     return NextResponse.json({ success: true, ticket });
   } catch (error) {
@@ -61,12 +65,11 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
     const userId = (session.user as { id: string }).id;
     const userRole = (session.user as { role?: string }).role;
 
-    const body = await req.json();
-    const { content } = body;
-
-    if (!content?.trim()) {
-      return NextResponse.json({ error: "Reply content cannot be empty" }, { status: 400 });
+    const parsed = ticketReplySchema.safeParse(await req.json());
+    if (!parsed.success) {
+      return zodErrorResponse(parsed.error);
     }
+    const { content } = parsed.data;
 
     // Retrieve ticket details
     const ticket = await prisma.supportTicket.findUnique({
@@ -77,13 +80,11 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: "Ticket not found" }, { status: 404 });
     }
 
-    // Validate ownership (Admins can also reply here, but they should usually use the admin route)
+    // Admins can also reply here, but they should usually use the admin route.
     const isAdmin = userRole === "ADMIN";
     const isOwner = ticket.userId === userId || ticket.email.toLowerCase() === session.user.email?.toLowerCase();
-
-    if (!isOwner && !isAdmin) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
+    const denied = requireOwnership(isOwner || isAdmin, "Ticket not found");
+    if (denied) return denied;
 
     // Create reply
     const reply = await prisma.ticketReply.create({
@@ -91,7 +92,7 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
         ticketId: id,
         userId,
         senderType: isAdmin ? "ADMIN" : "USER",
-        content: content.trim(),
+        content,
       },
       include: {
         user: {

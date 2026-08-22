@@ -19,6 +19,34 @@ export const GOLDEN_CASE_TAGS = [
 
 export type GoldenCaseTag = (typeof GOLDEN_CASE_TAGS)[number];
 
+export const HANDWRITING_QUALITIES = ["typed", "clean", "average", "messy"] as const;
+export type HandwritingQuality = (typeof HANDWRITING_QUALITIES)[number];
+
+// One ground-truth question, marked independently by a human WITHOUT seeing
+// the AI's output (marking after seeing the AI's marks anchors the human and
+// destroys the baseline — see fixtures/golden-set/README.md). errorKeywords
+// is the same discipline fixtureRegression.test.ts already uses for its
+// namesTheError() check: a short list of specific phrases a genuinely
+// specific explanation of THIS error would have to contain. Required
+// whenever teacherMarks < maxMarks (there IS an error to name); leave it out
+// for a fully-correct question.
+const goldenQuestionSchema = z
+  .object({
+    questionNumber: z.number().int().positive(),
+    maxMarks: z.number().positive(),
+    teacherMarks: z.number().min(0),
+    secondMarkerMarks: z.number().min(0).nullable().optional().default(null),
+    errorKeywords: z.array(z.string().min(1)).optional().default([]),
+  })
+  .refine((q) => q.teacherMarks <= q.maxMarks, {
+    message: "teacherMarks cannot exceed maxMarks",
+  })
+  .refine((q) => q.teacherMarks >= q.maxMarks || q.errorKeywords.length > 0, {
+    message: "a question marked below full marks needs errorKeywords — otherwise feedback specificity can't be scored for it",
+  });
+
+export type GoldenQuestion = z.infer<typeof goldenQuestionSchema>;
+
 const metadataSchema = z.object({
   id: z.string().min(1),
   subject: z.string().min(1),
@@ -26,11 +54,18 @@ const metadataSchema = z.object({
   examType: z.string().min(1),
   file: z.string().min(1),
   mimeType: z.string().min(1),
-  teacherTotalMarks: z.number().min(0),
-  maxMarks: z.number().positive(),
+  // "photographed" is the point of this fixture set — a scanned/rendered
+  // sheet belongs in fixtures/regression-set instead. false is allowed only
+  // for a deliberate, tagged exception (e.g. a typed PDF a real user
+  // actually submitted), never as the default.
+  photographed: z.boolean(),
+  handwritingQuality: z.enum(HANDWRITING_QUALITIES),
+  language: z.string().min(1).default("English"),
   tags: z.array(z.enum(GOLDEN_CASE_TAGS)).min(1),
   markedBy: z.string().min(1),
+  secondMarkedBy: z.string().optional(),
   notes: z.string().optional().default(""),
+  questions: z.array(goldenQuestionSchema).min(1),
 });
 
 export type GoldenCaseMetadata = z.infer<typeof metadataSchema>;

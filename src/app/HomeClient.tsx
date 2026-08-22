@@ -286,14 +286,17 @@ export default function HomeClient({ accuracy }: { accuracy: AccuracySummary | n
 
           {accuracy ? (
             <>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-10">
+              <p className="text-center text-sm font-semibold text-graphite mb-6">
+                n = {accuracy.scoredCases} real, photographed answer sheets ({accuracy.comparableQuestions} questions) — every figure below is a range over that sample, not a point estimate.
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-4 gap-6 mb-10">
                 <div className="text-center rounded-2xl p-6 border border-rule bg-gray-50">
                   <Target className="w-6 h-6 text-teal-500 mx-auto mb-2" />
                   <p className="text-3xl font-bold" style={{ fontFamily: "var(--font-display)" }}>
                     {accuracy.mae}
                   </p>
                   <p className="text-sm mt-1 text-graphite">
-                    mean absolute error (marks)
+                    mean absolute error (marks/question)
                   </p>
                 </div>
                 <div className="text-center rounded-2xl p-6 border border-rule bg-gray-50">
@@ -314,11 +317,22 @@ export default function HomeClient({ accuracy }: { accuracy: AccuracySummary | n
                     within 2 marks of the teacher
                   </p>
                 </div>
+                <div className="text-center rounded-2xl p-6 border border-rule bg-gray-50">
+                  <CheckCircle className="w-6 h-6 text-teal-500 mx-auto mb-2" />
+                  <p className="text-3xl font-bold" style={{ fontFamily: "var(--font-display)" }}>
+                    {accuracy.fullMarksAgreementPct}%
+                  </p>
+                  <p className="text-sm mt-1 text-graphite">
+                    full-marks agreement (n={accuracy.fullMarksQuestionCount})
+                  </p>
+                </div>
               </div>
               <p className="text-center text-sm max-w-2xl mx-auto text-graphite">
-                Methodology: {accuracy.scoredCases} real answer sheets, marked by real teachers, spanning multiple
-                subjects, grade levels, and handwriting quality — including deliberately hard cases (messy
-                handwriting, partial credit, blank answers). Last measured{" "}
+                Methodology: {accuracy.scoredCases} real, phone-photographed answer sheets, marked per question by a
+                real teacher without seeing the AI&apos;s output, spanning multiple subjects, grade levels, and
+                handwriting quality — including deliberately hard cases (messy handwriting, partial credit, blank
+                answers). Full breakdown by subject and handwriting quality, over- vs under-marking rate, and
+                feedback specificity is in the methodology report. Last measured{" "}
                 {new Date(accuracy.generatedAt).toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" })}.
               </p>
             </>

@@ -64,12 +64,15 @@ export async function POST(request: NextRequest) {
         },
       });
     } catch (emailErr) {
+      // Logged and captured for real visibility into the failure, but the
+      // client response below must stay identical to the success case —
+      // a distinct response here (previously a 500 with a different
+      // message) is a user-enumeration side channel: it tells a caller
+      // "this email exists AND belongs to a real account" whenever
+      // delivery happens to fail, which the generic response above is
+      // specifically designed to never reveal.
       console.error("Failed to send reset password email:", emailErr);
       captureException(emailErr, { route: "POST /api/auth/forgot-password", stage: "send-email" });
-      return NextResponse.json(
-        { error: "Failed to send reset email. Please try again later." },
-        { status: 500 }
-      );
     }
 
     return NextResponse.json({

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/requireAdmin";
 import { prisma } from "@/lib/prisma";
+import { reportApiError } from "@/lib/apiError";
 
 export async function GET() {
   const auth = await requireAdmin();
@@ -44,8 +45,8 @@ export async function GET() {
       migrationCount,
       tables,
     });
-  } catch {
-    return NextResponse.json({ error: "Failed to gather database statistics" }, { status: 500 });
+  } catch (error) {
+    return reportApiError({ code: "ADMIN_ACTION_FAILED", error, route: "GET /api/admin/db" });
   }
 }
 
@@ -90,7 +91,7 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json({ error: "Invalid action" }, { status: 400 });
-  } catch (err: unknown) {
-    return NextResponse.json({ error: err instanceof Error ? err.message : "Action failed" }, { status: 500 });
+  } catch (error) {
+    return reportApiError({ code: "ADMIN_ACTION_FAILED", error, route: "POST /api/admin/db" });
   }
 }

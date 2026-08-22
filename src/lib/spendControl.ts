@@ -10,8 +10,12 @@ const INPUT_COST_PER_TOKEN = 0.10 / 1_000_000;
 const OUTPUT_COST_PER_TOKEN = 0.40 / 1_000_000;
 
 // Kill-switch threshold and alert threshold (half of it), both configurable
-// without a code change.
-export const MAX_DAILY_SPEND_USD = Number(process.env.MAX_DAILY_SPEND_USD || 5);
+// without a code change. A malformed (non-numeric) env value falls back to
+// the default rather than becoming NaN — NaN would make every comparison
+// against it silently false, disabling the spend kill-switch entirely
+// without any error or log to say so.
+const parsedMaxDailySpend = Number(process.env.MAX_DAILY_SPEND_USD);
+export const MAX_DAILY_SPEND_USD = Number.isFinite(parsedMaxDailySpend) && parsedMaxDailySpend > 0 ? parsedMaxDailySpend : 5;
 const ALERT_FRACTION = 0.5;
 
 function estimateCostUsd(promptTokens: number, completionTokens: number): number {

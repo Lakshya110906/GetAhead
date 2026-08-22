@@ -4,6 +4,9 @@ import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { revokeAllUserSessions } from "@/lib/sessionRevocation";
+import { zodErrorResponse } from "@/lib/zodError";
+import { reportApiError } from "@/lib/apiError";
 
 // Backs the privacy policy's "permanently deleted within 7 days" and
 // "Deletion — request permanent deletion of your account" commitments.
@@ -29,7 +32,7 @@ export async function POST(request: NextRequest) {
 
     const parsed = deleteAccountSchema.safeParse(await request.json());
     if (!parsed.success) {
-      return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 });
+      return zodErrorResponse(parsed.error);
     }
 
     const user = await prisma.user.findUnique({ where: { id: userId } });
@@ -48,12 +51,17 @@ export async function POST(request: NextRequest) {
 
     await prisma.user.delete({ where: { id: userId } });
 
+    // Same revocation change-password already does: the JWT session strategy
+    // has no per-request DB lookup, so without this the deleted user's
+    // existing token stays "valid" (per the session callback's revocation
+    // check) for up to its remaining SESSION_MAX_AGE_SECONDS lifetime —
+    // long enough to hit a route that trusts session.user.id as a live FK
+    // (e.g. quota consumption) and crash with a foreign-key violation
+    // instead of a clean "signed out" state.
+    await revokeAllUserSessions(userId);
+
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Delete account API error:", error);
-    return NextResponse.json(
-      { error: "Couldn't delete your account due to a server error. Try again in a moment." },
-      { status: 500 }
-    );
+    return reportApiError({ code: "ACCOUNT_DELETE_FAILED", error, route: "POST /api/user/delete-account" });
   }
 }

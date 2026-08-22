@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { after } from "next/server";
 import { getServerSession } from "next-auth/next";
+import { z } from "zod";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { consumeQuota, QuotaExceededError } from "@/lib/quota";
@@ -11,9 +12,31 @@ import { parseCustomInstructions, checkForConflict } from "@/lib/paperConstraint
 import { suggestTopicCorrection } from "@/lib/topicSpellcheck";
 import { initialAgentStates, processJobStep } from "@/lib/paperJob";
 import { reportApiError } from "@/lib/apiError";
+import { zodErrorResponse } from "@/lib/zodError";
 import { logger } from "@/lib/logger";
 import { normalizeEntryText } from "@/lib/normalizeText";
 import type { PaperConfig } from "@/lib/question-agents";
+import { userStillExists } from "@/lib/requireLiveUser";
+
+// Bounds mirror the actual UI inputs (generate-paper/page.tsx), not an
+// arbitrary guess: totalMarks is a number input with min=5/max=200 there,
+// and questionTypes is a fixed 3-option checkbox group. This was previously
+// unvalidated past "is it present" — totalMarks only got an isNaN check, so
+// a negative total or a 3-word subject were both accepted and reached the
+// paper-generation pipeline as-is.
+const generatePaperSchema = z.object({
+  subject: z.string().trim().min(1, "Subject is required").max(200),
+  grade: z.string().trim().min(1, "Grade is required").max(100),
+  topic: z.string().trim().min(1, "Topic is required").max(300),
+  difficulty: z.enum(["Easy", "Medium", "Hard"]),
+  totalMarks: z.coerce.number().int().min(5, "Total marks must be at least 5").max(200, "Total marks cannot exceed 200"),
+  questionTypes: z.array(z.enum(["MCQ", "Short Answer", "Long Answer"])).min(1, "Select at least one question type"),
+  customPrompt: z.string().max(5000).optional(),
+  studyMaterialText: z.string().max(100_000).optional(),
+  conflictResolution: z.enum(["useImplied", "useField"]).optional(),
+  topicResolution: z.enum(["useOriginal", "useSuggested"]).optional(),
+  suggestedTopic: z.string().trim().min(1).optional(),
+});
 
 // Deliberately small — this route only validates input, resolves conflicts,
 // and writes a "queued" row; it must never do real Gemini work itself in the
@@ -43,6 +66,10 @@ export async function POST(request: NextRequest) {
     }
     userId = (session.user as { id: string }).id;
 
+    if (!(await userStillExists(userId))) {
+      return NextResponse.json({ error: "Your account is no longer valid. Please sign in again." }, { status: 401 });
+    }
+
     try {
       await assertSpendGateOpen();
     } catch (err) {
@@ -52,11 +79,15 @@ export async function POST(request: NextRequest) {
       throw err;
     }
 
-    const body = await request.json();
+    const parsedBody = generatePaperSchema.safeParse(await request.json());
+    if (!parsedBody.success) {
+      return zodErrorResponse(parsedBody.error);
+    }
     const {
-      difficulty, totalMarks, questionTypes,
-      customPrompt, studyMaterialText, conflictResolution, topicResolution,
-    } = body;
+      difficulty, questionTypes,
+      customPrompt, studyMaterialText, conflictResolution, topicResolution, suggestedTopic,
+    } = parsedBody.data;
+    const parsedTotalMarks = parsedBody.data.totalMarks;
     // Normalized once, here, at the entry point — every downstream
     // consumer (validation, the topic-typo suggestion, the job config
     // that's persisted, analytics grouping by subject) sees the same
@@ -64,17 +95,9 @@ export async function POST(request: NextRequest) {
     // tolerance for a stray leading/trailing/doubled space. This is the
     // same class of bug as the "trigonometry " topic-validation incident,
     // fixed at its actual source instead of downstream.
-    const subject = typeof body.subject === "string" ? normalizeEntryText(body.subject) : body.subject;
-    const grade = typeof body.grade === "string" ? normalizeEntryText(body.grade) : body.grade;
-    const topic = typeof body.topic === "string" ? normalizeEntryText(body.topic) : body.topic;
-
-    if (!subject || !grade || !topic || !difficulty || !totalMarks || !questionTypes || !Array.isArray(questionTypes)) {
-      return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
-    }
-    const parsedTotalMarks = parseInt(totalMarks);
-    if (isNaN(parsedTotalMarks)) {
-      return NextResponse.json({ error: "Invalid total marks" }, { status: 400 });
-    }
+    const subject = normalizeEntryText(parsedBody.data.subject);
+    const grade = normalizeEntryText(parsedBody.data.grade);
+    const topic = normalizeEntryText(parsedBody.data.topic);
 
     // Catch a likely topic typo BEFORE spending any Gemini calls — this is
     // the actual fix for a real, confirmed-live incident: "trignometry and
@@ -96,8 +119,8 @@ export async function POST(request: NextRequest) {
           { status: 409 }
         );
       }
-    } else if (topicResolution === "useSuggested" && typeof body.suggestedTopic === "string") {
-      effectiveTopic = normalizeEntryText(body.suggestedTopic);
+    } else if (topicResolution === "useSuggested" && suggestedTopic) {
+      effectiveTopic = normalizeEntryText(suggestedTopic);
     }
     // topicResolution === "useOriginal" (or anything else): keep the user's
     // topic exactly as typed — validatePaper() still matches on the

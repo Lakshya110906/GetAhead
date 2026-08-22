@@ -1,0 +1,53 @@
+[
+  {
+    "questionNumber": 1,
+    "marksAwarded": 3,
+    "marksAvailable": 5,
+    "topic": "Algebraic equations",
+    "correctPoints": [
+      "Correctly set up the equation to isolate the variable term",
+      "Understood the goal of isolating x"
+    ],
+    "incorrectPoints": [
+      "Incorrect subtraction (14 - 6 = 9 instead of 8)"
+    ],
+    "errorType": "incorrect",
+    "errorCategory": "Arithmetic error",
+    "groundingQuote": "2x = 9",
+    "feedback": "You correctly started by isolating the term with x, but made an arithmetic error when subtracting 6 from 14. 14 - 6 equals 8, not 9."
+  },
+  {
+    "questionNumber": 2,
+    "marksAwarded": 3,
+    "marksAvailable": 5,
+    "topic": "Kinematics",
+    "correctPoints": [
+      "Correctly identified the formula for acceleration",
+      "Correctly identified initial and final velocities"
+    ],
+    "incorrectPoints": [
+      "Used incorrect value for time (5 seconds instead of 4 seconds)"
+    ],
+    "errorType": "incorrect",
+    "errorCategory": "Data transcription error",
+    "groundingQuote": "(20 - 0) / 5",
+    "feedback": "You used the correct formula for acceleration and correctly identified the initial and final velocities. However, you used 5 seconds for the time instead of the 4 seconds given in the problem."
+  },
+  {
+    "questionNumber": 3,
+    "marksAwarded": 3,
+    "marksAvailable": 5,
+    "topic": "Geometry (Area of Circle)",
+    "correctPoints": [
+      "Correctly identified the formula for the area of a circle",
+      "Correctly substituted pi and radius into the formula"
+    ],
+    "incorrectPoints": [
+      "Incorrectly calculated 7 squared as 14 instead of 49"
+    ],
+    "errorType": "incorrect",
+    "errorCategory": "Arithmetic error (squaring)",
+    "groundingQuote": "7^2 = 14",
+    "feedback": "You correctly used the formula for the area of a circle and substituted the values. However, you made an error when calculating 7 squared; 7^2 means 7 multiplied by 7, which is 49, not 14."
+  }
+]

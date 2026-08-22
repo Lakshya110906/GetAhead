@@ -3,6 +3,7 @@ import {
   validateQuestionGrade,
   looksMismatched,
   buildOverallFeedback,
+  displayErrorCategory,
   gradeFromPercentage,
   normalizeForQuoteMatch,
   MODEL_ID,
@@ -47,14 +48,14 @@ describe("validateQuestionGrade", () => {
 
   it("rejects marksAwarded exceeding marksAvailable", () => {
     const q = makeQuestion({ marksAvailable: 5 });
-    const g = makeGrade({ marksAwarded: 7, marksAvailable: 5, errorType: "method_error" });
+    const g = makeGrade({ marksAwarded: 7, marksAvailable: 5, errorType: "incorrect" });
     const violations = validateQuestionGrade(g, q);
     expect(violations.some((v) => v.includes("between 0 and 5"))).toBe(true);
   });
 
   it("rejects negative marksAwarded", () => {
     const q = makeQuestion();
-    const g = makeGrade({ marksAwarded: -1, errorType: "method_error" });
+    const g = makeGrade({ marksAwarded: -1, errorType: "incorrect" });
     expect(validateQuestionGrade(g, q).some((v) => v.includes("between 0 and"))).toBe(true);
   });
 
@@ -67,7 +68,7 @@ describe("validateQuestionGrade", () => {
   // The central grounding requirement: a judgement with no quote is rejected.
   it("rejects a non-blank/unreadable grade with an empty groundingQuote", () => {
     const q = makeQuestion();
-    const g = makeGrade({ groundingQuote: "", errorType: "method_error", marksAwarded: 2 });
+    const g = makeGrade({ groundingQuote: "", errorType: "incorrect", marksAwarded: 2 });
     expect(validateQuestionGrade(g, q).some((v) => v.includes("no groundingQuote"))).toBe(true);
   });
 
@@ -128,18 +129,18 @@ describe("looksMismatched", () => {
 // ── Grounded overall feedback — built in code from real per-question grades,
 // never a separate summarization call ────────────────────────────────────────
 describe("buildOverallFeedback", () => {
-  it("names specific questions and error types, not generic text", () => {
+  it("names specific questions and their model-chosen error category, not generic text", () => {
     const grades = [
       makeGrade({ questionNumber: 1, errorType: "correct" }),
-      makeGrade({ questionNumber: 2, errorType: "method_error", incorrectPoints: ["Used the wrong formula entirely"] }),
-      makeGrade({ questionNumber: 3, errorType: "arithmetic_slip", incorrectPoints: ["Correct method, dropped a minus sign"] }),
+      makeGrade({ questionNumber: 2, errorType: "incorrect", errorCategory: "Wrong formula", incorrectPoints: ["Used the wrong formula entirely"] }),
+      makeGrade({ questionNumber: 3, errorType: "incorrect", errorCategory: "Arithmetic slip", incorrectPoints: ["Correct method, dropped a minus sign"] }),
     ];
     const feedback = buildOverallFeedback(grades);
     expect(feedback).toContain("Q1");
     expect(feedback).toContain("Q2");
-    expect(feedback).toContain("method error");
+    expect(feedback).toContain("Wrong formula");
     expect(feedback).toContain("Q3");
-    expect(feedback).toContain("arithmetic slip");
+    expect(feedback).toContain("Arithmetic slip");
     expect(feedback).toContain("dropped a minus sign");
   });
 
@@ -164,6 +165,44 @@ describe("buildOverallFeedback", () => {
     expect(feedback.toLowerCase()).toContain("counted toward the total");
     expect(feedback).toMatch(/1 question.*unreadable/i);
     expect(feedback.toLowerCase()).toContain("excluded from the total");
+  });
+});
+
+// ── errorCategory replaces the old hardcoded method_error/arithmetic_slip
+// binary (a maths-shaped taxonomy that mislabeled things like an unbalanced
+// chemical equation as "Arithmetic slip"). It's free text, model-authored —
+// these tests are the "must never contradict the feedback" guard from that
+// fix: a category is only ever shown when there's something in
+// incorrectPoints to actually ground it in. ─────────────────────────────────
+describe("displayErrorCategory", () => {
+  it("shows the category for an incorrect grade with real incorrectPoints behind it", () => {
+    const g = makeGrade({ errorType: "incorrect", errorCategory: "Unbalanced equation", incorrectPoints: ["Missing a coefficient"] });
+    expect(displayErrorCategory(g)).toBe("Unbalanced equation");
+  });
+
+  it("drops the category when incorrectPoints is empty — nothing to ground it in", () => {
+    const g = makeGrade({ errorType: "incorrect", errorCategory: "Unbalanced equation", incorrectPoints: [] });
+    expect(displayErrorCategory(g)).toBeNull();
+  });
+
+  it("drops the category for a correct grade, even if one was somehow set", () => {
+    const g = makeGrade({ errorType: "correct", errorCategory: "Unbalanced equation", incorrectPoints: [] });
+    expect(displayErrorCategory(g)).toBeNull();
+  });
+
+  it("drops the category for blank/unreadable grades", () => {
+    expect(displayErrorCategory(makeGrade({ errorType: "blank", errorCategory: "Something", groundingQuote: "" }))).toBeNull();
+    expect(displayErrorCategory(makeGrade({ errorType: "unreadable", errorCategory: "Something", groundingQuote: "" }))).toBeNull();
+  });
+
+  it("returns null rather than an empty string when no category was given", () => {
+    const g = makeGrade({ errorType: "incorrect", incorrectPoints: ["Wrong answer"] });
+    expect(displayErrorCategory(g)).toBeNull();
+  });
+
+  it("returns null for a whitespace-only category", () => {
+    const g = makeGrade({ errorType: "incorrect", errorCategory: "   ", incorrectPoints: ["Wrong answer"] });
+    expect(displayErrorCategory(g)).toBeNull();
   });
 });
 

@@ -70,7 +70,14 @@ interface EvaluationData {
     topic?: string;
     correctPoints: string[];
     incorrectPoints: string[];
-    errorType: "correct" | "method_error" | "arithmetic_slip" | "unreadable" | "blank";
+    errorType: "correct" | "incorrect" | "unreadable" | "blank";
+    // Free text, model-authored, only meaningful (and only shown — see
+    // displayErrorCategory's server-side twin, answerSheetGrading.ts) when
+    // errorType is "incorrect". Replaces a hardcoded method_error/
+    // arithmetic_slip binary that didn't fit every subject (an unbalanced
+    // chemical equation labelled "Arithmetic slip" because maths was the
+    // only taxonomy on offer).
+    errorCategory?: string;
     groundingQuote: string;
     feedback: string;
   }> | null;
@@ -419,9 +426,13 @@ export default function EvaluationPage() {
           <div className="divide-y divide-rule">
             {data.questionGrades.map((q) => {
               const isCorrect = q.errorType === "correct";
+              // Same consistency guard as displayErrorCategory() server-side
+              // (answerSheetGrading.ts): a category with no incorrectPoints
+              // behind it is dropped rather than shown next to feedback it
+              // doesn't support.
+              const category = q.errorType === "incorrect" && q.errorCategory?.trim() && q.incorrectPoints.length > 0 ? q.errorCategory.trim() : null;
               const errorLabel =
-                q.errorType === "method_error" ? "Method error" :
-                q.errorType === "arithmetic_slip" ? "Arithmetic slip" :
+                q.errorType === "incorrect" ? (category ?? "Incorrect") :
                 q.errorType === "unreadable" ? "Unreadable" :
                 q.errorType === "blank" ? "Blank" : "Correct";
               const markColor = isCorrect ? "var(--tick)" : "var(--examiner)";

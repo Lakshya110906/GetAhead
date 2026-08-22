@@ -339,8 +339,13 @@ export default function AdminPage() {
       if (res.ok) {
         fetchEvaluations(evalsPage);
         fetchStats();
+      } else {
+        const d = await res.json();
+        alert(d.error || "Delete failed");
       }
-    } catch {}
+    } catch {
+      alert("Failed connecting to API");
+    }
   };
 
   const handlePaperDelete = async (id: string) => {
@@ -354,8 +359,13 @@ export default function AdminPage() {
       if (res.ok) {
         fetchPapers(papersPage);
         fetchStats();
+      } else {
+        const d = await res.json();
+        alert(d.error || "Delete failed");
       }
-    } catch {}
+    } catch {
+      alert("Failed connecting to API");
+    }
   };
 
   const triggerDbAction = async (action: string) => {

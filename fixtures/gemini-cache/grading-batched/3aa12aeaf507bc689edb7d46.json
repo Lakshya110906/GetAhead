@@ -1,0 +1,52 @@
+[
+  {
+    "questionNumber": 1,
+    "marksAwarded": 3,
+    "marksAvailable": 5,
+    "correctPoints": [
+      "Correctly identified the initial equation",
+      "Correctly isolated the term with x (2x)"
+    ],
+    "incorrectPoints": [
+      "Arithmetic error in subtraction (14 - 6 = 9 instead of 8)"
+    ],
+    "errorType": "incorrect",
+    "errorCategory": "Arithmetic slip",
+    "groundingQuote": "2x = 9",
+    "feedback": "You correctly set up the equation and isolated 2x. However, there was an arithmetic error when subtracting: 14 - 6 equals 8, not 9. This means 2x should be 8, leading to x = 4."
+  },
+  {
+    "questionNumber": 2,
+    "marksAwarded": 4,
+    "marksAvailable": 5,
+    "correctPoints": [
+      "Correctly identified the formula for acceleration",
+      "Correctly identified initial and final velocities",
+      "Correctly stated units for acceleration"
+    ],
+    "incorrectPoints": [
+      "Incorrectly substituted time as 5 seconds instead of 4 seconds from the problem statement"
+    ],
+    "errorType": "incorrect",
+    "errorCategory": "Incorrect value substitution",
+    "groundingQuote": "(20 - 0) / 5",
+    "feedback": "You correctly used the formula for acceleration and identified the initial and final velocities. However, you used 5 seconds for the time instead of 4 seconds, which was given in the question. The calculation should be (20 - 0) / 4 = 5 m/s^2."
+  },
+  {
+    "questionNumber": 3,
+    "marksAwarded": 3,
+    "marksAvailable": 5,
+    "correctPoints": [
+      "Correctly identified the formula for the area of a circle",
+      "Correctly substituted the value of pi and radius into the formula",
+      "Correctly stated units for area"
+    ],
+    "incorrectPoints": [
+      "Arithmetic error in calculating 7 squared (7^2 = 14 instead of 49)"
+    ],
+    "errorType": "incorrect",
+    "errorCategory": "Arithmetic slip",
+    "groundingQuote": "Since 7^2 = 14",
+    "feedback": "You correctly used the formula for the area of a circle and substituted the values for pi and the radius. However, you made an arithmetic error when calculating 7 squared; 7^2 is 49, not 14. The calculation should be (22/7) * 49 = 154 cm^2."
+  }
+]

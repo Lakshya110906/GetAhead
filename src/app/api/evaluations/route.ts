@@ -16,6 +16,8 @@ import { logger } from "@/lib/logger";
 import { captureException } from "@/lib/errorTracking";
 import { reportApiError } from "@/lib/apiError";
 import { normalizeEntryText } from "@/lib/normalizeText";
+import { zodErrorResponse } from "@/lib/zodError";
+import { userStillExists } from "@/lib/requireLiveUser";
 
 // after() keeps the worker call running past the point the response is
 // sent, so this stays fast for the client while the real work (which can
@@ -51,9 +53,13 @@ export async function POST(request: NextRequest) {
     }
     userId = (session.user as { id: string }).id;
 
+    if (!(await userStillExists(userId))) {
+      return NextResponse.json({ error: "Your account is no longer valid. Please sign in again." }, { status: 401 });
+    }
+
     const parsed = enqueueSchema.safeParse(await request.json());
     if (!parsed.success) {
-      return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 });
+      return zodErrorResponse(parsed.error);
     }
     const { fileUrl, fileKey, fileName, fileSize, fileType, subject, grade, examType } = parsed.data;
 
@@ -120,13 +126,23 @@ export async function POST(request: NextRequest) {
     // from POST /api/uploads's handleUpload() call, which only ever hands
     // back a *.public.blob.vercel-storage.com URL (see @vercel/blob's own
     // docs), so anything else is never a legitimate upload.
-    let fileHost: string;
+    let parsedFileUrl: URL;
     try {
-      fileHost = new URL(fileUrl).hostname;
+      parsedFileUrl = new URL(fileUrl);
     } catch {
       return NextResponse.json({ error: "That file URL isn't valid. Try uploading again." }, { status: 400 });
     }
-    if (!fileHost.endsWith(".public.blob.vercel-storage.com")) {
+    if (!parsedFileUrl.hostname.endsWith(".public.blob.vercel-storage.com")) {
+      return NextResponse.json({ error: "That file URL isn't valid. Try uploading again." }, { status: 400 });
+    }
+    // The hostname check above only rules out a non-Blob URL (the SSRF
+    // fix) — it says nothing about WHICH user's blob this is. /api/uploads
+    // always writes under answer-sheets/{userId}/..., so the path itself is
+    // the ownership check: without this, any caller who obtains another
+    // user's blob URL (these are public, unauthenticated links — see the
+    // storage-privacy finding) could submit it as their OWN evaluation
+    // input and have someone else's file graded under their account.
+    if (!parsedFileUrl.pathname.startsWith(`/answer-sheets/${userId}/`)) {
       return NextResponse.json({ error: "That file URL isn't valid. Try uploading again." }, { status: 400 });
     }
 

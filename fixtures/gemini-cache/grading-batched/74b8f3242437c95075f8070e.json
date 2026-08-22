@@ -1,0 +1,77 @@
+[
+  {
+    "questionNumber": 1,
+    "marksAwarded": 5,
+    "marksAvailable": 5,
+    "correctPoints": [
+      "Correctly balanced equation",
+      "Correct explanation of balancing"
+    ],
+    "incorrectPoints": [],
+    "errorType": "correct",
+    "groundingQuote": "2H2 + O2 -> 2H2O. This is balanced: there are 4 hydrogen atoms and 2 oxygen atoms on both sides.",
+    "feedback": "Excellent work! The equation is perfectly balanced, and your explanation is accurate."
+  },
+  {
+    "questionNumber": 2,
+    "marksAwarded": 2,
+    "marksAvailable": 4,
+    "correctPoints": [
+      "Correct reactants and products identified",
+      "Correct coefficient for ammonia (NH3)"
+    ],
+    "incorrectPoints": [
+      "Incorrect coefficient for hydrogen (H2)"
+    ],
+    "errorType": "incorrect",
+    "errorCategory": "Unbalanced equation",
+    "groundingQuote": "N2 + 2H2 -> 2NH3. This is balanced because the nitrogen atoms match on both sides.",
+    "feedback": "The nitrogen atoms are balanced, but the hydrogen atoms are not. You have 4 hydrogen atoms on the reactant side and 6 on the product side. The coefficient for H2 should be 3, not 2."
+  },
+  {
+    "questionNumber": 3,
+    "marksAwarded": 1,
+    "marksAvailable": 5,
+    "correctPoints": [
+      "Correctly identified as exothermic"
+    ],
+    "incorrectPoints": [
+      "Incorrect explanation of energy transfer in exothermic reactions"
+    ],
+    "errorType": "incorrect",
+    "errorCategory": "Energy-transfer misconception",
+    "groundingQuote": "During an exothermic reaction, energy is absorbed from the surroundings, which is why heat is given off.",
+    "feedback": "You correctly identified the reaction as exothermic. However, in an exothermic reaction, energy is *released* to the surroundings, not absorbed. This release of energy is what causes heat to be given off."
+  },
+  {
+    "questionNumber": 4,
+    "marksAwarded": 1,
+    "marksAvailable": 5,
+    "correctPoints": [
+      "Correct reactants and products identified with correct formulas"
+    ],
+    "incorrectPoints": [
+      "Incorrectly stated that the equation is already balanced",
+      "Failed to balance hydrogen and chlorine atoms"
+    ],
+    "errorType": "incorrect",
+    "errorCategory": "Unbalanced equation",
+    "groundingQuote": "This equation is already balanced.",
+    "feedback": "The equation is not balanced. You have 1 hydrogen and 1 chlorine atom on the reactant side, but 2 hydrogen and 2 chlorine atoms on the product side. You need to add a coefficient to HCl to balance it."
+  },
+  {
+    "questionNumber": 5,
+    "marksAwarded": 6,
+    "marksAvailable": 6,
+    "correctPoints": [
+      "Correctly named product (magnesium oxide)",
+      "Correct chemical formula for product (MgO)",
+      "Correctly balanced chemical equation",
+      "Correct explanation of balancing"
+    ],
+    "incorrectPoints": [],
+    "errorType": "correct",
+    "groundingQuote": "The product is magnesium oxide (MgO), a white powder. The balanced equation is: 2Mg + O2 -> 2MgO. Magnesium and oxygen atoms are balanced on both sides (2 Mg and 2 O).",
+    "feedback": "Excellent work! You correctly identified the product and provided a perfectly balanced chemical equation with a clear explanation."
+  }
+]

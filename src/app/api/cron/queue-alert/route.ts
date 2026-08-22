@@ -6,8 +6,11 @@ import { logger } from "@/lib/logger";
 // A growing queue is how you find out the worker died before a user tells
 // you — this cron is the check for exactly that. Threshold and cadence are
 // intentionally conservative defaults; tune QUEUE_DEPTH_ALERT_THRESHOLD to
-// whatever "clearly not draining" means at your actual traffic volume.
-const QUEUE_DEPTH_ALERT_THRESHOLD = Number(process.env.QUEUE_DEPTH_ALERT_THRESHOLD || 20);
+// whatever "clearly not draining" means at your actual traffic volume. A
+// malformed env value falls back to the default instead of becoming NaN,
+// which would make the alert comparison silently always false.
+const parsedQueueThreshold = Number(process.env.QUEUE_DEPTH_ALERT_THRESHOLD);
+const QUEUE_DEPTH_ALERT_THRESHOLD = Number.isFinite(parsedQueueThreshold) && parsedQueueThreshold > 0 ? parsedQueueThreshold : 20;
 
 function isAuthorized(request: NextRequest): boolean {
   const secret = process.env.CRON_SECRET;

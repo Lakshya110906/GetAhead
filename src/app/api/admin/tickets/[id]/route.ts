@@ -57,12 +57,7 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
     if (!auth.ok) {
       return auth.response;
     }
-
-    const adminUser = await prisma.user.findFirst({ where: { role: "ADMIN" } });
-    if (!adminUser) {
-      return NextResponse.json({ error: "Admin user not initialized" }, { status: 500 });
-    }
-    const adminId = adminUser.id;
+    const adminId = auth.userId;
 
     const { id } = await params;
     const body = await req.json();
@@ -148,8 +143,6 @@ export async function DELETE(req: NextRequest, { params }: RouteParams) {
       return auth.response;
     }
 
-    const adminUser = await prisma.user.findFirst({ where: { role: "ADMIN" } });
-
     const { id } = await params;
 
     const ticket = await prisma.supportTicket.findUnique({
@@ -167,7 +160,7 @@ export async function DELETE(req: NextRequest, { params }: RouteParams) {
     // Log admin deletion in AuditLog
     await prisma.auditLog.create({
       data: {
-        userId: adminUser?.id || null,
+        userId: auth.userId,
         action: "DELETE_SUPPORT_TICKET",
         details: `Deleted Ticket #TKT-${ticket.ticketNumber} (${ticket.subject})`,
         status: "SUCCESS",

@@ -3,6 +3,8 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
+import { zodErrorResponse } from "@/lib/zodError";
+import { reportApiError } from "@/lib/apiError";
 
 const profileSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
@@ -37,11 +39,7 @@ export async function GET() {
       },
     });
   } catch (error) {
-    console.error("Profile GET API error:", error);
-    return NextResponse.json(
-      { error: "Internal Server Error" },
-      { status: 500 }
-    );
+    return reportApiError({ code: "PROFILE_FETCH_FAILED", error, route: "GET /api/user/profile" });
   }
 }
 
@@ -57,10 +55,7 @@ export async function PUT(request: NextRequest) {
     const parsed = profileSchema.safeParse(body);
 
     if (!parsed.success) {
-      return NextResponse.json(
-        { error: parsed.error.issues[0].message },
-        { status: 400 }
-      );
+      return zodErrorResponse(parsed.error);
     }
 
     const { name, avatar } = parsed.data;
@@ -103,10 +98,6 @@ export async function PUT(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error("Profile PUT API error:", error);
-    return NextResponse.json(
-      { error: "Failed to update profile settings" },
-      { status: 500 }
-    );
+    return reportApiError({ code: "PROFILE_UPDATE_FAILED", error, route: "PUT /api/user/profile" });
   }
 }

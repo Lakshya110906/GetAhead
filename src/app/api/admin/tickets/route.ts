@@ -1,7 +1,7 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/requireAdmin";
 import { prisma } from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
 import { reportApiError } from "@/lib/apiError";
 
 export async function GET(req: NextRequest) {
@@ -22,7 +22,7 @@ export async function GET(req: NextRequest) {
     const skip = (page - 1) * limit;
 
     // Build Prisma query condition
-    const where: any = {};
+    const where: Prisma.SupportTicketWhereInput = {};
 
     if (status) where.status = status;
     if (priority) where.priority = priority;
@@ -87,10 +87,18 @@ export async function PATCH(req: NextRequest) {
     }
 
     // Prepare update data payload
-    const updateData: any = {};
+    const updateData: Prisma.SupportTicketUpdateInput = {};
     if (status) updateData.status = status;
     if (priority) updateData.priority = priority;
-    if (assignedToId !== undefined) updateData.assignedToId = assignedToId;
+    // assignedToId only has a plain-scalar setter when there's no
+    // relation object involved; Prisma's generated update input here
+    // requires going through the relation instead — connect to assign,
+    // disconnect to clear. The previous `any`-typed version silently
+    // assigned to a property this type doesn't have, caught the moment
+    // this got a real type.
+    if (assignedToId !== undefined) {
+      updateData.assignedTo = assignedToId ? { connect: { id: assignedToId } } : { disconnect: true };
+    }
 
     const updated = await prisma.supportTicket.update({
       where: { id: ticketId },

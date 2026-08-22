@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 import { reportApiError } from "@/lib/apiError";
 import { checkRateLimit } from "@/lib/rateLimit";
+import { zodErrorResponse } from "@/lib/zodError";
 
 const signupSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
@@ -33,10 +34,7 @@ export async function POST(request: NextRequest) {
     const parsed = signupSchema.safeParse(body);
 
     if (!parsed.success) {
-      return NextResponse.json(
-        { error: parsed.error.issues[0].message },
-        { status: 400 }
-      );
+      return zodErrorResponse(parsed.error);
     }
 
     const { name, role } = parsed.data;

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/requireAdmin";
 import { prisma } from "@/lib/prisma";
+import { reportApiError } from "@/lib/apiError";
 
 export async function GET() {
   const auth = await requireAdmin();
@@ -152,7 +153,7 @@ export async function GET() {
         subjectPopularity,
       },
     });
-  } catch {
-    return NextResponse.json({ error: "Failed to gather statistics" }, { status: 500 });
+  } catch (error) {
+    return reportApiError({ code: "ADMIN_ACTION_FAILED", error, route: "GET /api/admin/stats" });
   }
 }

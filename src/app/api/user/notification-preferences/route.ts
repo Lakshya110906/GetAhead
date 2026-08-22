@@ -3,6 +3,8 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
+import { zodErrorResponse } from "@/lib/zodError";
+import { reportApiError } from "@/lib/apiError";
 
 const preferencesSchema = z.object({
   evaluationCompletion: z.boolean(),
@@ -46,8 +48,7 @@ export async function GET() {
 
     return NextResponse.json({ success: true, preferences });
   } catch (error) {
-    console.error("Notification preferences GET API error:", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    return reportApiError({ code: "PREFERENCES_FETCH_FAILED", error, route: "GET /api/user/notification-preferences" });
   }
 }
 
@@ -63,7 +64,7 @@ export async function PUT(request: NextRequest) {
     const parsed = preferencesSchema.safeParse(body);
 
     if (!parsed.success) {
-      return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 });
+      return zodErrorResponse(parsed.error);
     }
 
     await prisma.user.update({
@@ -73,7 +74,6 @@ export async function PUT(request: NextRequest) {
 
     return NextResponse.json({ success: true, preferences: parsed.data });
   } catch (error) {
-    console.error("Notification preferences PUT API error:", error);
-    return NextResponse.json({ error: "Failed to save notification preferences" }, { status: 500 });
+    return reportApiError({ code: "PREFERENCES_UPDATE_FAILED", error, route: "PUT /api/user/notification-preferences" });
   }
 }

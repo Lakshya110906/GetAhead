@@ -5,6 +5,8 @@ import { prisma } from "@/lib/prisma";
 import { revokeAllUserSessions } from "@/lib/sessionRevocation";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
+import { zodErrorResponse } from "@/lib/zodError";
+import { reportApiError } from "@/lib/apiError";
 
 const changePasswordSchema = z.object({
   currentPassword: z.string().min(1, "Current password is required"),
@@ -23,10 +25,7 @@ export async function POST(request: NextRequest) {
     const parsed = changePasswordSchema.safeParse(body);
 
     if (!parsed.success) {
-      return NextResponse.json(
-        { error: parsed.error.issues[0].message },
-        { status: 400 }
-      );
+      return zodErrorResponse(parsed.error);
     }
 
     const { currentPassword, newPassword } = parsed.data;
@@ -67,10 +66,6 @@ export async function POST(request: NextRequest) {
       message: "Password updated successfully",
     });
   } catch (error) {
-    console.error("Change password API error:", error);
-    return NextResponse.json(
-      { error: "Couldn't update your password due to a server error. Try again in a moment." },
-      { status: 500 }
-    );
+    return reportApiError({ code: "PASSWORD_CHANGE_FAILED", error, route: "POST /api/user/change-password" });
   }
 }

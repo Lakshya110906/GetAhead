@@ -1,0 +1,47 @@
+[
+  {
+    "questionNumber": 1,
+    "marksAwarded": 4,
+    "marksAvailable": 4,
+    "topic": "Linear Equations",
+    "correctPoints": [
+      "Correctly isolated 2x",
+      "Correctly solved for x",
+      "Correct final answer"
+    ],
+    "incorrectPoints": [],
+    "errorType": "correct",
+    "groundingQuote": "2x + 6 = 14, so 2x = 8, so x = 4.",
+    "feedback": "Excellent work! All steps are correct and clearly shown."
+  },
+  {
+    "questionNumber": 2,
+    "marksAwarded": 5,
+    "marksAvailable": 5,
+    "topic": "Area of a Rectangle",
+    "correctPoints": [
+      "Correct formula for area of a rectangle",
+      "Correct substitution of values",
+      "Correct calculation",
+      "Correct units"
+    ],
+    "incorrectPoints": [],
+    "errorType": "correct",
+    "groundingQuote": "Area = length x width = 8 x 5 = 40 cm^2.",
+    "feedback": "Perfect! You correctly applied the formula and included the units."
+  },
+  {
+    "questionNumber": 3,
+    "marksAwarded": 5,
+    "marksAvailable": 5,
+    "topic": "Quadratic Equations",
+    "correctPoints": [
+      "Correctly factored the quadratic equation",
+      "Correctly identified both solutions for x"
+    ],
+    "incorrectPoints": [],
+    "errorType": "correct",
+    "groundingQuote": "Factoring: (x - 2)(x - 3) = 0. So x = 2 or x = 3.",
+    "feedback": "Excellent work! You correctly factored the quadratic and found both solutions."
+  }
+]

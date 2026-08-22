@@ -37,14 +37,20 @@ export const authOptions: NextAuthOptions = {
         }
 
         const email = credentials.email.trim().toLowerCase();
-        const adminEmail = (process.env.ADMIN_EMAIL || "admin@getahead.ai").trim().toLowerCase();
-        const adminPassword = process.env.ADMIN_PASSWORD || "adminpassword123";
+        // No hardcoded fallback for either value: if the operator hasn't
+        // configured both, the admin-bootstrap branch below is simply
+        // unreachable (adminEmail/adminPassword are undefined and can never
+        // equal a submitted credential) rather than silently defaulting to
+        // a well-known email/password pair that anyone reading the source
+        // could log in with.
+        const adminEmail = process.env.ADMIN_EMAIL?.trim().toLowerCase();
+        const adminPassword = process.env.ADMIN_PASSWORD;
 
         let user = await prisma.user.findUnique({
           where: { email },
         });
 
-        if (email === adminEmail && credentials.password === adminPassword) {
+        if (adminEmail && adminPassword && email === adminEmail && credentials.password === adminPassword) {
           if (!user) {
             const hashedPassword = await bcrypt.hash(adminPassword, 12);
             user = await prisma.user.create({

@@ -64,7 +64,19 @@ export const GEMINI_EXTRACTION_RESPONSE_SCHEMA: Schema = {
 };
 
 // ─── Stage 2: GRADE (one question at a time) ────────────────────────────────
-export const ERROR_TYPES = ["correct", "method_error", "arithmetic_slip", "unreadable", "blank"] as const;
+// errorType is now ONLY the four structural sentinels that code actually
+// branches on (marks totals, denominator inclusion, full-marks validation).
+// It used to also carry "method_error" vs "arithmetic_slip" — a maths-shaped
+// binary applied to every subject, which produced things like an unbalanced
+// chemical equation labelled "Arithmetic slip" (it isn't arithmetic) because
+// the model had exactly two wrong-answer buckets to choose from regardless
+// of subject. Same class of bug as the old hardcoded topic-keyword buckets:
+// a fixed list that doesn't fit the content. Fixed the same way — collapsed
+// to a single "incorrect" sentinel, and errorCategory (below) lets the model
+// write whatever short, accurate category actually fits this subject and
+// this error, generated in the same call as the feedback so it can't drift
+// from a separately-computed classification.
+export const ERROR_TYPES = ["correct", "incorrect", "unreadable", "blank"] as const;
 export type ErrorType = (typeof ERROR_TYPES)[number];
 
 export const questionGradeSchema = z.object({
@@ -80,6 +92,14 @@ export const questionGradeSchema = z.object({
   correctPoints: z.array(z.string()),
   incorrectPoints: z.array(z.string()),
   errorType: z.enum(ERROR_TYPES),
+  // Free text, model-authored, only meaningful when errorType is "incorrect"
+  // (see the comment above ERROR_TYPES) — e.g. "Unbalanced equation",
+  // "Energy-transfer misconception", "Arithmetic slip", whatever actually
+  // describes this error for this subject. Not validated against a fixed
+  // list; validated for consistency with incorrectPoints in code instead
+  // (see the empty-incorrectPoints guard in answerSheetGrading.ts) — a
+  // category with nothing behind it gets dropped rather than shown.
+  errorCategory: z.string().optional(),
   // The specific line from the student's OWN answer the judgement rests on.
   // Checked in code against that question's extracted studentAnswer — not
   // just requested and trusted. Blank/unreadable questions are exempt (nothing
@@ -99,6 +119,7 @@ export const GEMINI_GRADE_RESPONSE_SCHEMA: Schema = {
     correctPoints: { type: SchemaType.ARRAY, items: { type: SchemaType.STRING } },
     incorrectPoints: { type: SchemaType.ARRAY, items: { type: SchemaType.STRING } },
     errorType: { type: SchemaType.STRING, format: "enum", enum: [...ERROR_TYPES] },
+    errorCategory: { type: SchemaType.STRING },
     groundingQuote: { type: SchemaType.STRING },
     feedback: { type: SchemaType.STRING },
   },

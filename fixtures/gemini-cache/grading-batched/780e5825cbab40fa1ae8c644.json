@@ -1,0 +1,31 @@
+[
+  {
+    "questionNumber": 2,
+    "marksAwarded": 6,
+    "marksAvailable": 6,
+    "topic": "Percentage Calculation",
+    "correctPoints": [
+      "Correctly calculated 10% of 240",
+      "Correctly calculated 5% of 240",
+      "Correctly summed percentages to find 15%"
+    ],
+    "incorrectPoints": [],
+    "errorType": "correct",
+    "groundingQuote": "10% of 240 = 24. 5% of 240 is half of that = 12. So 15% of 240 = 24 + 12 = 36.",
+    "feedback": "Excellent work! You correctly broke down the percentage calculation into manageable steps and performed all arithmetic accurately."
+  },
+  {
+    "questionNumber": 3,
+    "marksAwarded": 5,
+    "marksAvailable": 5,
+    "topic": "Newton's Laws of Motion",
+    "correctPoints": [
+      "Correctly stated Newton's third law of motion",
+      "Provided a clear and accurate explanation of the law"
+    ],
+    "incorrectPoints": [],
+    "errorType": "correct",
+    "groundingQuote": "For every action, there is an equal and opposite reaction — when object A exerts a force on object B, object B exerts an equal and opposite force back on object A.",
+    "feedback": "Perfectly stated Newton's third law, including a clear explanation of the action-reaction pair."
+  }
+]

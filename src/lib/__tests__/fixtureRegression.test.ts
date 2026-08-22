@@ -20,6 +20,25 @@ import type { QuestionGrade } from "@/lib/answerSheetSchema";
 //   npx tsx scripts/generate-fixtures.ts   # if fixture content changed
 //   npm run fixtures:live                  # records fresh responses
 // then commit the updated fixtures/gemini-cache/**.
+//
+// ── THE RULE THAT MAKES THIS SUITE WORTH RUNNING (2026-08-17) ───────────────
+// Every expected value below comes from independent marking of the fixture
+// content — working the answer sheet by hand, the way an actual examiner
+// would — never from observing what the grader currently outputs. This
+// suite exists to catch the grader disagreeing with a correct mark scheme;
+// if an expectation gets quietly moved to match whatever the grader
+// happens to return, the suite can no longer detect the thing it exists to
+// detect, and a real regression (a subject-agnostic error taxonomy, a
+// stubborn zero on a substantially-correct answer, a blank counted as
+// unreadable) passes silently. This has actually happened, twice, in this
+// file's history: chem-sheet's band was narrowed to match a live buggy run,
+// and sheet-d-edge's expected total was changed to match a real code bug
+// that got rationalized as intentional design. Both were caught and
+// reverted. A live grader run belongs in a comment explaining what was
+// found — never in the assertion itself. If a fixture's real output lands
+// outside its ground-truth band, that is the fixture (or the fixture's
+// documented mark scheme) revealing a defect to fix, not evidence the band
+// was wrong.
 
 interface FixtureMetadata {
   id: string;
@@ -60,31 +79,20 @@ beforeAll(() => {
 });
 
 describe("fixture regression: chem-sheet", () => {
-  // Full iteration history (2026-08-16 to 2026-08-17), each step verified
-  // against real live calls, not assumed:
-  //   1. Original design estimate: 19-22 (untested).
-  //   2. First real run: 15/25 — narrowed to 13-17. This was WRONG to do:
-  //      Q4 ("missing 2HCl") scored 0/5 with an EMPTY correctPoints list,
-  //      the same error class as Q2's "missing/wrong H2 coefficient" which
-  //      kept 2/4 in the same response. Reproduced identically 3 times
-  //      running (2 runs before any prompt change, 1 run after a first
-  //      rubric fix that didn't move it) — a real, confirmed, stubborn
-  //      grading defect, not noise.
-  //   3. Added a second, concrete rubric fix: an explicit worked example
-  //      matching this exact shape (a confidently-wrong "already balanced"
-  //      claim must still earn credit for correct reactants/products). This
-  //      DID move it: Q4 -> 1/5 with a real, non-empty correctPoints list
-  //      ("Correctly identified reactants and products with correct
-  //      formulas"). The zero/empty-list bug is fixed. It did not return to
-  //      the original hoped-for 4/5 — Q2/Q3/Q4 all still run a bit
-  //      conservative on partial credit versus the original design
-  //      estimate, which itself was never verified against a live call.
-  // Band set from the one clean post-both-fixes run (15/25) with margin for
-  // normal run-to-run variance, not tightened to force an exact repeat.
-  // The line that actually matters is the Q4 assertion below: it must never
-  // again be zero with an empty correctPoints list — that's the specific,
-  // confirmed defect this locks in against regressing.
-  it("totals in a reasonable band (13-18), Q1 and Q5 exact, names all three planted errors, and Q4 is never zero-with-no-credit again", async () => {
+  // Ground truth (independent marking, per-question):
+  //   Q1 5/5 exact — correctly balanced, no planted error.
+  //   Q2 marked out of 4 — hydrogen unbalanced (needs 3H2, not 2H2).
+  //   Q3 marked out of 5 — energy released, not absorbed (exothermic mixup).
+  //   Q4 marked out of 5 — missing 2HCl coefficient.
+  //   Q5 6/6 exact — correctly balanced, no planted error.
+  // Total 25 marks available; ground truth for the paper as marked by hand
+  // is 21/25 (Q1 5, Q2 3, Q3 3, Q4 4, Q5 6). Band 19-22 absorbs legitimate
+  // marking disagreement on exactly how much a single missing/wrong
+  // coefficient should cost (Q4 at 4 vs 5, say) without absorbing a real
+  // defect (Q4 scored 0/5 with an empty correctPoints list — reproduced 3
+  // times before the grading-prompt fix; see git history on this file for
+  // the full incident). Q1 and Q5 have no planted error and must be exact.
+  it("totals 19-22 out of 25, Q1 and Q5 exact, and names all three planted errors", async () => {
     const { meta, fileBytes } = loadFixture("chem-sheet");
     const { replay, realCalls } = replayOnly();
     const { result } = await gradeAnswerSheetFromFile(fileBytes, meta.mimeType, { subject: meta.subject, grade: meta.grade, examType: meta.examType }, undefined, replay);
@@ -92,20 +100,12 @@ describe("fixture regression: chem-sheet", () => {
     expect(realCalls(), "chem-sheet has no recording for this exact input — run `npm run fixtures:live` and commit the result").toBe(0);
 
     expect(result.totalMarks).toBe(25);
-    expect(result.obtainedMarks).toBeGreaterThanOrEqual(13);
-    expect(result.obtainedMarks).toBeLessThanOrEqual(18);
+    expect(result.obtainedMarks).toBeGreaterThanOrEqual(19);
+    expect(result.obtainedMarks).toBeLessThanOrEqual(22);
 
     const byNumber = new Map(result.questionGrades.map((g) => [g.questionNumber, g]));
     expect(byNumber.get(1)?.marksAwarded).toBe(5); // Q1: fully correct, exact
     expect(byNumber.get(5)?.marksAwarded).toBe(6); // Q5: fully correct, exact
-
-    // The actual regression guard: Q4's answer is substantially correct
-    // (right reactants, products, formulas — one wrong coefficient). Zero
-    // marks with no credited points at all is the specific bug that was
-    // reproduced 3 times; it must never come back silently.
-    const q4 = byNumber.get(4)!;
-    expect(q4.marksAwarded, "Q4 must not be zeroed out — it has real correct content").toBeGreaterThan(0);
-    expect(q4.correctPoints.length, "Q4 must credit what it got right, not report an empty correctPoints list").toBeGreaterThan(0);
 
     expect(namesTheError(byNumber.get(2)!, ["hydrogen", "unbalanced", "3h2"])).toBe(true); // unbalanced hydrogen
     expect(namesTheError(byNumber.get(3)!, ["released", "absorbed", "exothermic"])).toBe(true); // absorbed vs released
@@ -129,25 +129,25 @@ describe("fixture regression: sheet-a-correct", () => {
 });
 
 describe("fixture regression: sheet-b-errors", () => {
-  // Band re-baselined against a real live grading run (was 5-8, an untested
-  // design estimate — the model is more generous with partial credit for
-  // an arithmetic slip than originally guessed, scoring 10/15, while still
-  // naming all three planted mistakes exactly). Checked this one for the
-  // same class of bug as chem-sheet's Q4 (2026-08-16): all three questions
-  // here are the same error shape (correct method/setup, one arithmetic
-  // slip), and the model's per-question marks (3/5, 4/5, 3/5 — recorded
-  // output) are proportionate and consistent with each other, unlike
-  // chem-sheet's Q4 outlier. No bug found; keeping this band. Not yet
-  // re-verified against the current prompt (daily Gemini quota exhausted
-  // during this fix), but there's no evidence this one needs it.
-  it("scores 8-12 and names its three planted mistakes", async () => {
+  // Ground truth (independent marking): Q1 3/5 (14-6=8, not 9 — arithmetic
+  // slip, method is right), Q2 2/5 (divided by 5 instead of the given 4
+  // seconds), Q3 2/5 (7 squared is 49, not 14). Total 7/15, band 5-8.
+  //
+  // This was briefly widened to 8-12 to match a live run that scored 10/15
+  // (2026-08-16) — I judged the grader's marking "internally consistent" at
+  // the time and kept the wider band rather than reset it. That judgment
+  // call was itself an instance of the exact thing this suite exists to
+  // prevent: consistency with itself isn't the same as correctness against
+  // an independent mark scheme, and a genuine question-count regression here
+  // could hide it. Reset to ground truth.
+  it("scores 5-8 and names its three planted mistakes", async () => {
     const { meta, fileBytes } = loadFixture("sheet-b-errors");
     const { replay, realCalls } = replayOnly();
     const { result } = await gradeAnswerSheetFromFile(fileBytes, meta.mimeType, { subject: meta.subject, grade: meta.grade, examType: meta.examType }, undefined, replay);
 
     expect(realCalls(), "sheet-b-errors has no recording for this exact input — run `npm run fixtures:live` and commit the result").toBe(0);
-    expect(result.obtainedMarks).toBeGreaterThanOrEqual(8);
-    expect(result.obtainedMarks).toBeLessThanOrEqual(12);
+    expect(result.obtainedMarks).toBeGreaterThanOrEqual(5);
+    expect(result.obtainedMarks).toBeLessThanOrEqual(8);
 
     const byNumber = new Map(result.questionGrades.map((g) => [g.questionNumber, g]));
     expect(namesTheError(byNumber.get(1)!, ["8", "9", "arithmetic", "x = 4"])).toBe(true);

@@ -11,6 +11,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import { timedGeminiCall } from "@/lib/geminiCallLog";
 import { DAILY_QUOTA_PATTERN, PER_MINUTE_QUOTA_PATTERN, AUTH_ERROR_PATTERN } from "@/lib/geminiErrorPatterns";
 import { assertQuotaHeadroom, QuotaHeadroomError, PreviewEnvironmentBlockedError } from "@/lib/geminiQuotaState";
+import { userStillExists } from "@/lib/requireLiveUser";
 
 const TUTOR_MODEL_ID = "gemini-2.5-flash";
 
@@ -49,6 +50,10 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
   }
   const userId = (session.user as { id: string }).id;
   const { evaluationId } = await params;
+
+  if (!(await userStillExists(userId))) {
+    return new Response(JSON.stringify({ error: "Your account is no longer valid. Please sign in again." }), { status: 401 });
+  }
 
   let userMessage: string;
   try {

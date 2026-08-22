@@ -1,12 +1,18 @@
 name: Accuracy harness
 
-# Runs whenever the prompt, rubric, model config, or the golden set itself
-# changes — those are exactly the changes that can silently move grading
-# accuracy without anything else (typecheck, lint, unit tests) noticing.
+# Runs whenever the prompt, structured-output schema, rubric, model config,
+# or the golden set itself changes — those are exactly the changes that can
+# silently move grading accuracy without anything else (typecheck, lint,
+# unit tests) noticing. answerSheetSchema.ts is watched separately from
+# answerSheetGrading.ts: it defines the Gemini response schema (ERROR_TYPES,
+# GEMINI_GRADE_RESPONSE_SCHEMA) that constrains what the model can even
+# output, and can change accuracy without the prompt TEXT changing at all —
+# this workflow previously missed exactly this file.
 on:
   pull_request:
     paths:
       - "src/lib/answerSheetGrading.ts"
+      - "src/lib/answerSheetSchema.ts"
       - "src/lib/paperValidation.ts"
       - "src/lib/question-agents.ts"
       - "src/lib/evaluationWorker.ts"
@@ -19,6 +25,7 @@ on:
     branches: [main]
     paths:
       - "src/lib/answerSheetGrading.ts"
+      - "src/lib/answerSheetSchema.ts"
       - "src/lib/paperValidation.ts"
       - "src/lib/question-agents.ts"
       - "src/lib/evaluationWorker.ts"

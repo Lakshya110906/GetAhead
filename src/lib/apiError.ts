@@ -36,6 +36,16 @@ export const ErrorCodes = {
   TICKET_ACTION_FAILED: "Couldn't complete that action on this ticket.",
   TICKET_CREATE_FAILED: "Couldn't submit your support ticket.",
   AUTH_REQUEST_FAILED: "Something went wrong processing that request.",
+  ACCOUNT_DELETE_FAILED: "Couldn't delete your account due to a server error. Try again in a moment.",
+  PROFILE_FETCH_FAILED: "Couldn't load your profile.",
+  PROFILE_UPDATE_FAILED: "Failed to update profile settings.",
+  PASSWORD_CHANGE_FAILED: "Couldn't update your password due to a server error. Try again in a moment.",
+  PREFERENCES_FETCH_FAILED: "Couldn't load your notification preferences.",
+  PREFERENCES_UPDATE_FAILED: "Failed to save notification preferences.",
+  ADMIN_ACTION_FAILED: "Couldn't complete that admin action.",
+  QUESTION_PAPER_FETCH_FAILED: "Couldn't load this question paper.",
+  QUESTION_PAPER_DELETE_FAILED: "Couldn't delete this question paper.",
+  QUESTION_PAPER_UPDATE_FAILED: "Couldn't update this question paper.",
   UNKNOWN: "Something went wrong on our end.",
 } as const;
 
