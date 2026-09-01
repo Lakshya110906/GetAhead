@@ -28,11 +28,23 @@ export async function POST(request: Request): Promise<NextResponse> {
       body,
       request,
       onBeforeGenerateToken: async (pathname) => {
+        // This does NOT rewrite the final path — @vercel/blob's handleUpload
+        // (confirmed in 2.6.1 and still in 2.8.0, the latest) spreads the
+        // client's originally-requested pathname back into the token
+        // AFTER this callback's return value, silently discarding whatever
+        // `pathname` is returned here. The real security boundary has to be
+        // a validation, not a rewrite: reject any pathname that doesn't
+        // already sit under the caller's own, server-verified userId — the
+        // client (src/app/upload/page.tsx) constructs that prefix itself,
+        // but only this check stops it from claiming someone else's.
+        const requiredPrefix = `answer-sheets/${userId}/`;
+        if (!pathname.startsWith(requiredPrefix)) {
+          throw new Error("Upload path must be scoped to your own account.");
+        }
         return {
           allowedContentTypes: ALLOWED_CONTENT_TYPES,
           maximumSizeInBytes: MAX_UPLOAD_BYTES,
           addRandomSuffix: true,
-          pathname: `answer-sheets/${userId}/${pathname}`,
           tokenPayload: JSON.stringify({ userId }),
         };
       },

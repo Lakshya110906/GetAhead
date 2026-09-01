@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { useDropzone } from "react-dropzone";
 import { upload } from "@vercel/blob/client";
 import {
@@ -45,6 +46,7 @@ const MIME_BY_EXT: Record<string, string> = {
 
 export default function UploadPage() {
   const router = useRouter();
+  const { data: session } = useSession();
   const [file, setFile] = useState<File | null>(null);
   const [subject, setSubject] = useState("");
   const [grade, setGrade] = useState("");
@@ -139,6 +141,13 @@ export default function UploadPage() {
   const handleEvaluate = async () => {
     if (!file || !subject || !grade) return;
 
+    const userId = (session?.user as { id?: string } | undefined)?.id;
+    if (!userId) {
+      setStatus("failed");
+      setError("Your session isn't ready yet — try again in a moment.");
+      return;
+    }
+
     setStatus("uploading");
     setError("");
     setUploadProgress(0);
@@ -147,7 +156,17 @@ export default function UploadPage() {
       const ext = file.name.split(".").pop()?.toLowerCase() || "";
       const contentType = MIME_BY_EXT[ext] || file.type;
 
-      const blob = await upload(file.name, file, {
+      // @vercel/blob's handleUpload doesn't actually let the server rewrite
+      // this path — despite onBeforeGenerateToken appearing to return one,
+      // the SDK's own token-generation call spreads the client-requested
+      // pathname back in afterward, silently overriding it (confirmed
+      // against @vercel/blob 2.6.1 and 2.8.0, both have this). The real
+      // per-user namespacing has to come from the client requesting the
+      // correctly-prefixed path itself; /api/uploads now enforces (not
+      // rewrites) that this prefix actually matches the caller's real,
+      // server-verified session — a client can request its own prefix
+      // here, but not anyone else's.
+      const blob = await upload(`answer-sheets/${userId}/${file.name}`, file, {
         access: "public",
         handleUploadUrl: "/api/uploads",
         contentType,
