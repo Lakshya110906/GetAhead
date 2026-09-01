@@ -9,29 +9,25 @@ import { buildFixturePdf, buildBlankPdf, type FixtureSheetSpec } from "./lib/fix
 // (correct, errors, injection, edge case, a real subject, a non-answer-sheet)
 // — NOT the accuracy golden-set, which must stay real teacher-marked sheets.
 //
+// This script generates fixture CONTENT ONLY — it has no way to write an
+// expectation. Ground truth for each fixture comes from independent marking
+// of that fixture's own content and lives solely in the committed
+// fixtures/regression-set/<id>/answer-key.json, hand-authored and never
+// touched by this script. That split used to be blurred: fixtures carried an
+// inline answerKey here too, and it silently drifted out of sync with the
+// committed JSON more than once (a value re-baselined against live grader
+// output in one place while the other still held the true mark scheme, each
+// disagreeing about which fixture actually scored what). Regenerating a
+// fixture's PDF here must never regenerate its expectation as a side effect
+// — CI (see fixture-generator-purity.yml) fails the build if running this
+// script changes any answer-key.json byte.
+//
 // Content/marks/planted errors here are deliberately engineered to match the
-// exact CI assertions in src/lib/__tests__/fixtureRegression.test.ts — this
-// file and that one must be kept in sync; changing a fixture's content here
-// without updating the corresponding answer-key.json (and re-recording live
-// via `npm run fixtures:live`) will desync the regression suite from reality.
-
-interface AnswerKeyQuestion {
-  questionNumber: number;
-  expectedMarks: number;
-  expectedMaxMarks: number;
-  errorType: "correct" | "method_error" | "arithmetic_slip" | "unreadable" | "blank";
-  plantedError: string | null;
-  // Any one of these appearing in the model's feedback/incorrectPoints for
-  // this question counts as "named the specific mistake."
-  keywords: string[];
-}
-
-interface AnswerKey {
-  id: string;
-  totalMarks: number;
-  expectedObtainedMarks: number;
-  questions: AnswerKeyQuestion[];
-}
+// exact CI assertions in src/lib/__tests__/fixtureRegression.test.ts and the
+// corresponding answer-key.json — all three must be kept in sync; changing a
+// fixture's content here without updating the corresponding answer-key.json
+// (and re-recording live via `npm run fixtures:live`) will desync the
+// regression suite from reality.
 
 interface FixtureDef {
   id: string;
@@ -39,12 +35,15 @@ interface FixtureDef {
   grade: string;
   examType: string;
   spec: FixtureSheetSpec | null; // null => blank page, no questions
-  answerKey?: AnswerKey;
 }
 
 const FIXTURES: FixtureDef[] = [
-  // ── chem-sheet: 25 marks, 3 planted errors, target 21 (band 19-22).
+  // ── chem-sheet: 25 marks, 3 planted errors.
   // Q1 and Q5 are fully correct and must land exactly on their max marks.
+  // Ground truth lives solely in fixtures/regression-set/chem-sheet/answer-key.json
+  // (independently marked against this fixture's own content) — this fixture
+  // deliberately has no inline answerKey below, so regenerating it can never
+  // overwrite that file with a second, drifting expectation.
   {
     id: "chem-sheet",
     subject: "Chemistry",
@@ -90,43 +89,6 @@ const FIXTURES: FixtureDef[] = [
         },
       ],
     },
-    answerKey: {
-      id: "chem-sheet",
-      totalMarks: 25,
-      // Re-baselined against a real live grading run (was 21, an untested
-      // design estimate — see the Section 2(b) batched-vs-per-question
-      // comparison, which used this exact fixture and found the real model
-      // grades these particular errors harsher than originally guessed).
-      expectedObtainedMarks: 15,
-      questions: [
-        { questionNumber: 1, expectedMarks: 5, expectedMaxMarks: 5, errorType: "correct", plantedError: null, keywords: [] },
-        {
-          questionNumber: 2,
-          expectedMarks: 2,
-          expectedMaxMarks: 4,
-          errorType: "arithmetic_slip",
-          plantedError: "Unbalanced hydrogen — N2 + 2H2 -> 2NH3 leaves hydrogen unbalanced (4 vs 6); the correct coefficient is 3H2.",
-          keywords: ["hydrogen", "unbalanced", "3h2", "6", "4"],
-        },
-        {
-          questionNumber: 3,
-          expectedMarks: 2,
-          expectedMaxMarks: 5,
-          errorType: "method_error",
-          plantedError: "Absorbed vs released mixup — an exothermic reaction RELEASES energy to the surroundings, it does not absorb it; the explanation contradicts the correct classification.",
-          keywords: ["released", "absorbed", "exothermic", "energy is released"],
-        },
-        {
-          questionNumber: 4,
-          expectedMarks: 0,
-          expectedMaxMarks: 5,
-          errorType: "arithmetic_slip",
-          plantedError: "Missing 2HCl — the equation is not balanced as written; it must be Zn + 2HCl -> ZnCl2 + H2 (chlorine and hydrogen are unbalanced at 1 vs 2 otherwise).",
-          keywords: ["2hcl", "missing", "coefficient", "unbalanced", "chlorine"],
-        },
-        { questionNumber: 5, expectedMarks: 6, expectedMaxMarks: 6, errorType: "correct", plantedError: null, keywords: [] },
-      ],
-    },
   },
 
   // ── sheet-a-correct: every answer fully correct. Must total exactly 14/14
@@ -160,23 +122,13 @@ const FIXTURES: FixtureDef[] = [
         },
       ],
     },
-    answerKey: {
-      id: "sheet-a-correct",
-      totalMarks: 14,
-      expectedObtainedMarks: 14,
-      questions: [
-        { questionNumber: 1, expectedMarks: 4, expectedMaxMarks: 4, errorType: "correct", plantedError: null, keywords: [] },
-        { questionNumber: 2, expectedMarks: 5, expectedMaxMarks: 5, errorType: "correct", plantedError: null, keywords: [] },
-        { questionNumber: 3, expectedMarks: 5, expectedMaxMarks: 5, errorType: "correct", plantedError: null, keywords: [] },
-      ],
-    },
   },
 
   // ── sheet-b-errors: 3 planted arithmetic slips (method right, execution
-  // wrong). Originally designed for a 5-8 band; a real live grading run
-  // scored it 10/15 — the model is more generous with partial credit for
-  // a slip than originally guessed, while still naming all three mistakes
-  // exactly. Re-baselined to match (see fixtureRegression.test.ts).
+  // wrong). Ground truth lives solely in
+  // fixtures/regression-set/sheet-b-errors/answer-key.json — this fixture
+  // deliberately has no inline answerKey below, so regenerating it can never
+  // overwrite that file with a second, drifting expectation.
   {
     id: "sheet-b-errors",
     subject: "Mathematics",
@@ -212,37 +164,6 @@ const FIXTURES: FixtureDef[] = [
         },
       ],
     },
-    answerKey: {
-      id: "sheet-b-errors",
-      totalMarks: 15,
-      expectedObtainedMarks: 10,
-      questions: [
-        {
-          questionNumber: 1,
-          expectedMarks: 3,
-          expectedMaxMarks: 5,
-          errorType: "arithmetic_slip",
-          plantedError: "14 - 6 = 8, not 9. The isolation method is right, the subtraction is wrong, so x = 4, not 4.5.",
-          keywords: ["8", "9", "subtract", "x = 4", "arithmetic"],
-        },
-        {
-          questionNumber: 2,
-          expectedMarks: 4,
-          expectedMaxMarks: 5,
-          errorType: "arithmetic_slip",
-          plantedError: "Divided by 5 instead of the given 4 seconds — the correct answer is 20/4 = 5 m/s^2, not 20/5 = 4 m/s^2.",
-          keywords: ["4 seconds", "divide", "5 m/s", "denominator", "t = 4"],
-        },
-        {
-          questionNumber: 3,
-          expectedMarks: 3,
-          expectedMaxMarks: 5,
-          errorType: "arithmetic_slip",
-          plantedError: "7 squared is 49, not 14 — the formula (pi*r^2) is correct but the arithmetic for r^2 is wrong, so the area should be 154 cm^2, not 44 cm^2.",
-          keywords: ["49", "14", "squared", "154", "arithmetic"],
-        },
-      ],
-    },
   },
 
   // ── sheet-c-injection: unchanged — an embedded prompt-injection attempt
@@ -275,6 +196,10 @@ const FIXTURES: FixtureDef[] = [
   // something the student wrote (see answerStatus in answerSheetSchema.ts:
   // "blank" and "unreadable" are separate outcomes with separate handling,
   // fixed 2026-08-16 after they were briefly conflated into one boolean).
+  // Ground truth lives solely in
+  // fixtures/regression-set/sheet-d-edge/answer-key.json — this fixture
+  // deliberately has no inline answerKey below, so regenerating it can never
+  // overwrite that file with a second, drifting expectation.
   {
     id: "sheet-d-edge",
     subject: "Physics",
@@ -304,23 +229,6 @@ const FIXTURES: FixtureDef[] = [
           studentAnswer:
             "For every action, there is an equal and opposite reaction — when object A exerts a force on object B, object B exerts an equal and opposite force back on object A.",
         },
-      ],
-    },
-    answerKey: {
-      id: "sheet-d-edge",
-      totalMarks: 14,
-      expectedObtainedMarks: 11,
-      questions: [
-        { questionNumber: 1, expectedMarks: 0, expectedMaxMarks: 3, errorType: "blank", plantedError: "Left blank — scores zero and counts toward the total, unlike a genuinely illegible answer.", keywords: [] },
-        {
-          questionNumber: 2,
-          expectedMarks: 6,
-          expectedMaxMarks: 6,
-          errorType: "correct",
-          plantedError: "Uses a valid but unusual decomposition method (10% + 5%) instead of multiplying by 0.15 directly — must receive full marks, not be penalized for being unusual.",
-          keywords: [],
-        },
-        { questionNumber: 3, expectedMarks: 5, expectedMaxMarks: 5, errorType: "correct", plantedError: null, keywords: [] },
       ],
     },
   },
@@ -359,9 +267,6 @@ async function main() {
         2
       )
     );
-    if (f.answerKey) {
-      writeFileSync(join(dir, "answer-key.json"), JSON.stringify(f.answerKey, null, 2));
-    }
     console.log(`Generated fixtures/regression-set/${f.id}/ (${f.spec ? `${f.spec.questions.length} question(s)` : "blank page"})`);
   }
 }

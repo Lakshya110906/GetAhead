@@ -1,0 +1,56 @@
+name: Fixture generator purity
+
+# scripts/generate-fixtures.ts must generate fixture CONTENT only (the PDFs
+# and metadata.json under fixtures/regression-set/<id>/). Ground truth for
+# each fixture — its answer-key.json — is hand-authored from independent
+# marking of that fixture's own content and must never be written by this
+# script. That invariant broke silently more than once: a fixture's inline
+# answerKey drifted out of sync with its committed answer-key.json, and one
+# of the two values had been quietly re-baselined to match a live grader run
+# instead of the actual mark scheme, with nothing to catch it.
+#
+# This check runs the generator and fails the build if a single byte of any
+# answer-key.json changes as a result. That is the guard that would have
+# caught it.
+on:
+  pull_request:
+    paths:
+      - "scripts/generate-fixtures.ts"
+      - "scripts/lib/fixturePdf.ts"
+      - "fixtures/regression-set/**/answer-key.json"
+  push:
+    branches: [main]
+    paths:
+      - "scripts/generate-fixtures.ts"
+      - "scripts/lib/fixturePdf.ts"
+      - "fixtures/regression-set/**/answer-key.json"
+  workflow_dispatch: {}
+
+jobs:
+  generator-purity:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - name: Run the fixture generator
+        run: npm run fixtures:generate
+
+      - name: Fail if the generator touched any answer-key.json
+        run: |
+          if ! git diff --exit-code --quiet -- '**/answer-key.json'; then
+            echo "::error::scripts/generate-fixtures.ts modified a committed answer-key.json. The generator must only write fixture content (PDFs, metadata.json) — expectations are hand-authored ground truth and must never be written by this script. Revert the generator's answerKey ownership instead of committing this diff."
+            git diff -- '**/answer-key.json'
+            exit 1
+          fi
+          if git status --porcelain -- '**/answer-key.json' | grep .; then
+            echo "::error::scripts/generate-fixtures.ts created a new answer-key.json. Every fixture's ground truth must be added by hand from independent marking, not generated."
+            git status --porcelain -- '**/answer-key.json'
+            exit 1
+          fi

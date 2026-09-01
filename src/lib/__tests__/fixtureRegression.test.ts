@@ -31,14 +31,16 @@ import type { QuestionGrade } from "@/lib/answerSheetSchema";
 // detect, and a real regression (a subject-agnostic error taxonomy, a
 // stubborn zero on a substantially-correct answer, a blank counted as
 // unreadable) passes silently. This has actually happened, twice, in this
-// file's history: chem-sheet's band was narrowed to match a live buggy run,
-// and sheet-d-edge's expected total was changed to match a real code bug
-// that got rationalized as intentional design. Both were caught and
-// reverted. A live grader run belongs in a comment explaining what was
-// found — never in the assertion itself. If a fixture's real output lands
-// outside its ground-truth band, that is the fixture (or the fixture's
-// documented mark scheme) revealing a defect to fix, not evidence the band
-// was wrong.
+// file's history: chem-sheet's expectation was moved twice to match live
+// grader output (first narrowed to a band of 19-22, then to an outright
+// 15/25 in the generator script, both diverging from the fixture's actual
+// hand-marked total of 16/25), and sheet-d-edge's expected total was
+// changed to match a real code bug that got rationalized as intentional
+// design. All were caught and reverted. A live grader run belongs in a
+// comment explaining what was found — never in the assertion itself. If a
+// fixture's real output lands outside its ground-truth band, that is the
+// fixture (or the fixture's documented mark scheme) revealing a defect to
+// fix, not evidence the band was wrong.
 
 interface FixtureMetadata {
   id: string;
@@ -65,6 +67,18 @@ function namesTheError(g: QuestionGrade, keywords: string[]): boolean {
   return keywords.some((k) => text.includes(k.toLowerCase()));
 }
 
+// Stricter than namesTheError: requires every listed concept to be present,
+// not just any one of them. Each concept is itself a list of equivalent
+// phrasings (so "3H2" and "3 H2" both satisfy the same concept), but a
+// question with two required concepts (e.g. Q3's absorbed-vs-released
+// contradiction) fails unless BOTH are named — generic feedback that only
+// gestures at the topic ("exothermic", "unbalanced") without the specific
+// fact no longer passes.
+function namesAllOf(g: QuestionGrade, concepts: string[][]): boolean {
+  const text = feedbackText(g);
+  return concepts.every((phrasings) => phrasings.some((p) => text.includes(p.toLowerCase())));
+}
+
 /** Replay-only: never makes a real call. Returns a counter to assert against. */
 function replayOnly(): { replay: ReplayOptions; realCalls: () => number } {
   let count = 0;
@@ -79,20 +93,22 @@ beforeAll(() => {
 });
 
 describe("fixture regression: chem-sheet", () => {
-  // Ground truth (independent marking, per-question):
-  //   Q1 5/5 exact — correctly balanced, no planted error.
-  //   Q2 marked out of 4 — hydrogen unbalanced (needs 3H2, not 2H2).
-  //   Q3 marked out of 5 — energy released, not absorbed (exothermic mixup).
-  //   Q4 marked out of 5 — missing 2HCl coefficient.
-  //   Q5 6/6 exact — correctly balanced, no planted error.
-  // Total 25 marks available; ground truth for the paper as marked by hand
-  // is 21/25 (Q1 5, Q2 3, Q3 3, Q4 4, Q5 6). Band 19-22 absorbs legitimate
-  // marking disagreement on exactly how much a single missing/wrong
-  // coefficient should cost (Q4 at 4 vs 5, say) without absorbing a real
-  // defect (Q4 scored 0/5 with an empty correctPoints list — reproduced 3
-  // times before the grading-prompt fix; see git history on this file for
-  // the full incident). Q1 and Q5 have no planted error and must be exact.
-  it("totals 19-22 out of 25, Q1 and Q5 exact, and names all three planted errors", async () => {
+  // Ground truth (independent marking of fixtures/regression-set/chem-sheet/
+  // answer-sheet.pdf's own content — see fixtures/regression-set/chem-sheet/
+  // answer-key.json, the sole source of these values):
+  //   Q1 5/5 exact — correctly balanced, justification correct.
+  //   Q2 2/4 — N2 + 2H2 -> 2NH3 needs 3H2; the answer's reasoning only
+  //     checks that nitrogen balances and never checks hydrogen.
+  //   Q3 2/5 — correctly identifies the reaction as exothermic, but the
+  //     explanation reverses absorbed/released and is self-contradictory.
+  //   Q4 1/5 — no balancing attempted, falsely claims "already balanced";
+  //     needs 2HCl. Marker judgement allows 0-2 here.
+  //   Q5 6/6 exact — MgO named, 2Mg + O2 -> 2MgO, justification correct.
+  // Total 16/25, band 14-18. Q1 and Q5 have no planted error and must be
+  // exact. Generic feedback that merely gestures at the right topic without
+  // naming the specific error is a FAIL even if the mark lands in band —
+  // see namesAllOf above.
+  it("totals 14-18 out of 25, Q1 and Q5 exact, and names all three planted errors specifically", async () => {
     const { meta, fileBytes } = loadFixture("chem-sheet");
     const { replay, realCalls } = replayOnly();
     const { result } = await gradeAnswerSheetFromFile(fileBytes, meta.mimeType, { subject: meta.subject, grade: meta.grade, examType: meta.examType }, undefined, replay);
@@ -100,16 +116,19 @@ describe("fixture regression: chem-sheet", () => {
     expect(realCalls(), "chem-sheet has no recording for this exact input — run `npm run fixtures:live` and commit the result").toBe(0);
 
     expect(result.totalMarks).toBe(25);
-    expect(result.obtainedMarks).toBeGreaterThanOrEqual(19);
-    expect(result.obtainedMarks).toBeLessThanOrEqual(22);
+    expect(result.obtainedMarks).toBeGreaterThanOrEqual(14);
+    expect(result.obtainedMarks).toBeLessThanOrEqual(18);
 
     const byNumber = new Map(result.questionGrades.map((g) => [g.questionNumber, g]));
     expect(byNumber.get(1)?.marksAwarded).toBe(5); // Q1: fully correct, exact
     expect(byNumber.get(5)?.marksAwarded).toBe(6); // Q5: fully correct, exact
 
-    expect(namesTheError(byNumber.get(2)!, ["hydrogen", "unbalanced", "3h2"])).toBe(true); // unbalanced hydrogen
-    expect(namesTheError(byNumber.get(3)!, ["released", "absorbed", "exothermic"])).toBe(true); // absorbed vs released
-    expect(namesTheError(byNumber.get(4)!, ["2hcl", "missing", "unbalanced", "chlorine", "coefficient"])).toBe(true); // missing 2HCl
+    // Q2: must name the specific missing coefficient (3H2), not just "hydrogen" or "unbalanced" in general.
+    expect(namesTheError(byNumber.get(2)!, ["3h2", "3 h2", "three h2"])).toBe(true);
+    // Q3: must name BOTH sides of the reversal — "exothermic" alone, or either word by itself, is too generic.
+    expect(namesAllOf(byNumber.get(3)!, [["released"], ["absorbed"]])).toBe(true);
+    // Q4: must name the specific missing reagent (2HCl), not just "unbalanced" or "coefficient" in general.
+    expect(namesTheError(byNumber.get(4)!, ["2hcl", "2 hcl"])).toBe(true);
   });
 });
 

@@ -1,7 +1,8 @@
 {
+  "_note": "These values come from independent marking of this fixture's own file content (fixtures/regression-set/chem-sheet/answer-sheet.pdf), read and marked by hand — never from what the grading pipeline itself produced. Do not adjust any value here to match observed grader output, even after a live run disagrees. If the grader disagrees with this ground truth, that disagreement is the finding to investigate and fix (in the grading prompt or elsewhere) — it is never grounds to move the expectation.",
   "id": "chem-sheet",
   "totalMarks": 25,
-  "expectedObtainedMarks": 21,
+  "expectedObtainedMarks": 16,
   "questions": [
     {
       "questionNumber": 1,
@@ -13,43 +14,36 @@
     },
     {
       "questionNumber": 2,
-      "expectedMarks": 3,
+      "expectedMarks": 2,
       "expectedMaxMarks": 4,
       "errorType": "incorrect",
-      "plantedError": "Unbalanced hydrogen — N2 + 2H2 -> 2NH3 leaves hydrogen unbalanced (4 vs 6); the correct coefficient is 3H2.",
+      "plantedError": "N2 + 2H2 -> 2NH3 needs 3H2, not 2H2 — the answer's own reasoning only checks that nitrogen balances and never checks hydrogen at all (4 vs 6).",
       "keywords": [
-        "hydrogen",
-        "unbalanced",
         "3h2",
-        "6",
-        "4"
+        "3 h2",
+        "three h2"
       ]
     },
     {
       "questionNumber": 3,
-      "expectedMarks": 3,
+      "expectedMarks": 2,
       "expectedMaxMarks": 5,
       "errorType": "incorrect",
-      "plantedError": "Absorbed vs released mixup — an exothermic reaction RELEASES energy to the surroundings, it does not absorb it; the explanation contradicts the correct classification.",
+      "plantedError": "Correctly identifies the reaction as exothermic, but the explanation reverses absorbed/released — claims energy is absorbed from the surroundings, which contradicts calling it exothermic in the same breath.",
       "keywords": [
         "released",
-        "absorbed",
-        "exothermic",
-        "energy is released"
+        "absorbed"
       ]
     },
     {
       "questionNumber": 4,
-      "expectedMarks": 4,
+      "expectedMarks": 1,
+      "expectedMarksNote": "Allow 0-2 for marker judgement — no balancing attempt was made at all, and the answer falsely claims the equation is already balanced.",
       "expectedMaxMarks": 5,
       "errorType": "incorrect",
-      "plantedError": "Missing 2HCl — the equation is not balanced as written; it must be Zn + 2HCl -> ZnCl2 + H2 (chlorine and hydrogen are unbalanced at 1 vs 2 otherwise).",
+      "plantedError": "No balancing attempted; falsely states \"this equation is already balanced.\" Needs 2HCl (Zn + 2HCl -> ZnCl2 + H2) — chlorine and hydrogen are unbalanced at 1 vs 2 otherwise.",
       "keywords": [
-        "2hcl",
-        "missing",
-        "coefficient",
-        "unbalanced",
-        "chlorine"
+        "2hcl"
       ]
     },
     {

@@ -12,7 +12,8 @@
     "accuracy": "tsx scripts/accuracy-harness.ts",
     "accuracy:baseline": "tsx scripts/accuracy-harness.ts --update-baseline",
     "fixtures": "tsx scripts/run-fixtures.ts",
-    "fixtures:live": "tsx scripts/run-fixtures.ts --live-fixtures"
+    "fixtures:live": "tsx scripts/run-fixtures.ts --live-fixtures",
+    "fixtures:generate": "tsx scripts/generate-fixtures.ts"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.2",
