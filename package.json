@@ -50,7 +50,7 @@
     "@types/react-dropzone": "^4.2.2",
     "eslint": "^9",
     "eslint-config-next": "16.2.9",
-    "prisma": "6.19.3",
+    "prisma": "7.10.0",
     "tailwindcss": "^4",
     "tsx": "^4.23.5",
     "typescript": "^5",
