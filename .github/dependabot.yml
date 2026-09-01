@@ -5,6 +5,16 @@ updates:
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 10
+    ignore:
+      # Prisma 7 removes schema.prisma's datasource url/directUrl fields
+      # entirely (P1012) — this app's schema and prisma.config.ts are still
+      # on the v6 shape. Already tried and reverted once (see "Downgrade
+      # Prisma to v6", 2026-07-06); the migration is real, deliberate work
+      # for later, not something to pick up via an auto-merged patch PR.
+      - dependency-name: "prisma"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@prisma/client"
+        update-types: ["version-update:semver-major"]
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:

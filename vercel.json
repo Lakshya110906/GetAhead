@@ -1,7 +1,7 @@
 {
   "framework": "nextjs",
   "buildCommand": "prisma generate && prisma migrate deploy && next build",
-  "installCommand": "npm install",
+  "installCommand": "npm ci",
   "crons": [
     {
       "path": "/api/cron/sweep-evaluations",
