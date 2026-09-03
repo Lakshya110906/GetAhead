@@ -91,6 +91,12 @@ export async function POST(request: NextRequest) {
     // the floor, not the full estimate). Failing here means the user never
     // burns their own daily evaluation credit on an operation that was
     // already going to run out of Gemini quota partway through.
+    // Deliberately conservative: this checks BEFORE the file is even
+    // downloaded (below), so it can't yet know whether this exact input
+    // already has a GradingCache hit and would need zero real calls (see
+    // gradingCache.ts / evaluationWorker.ts). Worst case this occasionally
+    // blocks a request that would have been free — never the other
+    // direction (letting one through that can't actually complete).
     try {
       await assertQuotaHeadroom(EVAL_MODEL_ID, 2);
     } catch (err) {

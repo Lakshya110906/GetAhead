@@ -125,6 +125,24 @@ model Evaluation {
   finishedAt    DateTime?
   nextAttemptAt DateTime?
 
+  // Gemini's grading call is not deterministic even at temperature 0 (no
+  // seed parameter exists on this API — confirmed live, see GradingCache
+  // below) — measured directly on a real fixture: an unambiguous, clear-cut
+  // error scored 2/5 in 3 of 4 identical live samples and 1/5 in the 4th.
+  // Rather than let the SAME uploaded file silently return a different
+  // grade depending on when it's (re-)evaluated, a SUCCEEDED job whose
+  // content hash already has a GradingCache entry reuses that stored result
+  // instead of re-grading — see evaluationWorker.ts. gradedFromCache records
+  // which happened, so the UI can disclose it rather than hide it.
+  gradedFromCache    Boolean @default(false)
+  // Set by PATCH .../regrade (an explicit, user-initiated action, never
+  // automatic) to force a fresh live grading call for this run even though a
+  // cache entry exists — and to overwrite that entry with the fresh result
+  // afterward. This is the only sanctioned way to get a different grade for
+  // an unchanged file: never by silently re-running until a "better" score
+  // appears.
+  bypassGradingCache Boolean @default(false)
+
   // --- Audit trail: every SUCCEEDED row must be traceable to exactly
   // what produced it. Without these, "why did this student get 3/5" is
   // unanswerable six months later, and a prompt/rubric change can't be
@@ -168,6 +186,34 @@ model Evaluation {
   @@index([status])
   @@index([createdAt])
   @@index([status, nextAttemptAt])
+}
+
+// Content-addressed store for a completed grading pipeline result — keyed on
+// everything that determines the OUTPUT (file bytes + subject + grade +
+// examType + the exact extraction/grading prompt versions + model), so a
+// prompt, rubric, or model change naturally misses instead of silently
+// serving a result produced by different instructions. Written once after a
+// real (non-cached) evaluation succeeds; read before every evaluation starts
+// so the identical input is graded by Gemini at most once — everyone else
+// gets the stored result, for zero additional Gemini requests. This is the
+// fix for grading being non-deterministic (see Evaluation.gradedFromCache):
+// it does not make Gemini more consistent, it makes what THIS APP serves for
+// a given file consistent, with re-evaluation as the explicit escape hatch.
+model GradingCache {
+  id            String   @id @default(cuid())
+  contentHash   String   @unique
+  modelId       String
+  promptVersion String
+  subject       String
+  grade         String
+  examType      String
+  extraction    String   @db.LongText
+  result        String   @db.LongText
+  hitCount      Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([createdAt])
 }
 
 model SavedReport {

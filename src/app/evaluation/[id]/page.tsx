@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import {
@@ -25,6 +25,8 @@ import {
   AlertTriangle,
   Lightbulb,
   Brain,
+  RotateCcw,
+  Info,
 } from "lucide-react";
 
 // Without a `loading` component, the tutor panel's chunk-load window (the
@@ -84,6 +86,14 @@ interface EvaluationData {
   unreadableQuestions: number[];
   subjectMismatch: { declared: string; detected: string } | null;
   gradeMismatch: { declared: string; detected: string } | null;
+  // Gemini's grading call is not perfectly consistent run to run, even for
+  // the identical file (measured directly: a clear-cut error scored 2/5 in
+  // 3 of 4 identical live samples and 1/5 in the 4th). Rather than let a
+  // re-upload of the same sheet silently return a different grade, this
+  // result may be REUSED from an earlier identical evaluation instead of
+  // freshly graded — gradedFromCache says which, so it can be disclosed
+  // rather than hidden.
+  gradedFromCache: boolean;
   createdAt: string;
 }
 
@@ -116,16 +126,15 @@ export default function EvaluationPage() {
   const [shareCopied, setShareCopied] = useState(false);
   const [highlightedIndex, setHighlightedIndex] = useState<number | null>(null);
 
-  useEffect(() => {
-    if (!id || id === "demo") {
-      setTimeout(() => {
-        setLoading(false);
-      }, 0);
-      return;
-    }
-    
-    // Fetch report data
-    fetch(`/api/reports/${id}`)
+  // Re-evaluate: an explicit, user-initiated request for a fresh grading
+  // pass that bypasses the grading cache (see gradingCache.ts) — the only
+  // sanctioned way to get a different mark for an unchanged file.
+  const [regrading, setRegrading] = useState(false);
+  const [regradeError, setRegradeError] = useState("");
+  const regradePollRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const fetchReport = useCallback(() => {
+    return fetch(`/api/reports/${id}`)
       .then((r) => r.json())
       .then((d) => {
         if (!d.error) {
@@ -139,13 +148,25 @@ export default function EvaluationPage() {
             unreadableQuestions: d.unreadableQuestions || [],
             subjectMismatch: d.subjectMismatch || null,
             gradeMismatch: d.gradeMismatch || null,
+            gradedFromCache: d.gradedFromCache || false,
           });
+          setLoadError(false);
         } else {
           setLoadError(true);
         }
       })
-      .catch(() => setLoadError(true))
-      .finally(() => setLoading(false));
+      .catch(() => setLoadError(true));
+  }, [id]);
+
+  useEffect(() => {
+    if (!id || id === "demo") {
+      setTimeout(() => {
+        setLoading(false);
+      }, 0);
+      return;
+    }
+
+    fetchReport().finally(() => setLoading(false));
 
     // Fetch save status
     fetch(`/api/reports/save?evaluationId=${id}`)
@@ -156,7 +177,60 @@ export default function EvaluationPage() {
         }
       })
       .catch(() => {});
-  }, [id]);
+  }, [id, fetchReport]);
+
+  useEffect(() => {
+    return () => {
+      if (regradePollRef.current) clearTimeout(regradePollRef.current);
+    };
+  }, []);
+
+  const handleRegrade = async () => {
+    if (!id || regrading) return;
+    // Disclosure, not a formality: the whole point of this action is that
+    // it can come back different from the result on screen right now.
+    if (!confirm("Re-evaluating asks the grader for a fresh look at this same file. Marks may differ from the result shown now — this cannot be undone. Continue?")) {
+      return;
+    }
+    setRegrading(true);
+    setRegradeError("");
+    try {
+      const res = await fetch(`/api/evaluations/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "regrade" }),
+      });
+      const d = await res.json();
+      if (!res.ok) {
+        setRegradeError(d.error || "Couldn't start re-evaluation.");
+        setRegrading(false);
+        return;
+      }
+      const poll = async () => {
+        try {
+          const statusRes = await fetch(`/api/evaluations/${id}`);
+          const statusData = await statusRes.json();
+          if (statusData.status === "SUCCEEDED") {
+            await fetchReport();
+            setRegrading(false);
+            return;
+          }
+          if (statusData.status === "FAILED") {
+            setRegradeError(statusData.lastError || "Re-evaluation failed.");
+            setRegrading(false);
+            return;
+          }
+          regradePollRef.current = setTimeout(poll, 2000);
+        } catch {
+          regradePollRef.current = setTimeout(poll, 2000);
+        }
+      };
+      poll();
+    } catch {
+      setRegradeError("Couldn't start re-evaluation.");
+      setRegrading(false);
+    }
+  };
 
   useEffect(() => {
     const handleHighlight = (e: Event) => {
@@ -302,6 +376,16 @@ export default function EvaluationPage() {
         </div>
         <div className="flex items-center gap-2 no-print">
           <button
+            onClick={handleRegrade}
+            disabled={regrading}
+            aria-label="Ask the grader for a fresh evaluation of this same file"
+            title="Marks may differ from the result shown now"
+            className="inline-flex items-center gap-2 border border-rule bg-surface text-ink text-sm font-medium px-4 py-2 rounded-xl hover:bg-paper transition-colors disabled:opacity-60"
+          >
+            <RotateCcw className={`w-4 h-4 ${regrading ? "animate-spin" : ""}`} />
+            <span className="hidden sm:inline">{regrading ? "Re-evaluating…" : "Re-evaluate"}</span>
+          </button>
+          <button
             onClick={handleSave}
             disabled={saveLoading}
             aria-label={isSaved ? "Remove from saved reports" : "Save this report"}
@@ -332,6 +416,23 @@ export default function EvaluationPage() {
           </button>
         </div>
       </div>
+
+      {regradeError && (
+        <div className="no-print flex items-start gap-3 bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl px-4 py-3">
+          <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+          <span>{regradeError}</span>
+        </div>
+      )}
+
+      {data.gradedFromCache && (
+        <div className="no-print flex items-start gap-3 bg-blue-50 border border-blue-200 text-blue-800 text-sm rounded-xl px-4 py-3">
+          <Info className="w-4 h-4 mt-0.5 flex-shrink-0" />
+          <span>
+            This result reuses an earlier grading of an identical answer sheet, rather than a fresh pass — the same input can occasionally score
+            a mark or two differently between passes. Use &quot;Re-evaluate&quot; above for a new attempt.
+          </span>
+        </div>
+      )}
 
       {/* Score strip — one compact line, not four competing cards. Every
           figure that used to be its own card is still here (marks, %,

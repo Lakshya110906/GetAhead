@@ -6,7 +6,9 @@ import { prisma } from "@/lib/prisma";
 import { processSpecificJob } from "@/lib/evaluationWorker";
 import { reportApiError } from "@/lib/apiError";
 import { logger } from "@/lib/logger";
-import { NOT_AN_ANSWER_SHEET_MESSAGE } from "@/lib/answerSheetGrading";
+import { NOT_AN_ANSWER_SHEET_MESSAGE, MODEL_ID as EVAL_MODEL_ID } from "@/lib/answerSheetGrading";
+import { consumeQuota, QuotaExceededError } from "@/lib/quota";
+import { assertQuotaHeadroom, QuotaHeadroomError, PreviewEnvironmentBlockedError } from "@/lib/geminiQuotaState";
 
 export const maxDuration = 60;
 
@@ -187,6 +189,76 @@ export async function PATCH(
           await processSpecificJob(updated.id);
         } catch (err) {
           logger.error(`Background worker trigger failed on retry for job ${updated.id}`, {
+            route: "PATCH /api/evaluations/[id]",
+            jobId: updated.id,
+            message: err instanceof Error ? err.message : String(err),
+            stack: err instanceof Error ? err.stack : undefined,
+          });
+        }
+      });
+      return NextResponse.json({ status: updated.status });
+    }
+
+    if (action === "regrade") {
+      // Unlike "retry" (a failed job resuming its own first attempt),
+      // "regrade" deliberately re-runs a job that already SUCCEEDED — the
+      // only sanctioned way to get a different grade for an unchanged file
+      // (see gradingCache.ts). Explicit and user-initiated, never automatic:
+      // the UI must disclose that marks may differ from the result already
+      // shown before calling this.
+      if (job.status !== "SUCCEEDED") {
+        return NextResponse.json(
+          { error: "Only a completed evaluation can be re-evaluated." },
+          { status: 409 }
+        );
+      }
+
+      // This always costs a real Gemini call (it bypasses the grading
+      // cache by design), so it goes through the same preflight gates as a
+      // brand new evaluation: Gemini's shared daily headroom, then this
+      // user's own daily evaluation quota.
+      try {
+        await assertQuotaHeadroom(EVAL_MODEL_ID, 2);
+      } catch (err) {
+        if (err instanceof QuotaHeadroomError) {
+          return NextResponse.json(
+            { error: err.message, quotaExceeded: true, remaining: err.usage.remaining, limit: err.usage.limit, resetsAt: err.usage.resetsAt },
+            { status: 503 }
+          );
+        }
+        if (err instanceof PreviewEnvironmentBlockedError) {
+          return NextResponse.json({ error: err.message, previewBlocked: true }, { status: 503 });
+        }
+        throw err;
+      }
+      try {
+        await consumeQuota(job.userId, "EVALUATION");
+      } catch (err) {
+        if (err instanceof QuotaExceededError) {
+          return NextResponse.json(
+            { error: err.message, quotaExceeded: true, limit: err.limit, resetsAt: err.resetsAt.toISOString() },
+            { status: 429 }
+          );
+        }
+        throw err;
+      }
+
+      const updated = await prisma.evaluation.update({
+        where: { id },
+        data: {
+          status: "QUEUED",
+          attempts: 0,
+          nextAttemptAt: null,
+          startedAt: null,
+          finishedAt: null,
+          bypassGradingCache: true,
+        },
+      });
+      after(async () => {
+        try {
+          await processSpecificJob(updated.id);
+        } catch (err) {
+          logger.error(`Background worker trigger failed on regrade for job ${updated.id}`, {
             route: "PATCH /api/evaluations/[id]",
             jobId: updated.id,
             message: err instanceof Error ? err.message : String(err),

@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { withRetry, DailyQuotaExhaustedError, GeminiRateLimitError, GeminiAuthError, GeminiInvalidArgumentError } from "@/lib/question-agents";
+import type { ExtractionResult, GradedAnswerSheet } from "@/lib/answerSheetSchema";
 
 // ── RPD vs RPM vs auth vs invalid-argument classification ──────────────────
 // Regression coverage for the bug identified this session: DAILY_QUOTA_PATTERN
@@ -83,6 +84,14 @@ vi.mock("@/lib/prisma", () => ({
       update: vi.fn(),
       updateMany: vi.fn(),
     },
+    // evaluationWorker.ts checks the grading cache before ever calling
+    // gradeAnswerSheetFromFile (see gradingCache.ts) — findUnique resolving
+    // to null is a cache miss, the path this test is actually exercising.
+    gradingCache: {
+      findUnique: vi.fn().mockResolvedValue(null),
+      update: vi.fn(),
+      upsert: vi.fn(),
+    },
   },
 }));
 vi.mock("@/lib/quota", () => ({
@@ -156,5 +165,108 @@ describe("evaluationWorker.ts — quota failure handling (parity with paperJob.t
     // Credit refunded — the exact parity gap this fix closes.
     expect(refundQuota).toHaveBeenCalledTimes(1);
     expect(refundQuota).toHaveBeenCalledWith("user_1", "EVALUATION");
+  });
+});
+
+// ── evaluationWorker.ts: grading cache (never grade the same input twice) ──
+// Gemini's grading call is not deterministic even at temperature 0 (measured
+// directly: a clear-cut error scored 2/5 in 3 of 4 identical live samples
+// and 1/5 in the 4th). These cover the fix: a cache hit must never call
+// gradeAnswerSheetFromFile, and an explicit regrade (bypassGradingCache) must
+// skip the cache entirely, even when a hit exists.
+describe("evaluationWorker.ts — grading cache", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  const baseJob = {
+    id: "eval_2",
+    status: "PROCESSING",
+    fileUrl: "https://example.test/sheet.pdf",
+    fileType: "application/pdf",
+    subject: "Chemistry",
+    grade: "10th",
+    examType: "Unit Test",
+    userId: "user_1",
+    attempts: 1,
+  };
+
+  const cachedExtraction: ExtractionResult = { questions: [] } as unknown as ExtractionResult;
+  const cachedResult: GradedAnswerSheet = {
+    totalMarks: 25,
+    obtainedMarks: 17,
+    percentage: 68,
+    grade: "B+",
+    questionGrades: [],
+    unreadableQuestions: [],
+    topicBreakdown: null,
+    subjectMismatch: null,
+    gradeMismatch: null,
+    overallFeedback: "Reused from cache.",
+  } as GradedAnswerSheet;
+
+  it("a cache hit reuses the stored result and never calls gradeAnswerSheetFromFile", async () => {
+    const { prisma } = await import("@/lib/prisma");
+    const { gradeAnswerSheetFromFile } = await import("@/lib/answerSheetGrading");
+    const { processSpecificJob } = await import("@/lib/evaluationWorker");
+
+    (prisma.evaluation.updateMany as ReturnType<typeof vi.fn>).mockResolvedValue({ count: 1 });
+    (prisma.evaluation.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue({ ...baseJob, bypassGradingCache: false });
+    (prisma.evaluation.update as ReturnType<typeof vi.fn>).mockResolvedValue({});
+    (prisma.gradingCache.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue({
+      contentHash: "irrelevant-in-this-test",
+      extraction: JSON.stringify(cachedExtraction),
+      result: JSON.stringify(cachedResult),
+    });
+    (global.fetch as unknown) = vi.fn().mockResolvedValue({ ok: true, arrayBuffer: async () => new ArrayBuffer(8) });
+
+    await processSpecificJob(baseJob.id);
+
+    expect(gradeAnswerSheetFromFile).not.toHaveBeenCalled();
+    expect(prisma.gradingCache.upsert).not.toHaveBeenCalled();
+
+    const updateCall = (prisma.evaluation.update as ReturnType<typeof vi.fn>).mock.calls[0][0];
+    expect(updateCall.data.status).toBe("SUCCEEDED");
+    expect(updateCall.data.gradedFromCache).toBe(true);
+    expect(updateCall.data.obtainedMarks).toBe(17);
+    expect(updateCall.data.totalMarks).toBe(25);
+  });
+
+  it("bypassGradingCache skips an existing cache hit entirely and grades fresh, then overwrites the cache", async () => {
+    const { prisma } = await import("@/lib/prisma");
+    const { gradeAnswerSheetFromFile } = await import("@/lib/answerSheetGrading");
+    const { processSpecificJob } = await import("@/lib/evaluationWorker");
+
+    const freshResult: GradedAnswerSheet = { ...cachedResult, obtainedMarks: 15, overallFeedback: "Fresh regrade." };
+
+    (prisma.evaluation.updateMany as ReturnType<typeof vi.fn>).mockResolvedValue({ count: 1 });
+    (prisma.evaluation.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue({ ...baseJob, bypassGradingCache: true });
+    (prisma.evaluation.update as ReturnType<typeof vi.fn>).mockResolvedValue({});
+    // Even though a cache entry exists, bypassGradingCache must mean it's
+    // never even looked up — findUnique should not be called at all.
+    (prisma.gradingCache.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue({
+      contentHash: "irrelevant-in-this-test",
+      extraction: JSON.stringify(cachedExtraction),
+      result: JSON.stringify(cachedResult),
+    });
+    (prisma.gradingCache.upsert as ReturnType<typeof vi.fn>).mockResolvedValue({});
+    (gradeAnswerSheetFromFile as ReturnType<typeof vi.fn>).mockResolvedValue({
+      result: freshResult,
+      extraction: cachedExtraction,
+      usage: { promptTokens: 10, completionTokens: 20, totalTokens: 30 },
+    });
+    (global.fetch as unknown) = vi.fn().mockResolvedValue({ ok: true, arrayBuffer: async () => new ArrayBuffer(8) });
+
+    await processSpecificJob(baseJob.id);
+
+    expect(prisma.gradingCache.findUnique).not.toHaveBeenCalled();
+    expect(gradeAnswerSheetFromFile).toHaveBeenCalledTimes(1);
+    expect(prisma.gradingCache.upsert).toHaveBeenCalledTimes(1);
+
+    const updateCall = (prisma.evaluation.update as ReturnType<typeof vi.fn>).mock.calls[0][0];
+    expect(updateCall.data.status).toBe("SUCCEEDED");
+    expect(updateCall.data.gradedFromCache).toBe(false);
+    expect(updateCall.data.bypassGradingCache).toBe(false);
+    expect(updateCall.data.obtainedMarks).toBe(15);
   });
 });

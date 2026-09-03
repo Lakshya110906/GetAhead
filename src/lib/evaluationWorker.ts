@@ -3,13 +3,16 @@ import {
   gradeAnswerSheetFromFile,
   MODEL_ID,
   EXTRACTION_PROMPT_VERSION,
-  GRADE_PROMPT_VERSION,
+  GRADE_BATCH_PROMPT_VERSION,
   NotAnAnswerSheetError,
   displayErrorCategory,
+  UsageAccumulator,
 } from "@/lib/answerSheetGrading";
+import { computeGradingContentHash, lookupGradingCache, writeGradingCache } from "@/lib/gradingCache";
 import { refundQuota } from "@/lib/quota";
 import { logger } from "@/lib/logger";
 import { captureException } from "@/lib/errorTracking";
+import type { ExtractionResult, GradedAnswerSheet } from "@/lib/answerSheetSchema";
 
 // If a job has been sitting in PROCESSING longer than this, the worker that
 // claimed it is presumed dead (function crashed, was killed mid-run, etc.) —
@@ -91,25 +94,61 @@ async function runJob(id: string): Promise<void> {
     }
     const fileBytes = Buffer.from(await fileRes.arrayBuffer());
     const mimeType = job.fileType || "application/pdf";
+    const grade = job.grade || "12th";
 
-    logger.info("Sending to Gemini: extraction, then one grading call per question", { jobId: id, stage: "transcribe", subject: job.subject });
-    const graded = await gradeAnswerSheetFromFile(
+    // Grading is graded ONCE per distinct (file, subject, grade, examType,
+    // prompt versions, model) — Gemini's grading call is not deterministic
+    // even at temperature 0 (measured directly: the same clear-cut error on
+    // a fixed extraction scored 2/5 in 3 of 4 identical live samples and
+    // 1/5 in the 4th), so re-grading an unchanged file would silently risk
+    // handing back a different mark than last time. See gradingCache.ts.
+    const promptVersion = `${EXTRACTION_PROMPT_VERSION}.${GRADE_BATCH_PROMPT_VERSION}`;
+    const contentHash = computeGradingContentHash({
       fileBytes,
-      mimeType,
-      {
-        subject: job.subject,
-        grade: job.grade || "12th",
-        examType: job.examType,
-      },
-      { correlationId: id, userId: job.userId ?? undefined }
-    );
-    const { result, extraction, usage } = graded;
+      subject: job.subject,
+      grade,
+      examType: job.examType,
+      modelId: MODEL_ID,
+      promptVersion,
+    });
+
+    let extraction: ExtractionResult;
+    let result: GradedAnswerSheet;
+    let usage = new UsageAccumulator();
+    let gradedFromCache = false;
+
+    const cached = job.bypassGradingCache ? null : await lookupGradingCache(contentHash);
+    if (cached) {
+      logger.info("Reusing cached grading result — identical input already graded", { jobId: id, stage: "grade", subject: job.subject });
+      ({ extraction, result } = cached);
+      gradedFromCache = true;
+    } else {
+      logger.info("Sending to Gemini: extraction, then one grading call per question", { jobId: id, stage: "transcribe", subject: job.subject });
+      const graded = await gradeAnswerSheetFromFile(
+        fileBytes,
+        mimeType,
+        {
+          subject: job.subject,
+          grade,
+          examType: job.examType,
+        },
+        { correlationId: id, userId: job.userId ?? undefined }
+      );
+      ({ result, extraction, usage } = graded);
+      // Stored (or, on an explicit regrade, overwritten) so every future
+      // identical upload reuses THIS result instead of re-grading — the
+      // fresh sample from an explicit regrade becomes the new answer served
+      // from here on, which is the intended effect of that action.
+      await writeGradingCache({ contentHash, modelId: MODEL_ID, promptVersion, subject: job.subject, grade, examType: job.examType, extraction, result });
+    }
+
     logger.info("Grading complete", {
       jobId: id,
       stage: "grade",
       obtainedMarks: result.obtainedMarks,
       totalMarks: result.totalMarks,
       totalTokens: usage.totalTokens,
+      gradedFromCache,
     });
 
     // strengths/weaknesses/recommendations are derived here, in code, from
@@ -157,12 +196,21 @@ async function runJob(id: string): Promise<void> {
         // was actually written, not just a topic summary.
         ocrText: JSON.stringify(extraction),
         modelId: MODEL_ID,
-        promptVersion: `${EXTRACTION_PROMPT_VERSION}.${GRADE_PROMPT_VERSION}`,
+        // Was `${EXTRACTION_PROMPT_VERSION}.${GRADE_PROMPT_VERSION}` — the
+        // per-question prompt's version constant, even though
+        // gradeAnswerSheetFromFile's default (and only mode this worker
+        // uses) is "batched", governed by GRADE_BATCH_PROMPT_VERSION. Fixed
+        // while touching this line for the grading-cache work: the audit
+        // trail this field exists for ("why did this student get X marks")
+        // was recording the wrong prompt version for every batched-mode row.
+        promptVersion,
         rubricVersion: "answer-sheet-rebuild-2026-08-v1",
         rawModelResponse: JSON.stringify({ extraction, questionGrades: result.questionGrades }),
         promptTokens: usage.promptTokens,
         completionTokens: usage.completionTokens,
         totalTokens: usage.totalTokens,
+        gradedFromCache,
+        bypassGradingCache: false,
       },
     });
     logger.info("Job persisted", { jobId: id, stage: "persist", status: "SUCCEEDED" });
