@@ -1,0 +1,13 @@
+[
+  {
+    "questionNumber": 1,
+    "marksAwarded": 0,
+    "marksAvailable": 5,
+    "topic": "Indian Independence",
+    "correctPoints": [],
+    "incorrectPoints": [],
+    "errorType": "blank",
+    "groundingQuote": "I don't know the answer.",
+    "feedback": "You stated you don't know the answer. Please review the key figures and dates related to Indian independence."
+  }
+]

@@ -79,6 +79,21 @@ function namesAllOf(g: QuestionGrade, concepts: string[][]): boolean {
   return concepts.every((phrasings) => phrasings.some((p) => text.includes(p.toLowerCase())));
 }
 
+// For a fact that has one specific content but many natural phrasings — "3H2",
+// "3 H2", "the coefficient for H2 should be 3", "put a 3 in front of H2" all
+// name the same missing coefficient. A literal-substring check on "3h2" once
+// failed a recording whose feedback said exactly the right thing in the
+// second form. The pattern must still bind the NUMBER to the SPECIES: a
+// generic "the hydrogen is unbalanced" or "fix the coefficient" does not pass.
+function namesSpecifically(g: QuestionGrade, pattern: RegExp): boolean {
+  return pattern.test(feedbackText(g));
+}
+
+// Q2: hydrogen coefficient must be 3 (not 2) on H2.
+const NAMES_3H2 = /\b3\s*h2\b|\bthree\s+h2\b|coefficient\s+(?:for|of|on|in front of|before)\s+(?:the\s+)?h2\s+(?:should|must|needs? to|has to|ought to)\s+be\s+3\b|\b3\s+(?:in front of|before)\s+(?:the\s+)?h2\b|h2\s+(?:should|must|needs? to|has to)\s+(?:have|be given|get)\s+(?:a\s+)?coefficient\s+(?:of\s+)?3\b/;
+// Q4: HCl needs a coefficient of 2.
+const NAMES_2HCL = /\b2\s*hcl\b|\btwo\s+hcl\b|coefficient\s+(?:for|of|on|in front of|before)\s+(?:the\s+)?hcl\s+(?:should|must|needs? to|has to|ought to)\s+be\s+2\b|coefficient\s+of\s+2\s+(?:in front of|before)\s+(?:the\s+)?hcl\b|\b2\s+(?:in front of|before)\s+(?:the\s+)?hcl\b|hcl\s+(?:should|must|needs? to|has to)\s+(?:have|be given|get)\s+(?:a\s+)?coefficient\s+(?:of\s+)?2\b/;
+
 /** Replay-only: never makes a real call. Returns a counter to assert against. */
 function replayOnly(): { replay: ReplayOptions; realCalls: () => number } {
   let count = 0;
@@ -123,12 +138,13 @@ describe("fixture regression: chem-sheet", () => {
     expect(byNumber.get(1)?.marksAwarded).toBe(5); // Q1: fully correct, exact
     expect(byNumber.get(5)?.marksAwarded).toBe(6); // Q5: fully correct, exact
 
-    // Q2: must name the specific missing coefficient (3H2), not just "hydrogen" or "unbalanced" in general.
-    expect(namesTheError(byNumber.get(2)!, ["3h2", "3 h2", "three h2"])).toBe(true);
+    // Q2: must name the specific missing coefficient (3 on H2), not just "hydrogen" or "unbalanced" in general.
+    expect(namesSpecifically(byNumber.get(2)!, NAMES_3H2), `Q2 feedback did not name 3H2: ${feedbackText(byNumber.get(2)!)}`).toBe(true);
     // Q3: must name BOTH sides of the reversal — "exothermic" alone, or either word by itself, is too generic.
-    expect(namesAllOf(byNumber.get(3)!, [["released"], ["absorbed"]])).toBe(true);
-    // Q4: must name the specific missing reagent (2HCl), not just "unbalanced" or "coefficient" in general.
-    expect(namesTheError(byNumber.get(4)!, ["2hcl", "2 hcl"])).toBe(true);
+    // Stems, not inflections: "release"/"released"/"releases" and "absorb"/"absorbed" all name the same fact.
+    expect(namesAllOf(byNumber.get(3)!, [["releas"], ["absorb"]]), `Q3 feedback did not name both released and absorbed: ${feedbackText(byNumber.get(3)!)}`).toBe(true);
+    // Q4: must name the specific missing coefficient (2 on HCl), not just "unbalanced" or "coefficient" in general.
+    expect(namesSpecifically(byNumber.get(4)!, NAMES_2HCL), `Q4 feedback did not name 2HCl: ${feedbackText(byNumber.get(4)!)}`).toBe(true);
   });
 });
 

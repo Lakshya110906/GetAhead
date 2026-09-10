@@ -17,8 +17,17 @@ import type { ReplayOptions } from "../src/lib/geminiFixtureCache";
 // Usage:
 //   npx tsx scripts/run-fixtures.ts                 # replay (record on first run)
 //   npx tsx scripts/run-fixtures.ts --live-fixtures  # force live calls, re-record
+//   npx tsx scripts/run-fixtures.ts --live-grading   # re-record grading only (extraction replays)
+//
+// --live-grading is for a grading-prompt change: extraction's prompt (and
+// so its cache key) is untouched, so re-running it live spends a Gemini
+// request per fixture for a byte-identical answer.
 
-const forceLive = process.argv.includes("--live-fixtures");
+const forceLive: ReplayOptions["forceLive"] = process.argv.includes("--live-fixtures")
+  ? true
+  : process.argv.includes("--live-grading")
+    ? { grading: true, "grading-batched": true }
+    : false;
 
 interface FixtureMetadata {
   id: string;
@@ -58,7 +67,7 @@ async function main() {
     },
   };
 
-  console.log(`Running ${fixtures.length} fixture(s) — mode: ${forceLive ? "LIVE (forced)" : "replay (record on first run)"}\n`);
+  console.log(`Running ${fixtures.length} fixture(s) — mode: ${forceLive === true ? "LIVE (forced)" : forceLive ? "LIVE grading, replayed extraction" : "replay (record on first run)"}\n`);
 
   for (const { meta, fileBytes } of fixtures) {
     const start = Date.now();

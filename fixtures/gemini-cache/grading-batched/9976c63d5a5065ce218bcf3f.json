@@ -1,0 +1,59 @@
+[
+  {
+    "questionNumber": 1,
+    "marksAwarded": 2,
+    "marksAvailable": 5,
+    "topic": "Solving linear equations",
+    "correctPoints": [
+      "Setting up the equation 2x + 6 = 14",
+      "Isolating the term with x (conceptually)",
+      "Dividing by 2 to find x (conceptually)"
+    ],
+    "incorrectPoints": [
+      "Arithmetic error in subtracting 6 from 14"
+    ],
+    "errorType": "incorrect",
+    "errorCategory": "Arithmetic error",
+    "groundingQuote": "2x = 9",
+    "feedback": "You correctly started the problem, but made an arithmetic error when subtracting 6 from 14. 14 - 6 is 8, not 9. This would lead to 2x = 8, and then x = 4."
+  },
+  {
+    "questionNumber": 2,
+    "marksAwarded": 3,
+    "marksAvailable": 5,
+    "topic": "Kinematics / Acceleration",
+    "correctPoints": [
+      "Correct formula for acceleration a = (v - u) / t",
+      "Correctly identifying initial velocity (u=0)",
+      "Correctly identifying final velocity (v=20)",
+      "Correctly calculating acceleration based on substituted values",
+      "Correct units for acceleration (m/s^2)"
+    ],
+    "incorrectPoints": [
+      "Incorrectly using time t=5 instead of t=4 from the problem statement"
+    ],
+    "errorType": "incorrect",
+    "errorCategory": "Misreading problem data",
+    "groundingQuote": "(20 - 0) / 5",
+    "feedback": "You used the correct formula and identified the initial and final velocities correctly. However, you used 5 seconds for the time instead of the 4 seconds given in the problem. This led to an incorrect final answer."
+  },
+  {
+    "questionNumber": 3,
+    "marksAwarded": 3,
+    "marksAvailable": 5,
+    "topic": "Area of a circle",
+    "correctPoints": [
+      "Correct formula for the area of a circle (Area = pi x r^2)",
+      "Correct substitution of pi = 22/7 and r = 7 into the formula",
+      "Correctly performing the multiplication based on their intermediate value",
+      "Correct units for area (cm^2)"
+    ],
+    "incorrectPoints": [
+      "Incorrectly calculating 7^2 as 14 instead of 49"
+    ],
+    "errorType": "incorrect",
+    "errorCategory": "Arithmetic error (squaring)",
+    "groundingQuote": "Since 7^2 = 14",
+    "feedback": "You correctly used the formula for the area of a circle and substituted the values for pi and the radius. However, you made an arithmetic error when calculating 7 squared. 7^2 is 49, not 14. If you use 49, the area would be 22/7 * 49 = 154 cm^2."
+  }
+]

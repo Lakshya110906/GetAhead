@@ -23,9 +23,14 @@ export function hashOf(...parts: (string | Buffer)[]): string {
 
 export interface ReplayOptions {
   // Ignore any cached recording and always hit the real API, then overwrite
-  // the cache with the fresh result. This is what --live-fixtures sets, for
-  // deliberately re-verifying model behavior after a prompt change.
-  forceLive?: boolean;
+  // the cache with the fresh result. `true` forces every stage (what
+  // --live-fixtures sets); a per-bucket map forces only the named stages —
+  // e.g. { "grading-batched": true } re-records grading after a grading
+  // prompt change while extraction, whose prompt didn't change, keeps
+  // replaying. That halves the Gemini spend of a re-record on this
+  // project's RPD=20 ceiling, where a full re-record is over half a day's
+  // quota.
+  forceLive?: boolean | Partial<Record<string, boolean>>;
   // Called once per REAL Gemini call made (never on a cache hit) — lets a
   // caller assert exactly how many live calls a run made.
   onRealCall?: (label: string) => void;
@@ -35,8 +40,14 @@ function pathFor(bucket: string, key: string): string {
   return join(CACHE_ROOT, bucket, `${key}.json`);
 }
 
+export function isForcedLive(bucket: string, opts?: ReplayOptions): boolean {
+  if (!opts?.forceLive) return false;
+  if (opts.forceLive === true) return true;
+  return opts.forceLive[bucket] === true;
+}
+
 export function readReplay<T>(bucket: string, key: string, opts?: ReplayOptions): T | null {
-  if (!opts || opts.forceLive) return null;
+  if (!opts || isForcedLive(bucket, opts)) return null;
   const p = pathFor(bucket, key);
   if (!existsSync(p)) return null;
   return JSON.parse(readFileSync(p, "utf-8")) as T;

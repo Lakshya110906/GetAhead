@@ -1,0 +1,49 @@
+[
+  {
+    "questionNumber": 1,
+    "marksAwarded": 4,
+    "marksAvailable": 4,
+    "topic": "Solving Linear Equations",
+    "correctPoints": [
+      "Correctly set up the equation",
+      "Correctly isolated the term with x",
+      "Correctly solved for x",
+      "Correctly verified the solution"
+    ],
+    "incorrectPoints": [],
+    "errorType": "correct",
+    "groundingQuote": "2x + 6 = 14, so 2x = 8, so x = 4.",
+    "feedback": "Excellent work! All steps are correct and clearly shown, including a verification of your answer."
+  },
+  {
+    "questionNumber": 2,
+    "marksAwarded": 5,
+    "marksAvailable": 5,
+    "topic": "Area of Rectangles",
+    "correctPoints": [
+      "Correct formula for the area of a rectangle",
+      "Correct substitution of length and width",
+      "Correct calculation of the area",
+      "Correct units included in the final answer"
+    ],
+    "incorrectPoints": [],
+    "errorType": "correct",
+    "groundingQuote": "Area = length x width = 8 x 5 = 40 cm^2.",
+    "feedback": "Full marks. You correctly applied the formula, substituted the values, and included the correct units."
+  },
+  {
+    "questionNumber": 3,
+    "marksAwarded": 5,
+    "marksAvailable": 5,
+    "topic": "Solving Quadratic Equations by Factoring",
+    "correctPoints": [
+      "Correctly identified the method of factoring",
+      "Correctly factored the quadratic expression",
+      "Correctly identified both solutions for x"
+    ],
+    "incorrectPoints": [],
+    "errorType": "correct",
+    "groundingQuote": "x^2 - 5x + 6 = 0. Factoring: (x - 2)(x - 3) = 0. So x = 2 or x = 3.",
+    "feedback": "Excellent solution! You correctly factored the quadratic equation and found both roots."
+  }
+]
