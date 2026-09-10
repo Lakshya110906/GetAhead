@@ -3,7 +3,7 @@ import { Resend } from "resend";
 const resend = new Resend(process.env.RESEND_API_KEY || "re_dummy_key_for_build");
 
 const APP_NAME = "GetAhead AI";
-const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || "noreply@getahead.ai";
+const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || "onboarding@resend.dev";
 const APP_URL = process.env.NEXTAUTH_URL || "http://localhost:3005";
 
 export async function sendPasswordResetEmail(email: string, name: string, token: string) {

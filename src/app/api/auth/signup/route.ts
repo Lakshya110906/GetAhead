@@ -5,12 +5,22 @@ import { z } from "zod";
 import { reportApiError } from "@/lib/apiError";
 import { checkRateLimit } from "@/lib/rateLimit";
 import { zodErrorResponse } from "@/lib/zodError";
+import { LEGAL } from "@/lib/legalConfig";
 
 const signupSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
   email: z.string().email("Invalid email address"),
   password: z.string().min(8, "Password must be at least 8 characters"),
   role: z.enum(["STUDENT", "TEACHER", "INSTITUTION"]).default("STUDENT"),
+  // Consent must be an affirmative act (DPDP Act 2023 s.6(1): "free,
+  // specific, informed, unconditional and unambiguous with a clear
+  // affirmative action"). Enforced server-side so a modified client can't
+  // create an account without it, and recorded on the User row so it can
+  // be demonstrated later.
+  acceptTerms: z.literal(true, { message: "You must agree to the terms of service and privacy policy" }),
+  ageConsent: z.literal(true, {
+    message: "You must confirm you are 18 or older, or that a parent or guardian has agreed to your use of GetAhead",
+  }),
 });
 
 export async function POST(request: NextRequest) {
@@ -62,6 +72,9 @@ export async function POST(request: NextRequest) {
         email,
         password: hashedPassword,
         role,
+        consentAcceptedAt: new Date(),
+        consentVersion: LEGAL.consentVersion,
+        ageConsentConfirmed: true,
       },
     });
 

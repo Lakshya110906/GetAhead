@@ -40,6 +40,7 @@ export default function StudentsPage() {
     <div className="min-h-screen bg-paper">
       {/* Navbar */}
       <SiteHeader />
+      <main id="main-content" tabIndex={-1}>
 
       {/* Hero */}
       <section className="pt-32 pb-20 bg-paper">
@@ -200,6 +201,7 @@ export default function StudentsPage() {
         </div>
       </section>
 
+      </main>
       <SiteFooter />
     </div>
   );

@@ -98,12 +98,12 @@ function LoginForm() {
         </div>
 
         <p className="text-blue-200 text-sm">
-          © 2026 GetAhead AI — Trusted by students and teachers
+          © {new Date().getFullYear()} GetAhead AI
         </p>
       </div>
 
       {/* Right Panel */}
-      <div className="flex-1 flex items-center justify-center px-6 py-12 bg-surface">
+      <main id="main-content" tabIndex={-1} className="flex-1 flex items-center justify-center px-6 py-12 bg-surface">
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
@@ -138,21 +138,22 @@ function LoginForm() {
           )}
 
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-sm mb-6">
+            <div role="alert" className="bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-sm mb-6">
               {error}
             </div>
           )}
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
-              <label className="block text-sm font-medium text-ink mb-1.5">
+              <label htmlFor="email" className="block text-sm font-medium text-ink mb-1.5">
                 Email address
               </label>
               <div className="relative">
-                <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Mail aria-hidden="true" className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <input
                   id="email"
                   type="email"
+                  autoComplete="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="you@example.com"
@@ -163,14 +164,15 @@ function LoginForm() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-ink mb-1.5">
+              <label htmlFor="password" className="block text-sm font-medium text-ink mb-1.5">
                 Password
               </label>
               <div className="relative">
-                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Lock aria-hidden="true" className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <input
                   id="password"
                   type={showPass ? "text" : "password"}
+                  autoComplete="current-password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Enter your password"
@@ -180,18 +182,20 @@ function LoginForm() {
                 <button
                   type="button"
                   onClick={() => setShowPass(!showPass)}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-graphite"
+                  aria-label={showPass ? "Hide password" : "Show password"}
+                  aria-pressed={showPass}
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-graphite"
                 >
-                  {showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  {showPass ? <EyeOff aria-hidden="true" className="w-4 h-4" /> : <Eye aria-hidden="true" className="w-4 h-4" />}
                 </button>
               </div>
             </div>
 
-            <div className="flex items-center justify-between">
-              <label className="flex items-center gap-2 text-sm text-graphite cursor-pointer">
-                <input type="checkbox" className="rounded border-gray-300" />
-                Remember me
-              </label>
+            {/* The "Remember me" checkbox that used to sit here was never
+                wired to anything — sessions are 15-minute JWTs regardless
+                (see auth.ts). A control that visibly does nothing is a
+                misleading statement about the service, so it's gone. */}
+            <div className="flex items-center justify-end">
               <Link href="/forgot-password" className="text-sm text-blue-600 hover:underline font-medium">
                 Forgot password?
               </Link>
@@ -213,7 +217,7 @@ function LoginForm() {
             </button>
           </form>
         </motion.div>
-      </div>
+      </main>
     </div>
   );
 }

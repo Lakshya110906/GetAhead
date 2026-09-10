@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { useDropzone } from "react-dropzone";
 import { upload } from "@vercel/blob/client";
@@ -20,6 +21,7 @@ import {
 
 import { SubjectSelector } from "@/components/SubjectSelector";
 import { SharedQuotaBadge } from "@/components/SharedQuotaBadge";
+import { DAILY_QUOTA } from "@/lib/quotaLimits";
 
 const grades = [
   "8th Grade",
@@ -610,9 +612,27 @@ export default function UploadPage() {
               </div>
             )}
 
-            <div className="mt-4 flex items-start gap-2 text-xs text-gray-400">
-              <Info className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
-              <p>Uses 1 evaluation credit. Free during beta — 10 evaluations per day, resetting daily.</p>
+            <div className="mt-4 space-y-2 text-xs text-gray-400">
+              <div className="flex items-start gap-2">
+                <Info aria-hidden="true" className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
+                <p>Uses 1 of your {DAILY_QUOTA.EVALUATION} daily evaluations. Free during beta, resetting every day.</p>
+              </div>
+              {/* Just-in-time notice, not buried in the policy: this file goes
+                  to Google's Gemini API on its free tier, whose terms allow
+                  Google to use submitted content to improve its models and
+                  let human reviewers read it. The one thing a user can do
+                  about that is keep identifying details off the sheet. */}
+              <div className="flex items-start gap-2">
+                <Info aria-hidden="true" className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
+                <p>
+                  Your file is read by Google&apos;s Gemini API. Cover or crop the student&apos;s name, roll number and school before
+                  uploading — see{" "}
+                  <Link href="/privacy#section-4" className="underline hover:text-graphite">
+                    how Google may use uploads
+                  </Link>
+                  .
+                </p>
+              </div>
             </div>
           </div>
         </div>

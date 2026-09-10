@@ -6,6 +6,7 @@ import { ChevronDown, ArrowRight, HelpCircle } from "lucide-react";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SupportResponseNote } from "@/components/SupportResponseNote";
+import { DAILY_QUOTA } from "@/lib/quotaLimits";
 
 const faqCategories = [
   {
@@ -17,7 +18,7 @@ const faqCategories = [
       },
       {
         q: "Is GetAhead AI free to use?",
-        a: "Yes — GetAhead AI is free during our beta period, no credit card required. Each account gets a daily quota (currently 10 evaluations and 10 question paper generations per day) to keep the service running smoothly for everyone. We plan to introduce paid plans in the future as the product matures.",
+        a: `Yes — GetAhead AI is free during our beta period, no credit card required. Each account gets a daily quota (currently ${DAILY_QUOTA.EVALUATION} evaluations and ${DAILY_QUOTA.PAPER_GENERATION} question paper generations per day) to keep the service running smoothly for everyone, and the whole service shares one daily AI-request ceiling, so on a busy day you may occasionally be asked to try again later. We plan to introduce paid plans in the future as the product matures — see our refund policy for what that would mean.`,
       },
       {
         q: "Can I change my role after signing up?",
@@ -201,7 +202,7 @@ const faqCategories = [
       },
       {
         q: "Will GetAhead AI always be free?",
-        a: "The core features — AI evaluation and question paper generation — will remain free. We may introduce optional premium features (like bulk upload, advanced analytics, or API access) in future. Any changes will be communicated well in advance.",
+        a: "That is our intention for the core features — AI evaluation and question paper generation — but we can't promise it forever. We may introduce optional paid features (like bulk upload, advanced analytics, or API access) in future. Any change to pricing will be announced by email at least 14 days before it takes effect, and nothing you have already used will be charged for retroactively.",
       },
     ],
   },
@@ -222,6 +223,7 @@ export default function FAQPage() {
     <div className="min-h-screen bg-paper">
       {/* Navbar */}
       <SiteHeader />
+      <main id="main-content" tabIndex={-1}>
 
       {/* Hero */}
       <section className="pt-32 pb-20 bg-paper">
@@ -324,6 +326,7 @@ export default function FAQPage() {
         </div>
       </section>
 
+      </main>
       <SiteFooter />
     </div>
   );

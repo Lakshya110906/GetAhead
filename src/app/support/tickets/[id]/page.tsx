@@ -141,7 +141,7 @@ export default function UserTicketDetailPage() {
         <DashboardSidebar />
         <div className="flex-1 flex flex-col min-w-0">
           <DashboardHeader />
-          <main className="flex-1 flex items-center justify-center p-6">
+          <main id="main-content" tabIndex={-1} className="flex-1 flex items-center justify-center p-6">
             <div className="text-center">
               <Loader2 className="w-10 h-10 text-blue-500 animate-spin mx-auto mb-4" />
               <p className="text-graphite text-sm font-medium">Loading ticket conversation...</p>
@@ -158,7 +158,7 @@ export default function UserTicketDetailPage() {
         <DashboardSidebar />
         <div className="flex-1 flex flex-col min-w-0">
           <DashboardHeader />
-          <main className="flex-1 flex items-center justify-center p-6">
+          <main id="main-content" tabIndex={-1} className="flex-1 flex items-center justify-center p-6">
             <div className="max-w-md text-center bg-surface border border-rule rounded-2xl p-8 shadow-sm">
               <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4 animate-bounce" />
               <h2 className="font-bold text-ink dark:text-white text-lg mb-2" style={{ fontFamily: "var(--font-display)" }}>
@@ -184,7 +184,7 @@ export default function UserTicketDetailPage() {
       <div className="flex-1 flex flex-col min-w-0">
         <DashboardHeader />
         
-        <main className="flex-1 p-4 sm:p-6 pt-16 lg:pt-6 overflow-hidden flex flex-col">
+        <main id="main-content" tabIndex={-1} className="flex-1 p-4 sm:p-6 pt-16 lg:pt-6 overflow-hidden flex flex-col">
           <div className="max-w-5xl mx-auto w-full flex-1 flex flex-col lg:flex-row gap-6 overflow-hidden">
             
             {/* Left Column: Chat Conversation */}

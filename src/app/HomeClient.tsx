@@ -94,7 +94,7 @@ const faqs = [
   },
   {
     question: "Does it evaluate handwritten answers?",
-    answer: "Yes, our advanced OCR scanner supports handwriting recognition. As long as the handwritten text is legible and captured in clear lighting, the AI can read and grade it effectively.",
+    answer: "Yes — handwritten PDFs, PNGs and JPEGs are accepted, and the same AI model that grades the sheet also reads it. How well it reads depends on legibility and lighting: a clear, well-lit scan of neat handwriting works best, and anything it can't read is marked as unreadable and excluded from the total rather than guessed. We're still measuring how accurately it reads real photographed sheets, so check the report against the original for anything high-stakes.",
   },
 ];
 
@@ -148,7 +148,7 @@ export default function HomeClient({ accuracy }: { accuracy: AccuracySummary | n
       {/* Navbar */}
       <SiteHeader />
 
-      <main>
+      <main id="main-content" tabIndex={-1}>
       {/* Hero */}
       <section className={`pt-24 pb-20 overflow-hidden transition-colors duration-300 bg-paper`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -260,7 +260,7 @@ export default function HomeClient({ accuracy }: { accuracy: AccuracySummary | n
                   <p className="text-graphite leading-relaxed">{moment.description}</p>
                 </div>
                 <div className={moment.reverse ? "md:order-1" : ""}>
-                  <ScreenshotSlot src={moment.screenshotSrc} alt={moment.title} caption={moment.screenshotCaption} />
+                  <ScreenshotSlot src={moment.screenshotSrc} alt={`Screenshot of ${moment.screenshotCaption}`} caption={moment.screenshotCaption} />
                 </div>
               </motion.div>
             ))}

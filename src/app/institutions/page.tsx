@@ -18,7 +18,7 @@ import { SiteFooter } from "@/components/SiteFooter";
 
 export const metadata: Metadata = {
   title: "For institutions",
-  description: "GetAhead AI helps schools and institutions centralise AI evaluation, monitor department performance, and provide consistent grading across all teachers.",
+  description: "GetAhead AI helps schools and institutions centralise AI evaluation, monitor department performance, and put a shared grading rubric in front of every teacher.",
   alternates: { canonical: "/institutions" },
   openGraph: {
     title: "For institutions — GetAhead AI",
@@ -40,6 +40,7 @@ export default function InstitutionsPage() {
     <div className="min-h-screen bg-paper">
       {/* Navbar */}
       <SiteHeader />
+      <main id="main-content" tabIndex={-1}>
 
       {/* Hero */}
       <section className="pt-32 pb-20 bg-paper">
@@ -55,7 +56,7 @@ export default function InstitutionsPage() {
                 <span className="text-ink">Institution-wide.</span>
               </h1>
               <p className="text-xl text-graphite leading-relaxed mb-8">
-                GetAhead AI brings AI-powered evaluation to your entire institution — with centralised access, consistent grading standards, and performance insights across every department.
+                GetAhead AI brings AI-powered evaluation to your entire institution — with centralised access, a shared grading rubric, and performance insights across every department.
               </p>
               <div className="flex flex-col sm:flex-row gap-3">
                 <Link href="/signup" className="inline-flex items-center justify-center gap-2 bg-ink text-paper font-semibold px-6 py-3 rounded-xl hover:opacity-90 transition-opacity shadow-lg">
@@ -220,6 +221,7 @@ export default function InstitutionsPage() {
         </div>
       </section>
 
+      </main>
       <SiteFooter />
     </div>
   );

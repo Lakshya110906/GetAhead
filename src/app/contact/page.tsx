@@ -98,6 +98,7 @@ export default function ContactPage() {
     <div className="min-h-screen bg-paper">
       {/* Navbar */}
       <SiteHeader />
+      <main id="main-content" tabIndex={-1}>
 
       {/* Hero */}
       <section className="pt-32 pb-20 bg-paper">
@@ -282,8 +283,9 @@ export default function ContactPage() {
                   </button>
 
                   <p className="text-xs text-gray-400 text-center">
-                    By submitting this form, you agree to our{" "}
-                    <Link href="/privacy" className="text-blue-500 hover:underline">privacy policy</Link>.
+                    We use the details you enter only to reply to you and keep a record of this request, as described in our{" "}
+                    <Link href="/privacy#section-1" className="text-blue-600 hover:underline">privacy policy</Link>. Please don&apos;t include
+                    passwords or other people&apos;s personal details in your message.
                   </p>
                 </form>
               </div>
@@ -292,6 +294,7 @@ export default function ContactPage() {
         </div>
       </section>
 
+      </main>
       <SiteFooter />
     </div>
   );

@@ -9,7 +9,7 @@ import { prisma } from "@/lib/prisma";
 // app has access to; there's no PagerDuty/Slack integration configured).
 const resend = new Resend(process.env.RESEND_API_KEY || "re_dummy_key_for_build");
 const APP_NAME = "GetAhead AI";
-const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || "noreply@getahead.ai";
+const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || "onboarding@resend.dev";
 const ADMIN_ALERT_EMAIL = process.env.ADMIN_ALERT_EMAIL || process.env.ADMIN_EMAIL;
 
 export async function sendOpsAlert(type: string, message: string): Promise<void> {

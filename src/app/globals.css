@@ -456,6 +456,10 @@ h6 { font-family: var(--font-display); font-weight: 600; font-size: 0.9375rem; l
   border-color: var(--rule);
   color: var(--ink);
 }
+/* Placeholder text at Tailwind's default (currentColor at 50%) lands around
+   3.3:1 on white — below WCAG AA's 4.5:1. Graphite clears it in both themes. */
+input::placeholder,
+textarea::placeholder { color: var(--graphite); opacity: 1; }
 .theme-dark input::placeholder,
 .theme-dark textarea::placeholder { color: var(--graphite); }
 .theme-dark select option { background-color: var(--color-surface); color: var(--ink); }

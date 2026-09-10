@@ -18,11 +18,11 @@ import { SiteFooter } from "@/components/SiteFooter";
 
 export const metadata: Metadata = {
   title: "For teachers",
-  description: "GetAhead AI helps teachers evaluate answer sheets faster, generate question papers instantly, and get AI-consistent grading across an entire class.",
+  description: "GetAhead AI helps teachers evaluate answer sheets faster, generate question papers instantly, and get AI-assisted grading that applies the same rubric to every sheet in the class.",
   alternates: { canonical: "/teachers" },
   openGraph: {
     title: "For teachers — GetAhead AI",
-    description: "Save hours of manual grading. Get AI-consistent evaluation, question paper generation, and class-wide analytics.",
+    description: "Save hours of manual grading. Get AI-assisted evaluation, question paper generation, and class-wide analytics.",
     url: "/teachers",
     type: "website",
     images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "GetAhead" }],
@@ -30,7 +30,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "For teachers — GetAhead AI",
-    description: "Save hours of manual grading. Get AI-consistent evaluation, question paper generation, and class-wide analytics.",
+    description: "Save hours of manual grading. Get AI-assisted evaluation, question paper generation, and class-wide analytics.",
     images: ["/og-image.png"],
   },
 };
@@ -40,6 +40,7 @@ export default function TeachersPage() {
     <div className="min-h-screen bg-paper">
       {/* Navbar */}
       <SiteHeader />
+      <main id="main-content" tabIndex={-1}>
 
       {/* Hero */}
       <section className="pt-32 pb-20 bg-paper">
@@ -190,13 +191,13 @@ export default function TeachersPage() {
         <div className="grid md:grid-cols-2 gap-12 items-center">
           <div>
             <h2 className="text-3xl font-bold text-gray-900 mb-6" style={{ fontFamily: "var(--font-display)" }}>
-              AI grading is more consistent than human grading
+              The same rubric, applied the same way to every sheet
             </h2>
             <div className="space-y-4">
               {[
-                "No fatigue-related errors on sheet 30 vs. sheet 1",
+                "Sheet 30 gets the same attention as sheet 1 — the AI doesn't get tired",
                 "Same rubric applied to every student, every time",
-                "No unconscious bias based on student history or handwriting neatness",
+                "The grader never sees a student's name or past results — only what's written on the sheet. (Legibility still matters: unclear handwriting can be misread.)",
                 "Marks breakdown visible and auditable — not a black box",
                 "Manual override of AI marks is on our roadmap, not available yet",
               ].map((item) => (
@@ -237,6 +238,7 @@ export default function TeachersPage() {
         </div>
       </section>
 
+      </main>
       <SiteFooter />
     </div>
   );

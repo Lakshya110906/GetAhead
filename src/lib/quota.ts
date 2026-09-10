@@ -1,9 +1,11 @@
 import { prisma } from "@/lib/prisma";
+import { DAILY_QUOTA, type QuotaKind } from "@/lib/quotaLimits";
 
-export type QuotaKind = "EVALUATION" | "PAPER_GENERATION" | "TUTOR";
+export { DAILY_QUOTA };
+export type { QuotaKind };
 
-// Matches the "Free plan includes 10 credits" copy already shown in the
-// upload UI — enforced here for the first time rather than just displayed.
+// The numbers themselves live in quotaLimits.ts (no server imports) so the
+// FAQ and signup page can render the SAME values this module enforces.
 // TUTOR is a message-level daily cap on top of the existing 30-per-60s rate
 // limit in the tutor stream route — the rate limit stops bursts, this stops
 // one user's tutor conversation from consuming unbounded model spend across
@@ -14,18 +16,13 @@ export type QuotaKind = "EVALUATION" | "PAPER_GENERATION" | "TUTOR";
 // per evaluation, flat, regardless of sheet size — see
 // answerSheetGrading.ts's gradingMode default) the whole app can serve
 // roughly 10 evaluations/day, total, across every user, or ~6 paper
-// generations at best case (3 calls each). The numbers below were 10/10
-// before this pass — mathematically impossible to honor for even a single
-// user on a day anyone else also used the app; the shared-ceiling gate
+// generations at best case (3 calls each). The numbers were 10/10 before
+// this pass — mathematically impossible to honor for even a single user on
+// a day anyone else also used the app; the shared-ceiling gate
 // (assertQuotaHeadroom, checked before these per-user counters) is what
 // actually prevents overpromising in practice, and its live number is now
 // surfaced to users (see GET /api/quota-status) rather than only shown in
 // the admin dashboard.
-export const DAILY_QUOTA: Record<QuotaKind, number> = {
-  EVALUATION: 5,
-  PAPER_GENERATION: 3,
-  TUTOR: 50,
-};
 
 export class QuotaExceededError extends Error {
   readonly kind: QuotaKind;

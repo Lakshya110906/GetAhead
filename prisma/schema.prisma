@@ -24,6 +24,17 @@ model User {
   avatar        String?
   suspended     Boolean   @default(false)
   notificationPreferences String? @db.Text // JSON: { evaluationCompletion, featureUpdates, weeklyProgress, pushNotifications }
+  // Consent record (Digital Personal Data Protection Act 2023, s.6): when
+  // this person affirmatively agreed to the terms + privacy policy at
+  // signup, and which version (legalConfig.ts LEGAL.consentVersion) they
+  // saw. Null for accounts created before this was recorded — those need
+  // re-consent on next material policy change, not a silently assumed yes.
+  consentAcceptedAt DateTime?
+  consentVersion    String?
+  // Whether the person confirmed they are 18+, or that a parent/guardian
+  // consented on their behalf. Under DPDP s.9 anyone under 18 is a child
+  // whose data may only be processed with verifiable parental consent.
+  ageConsentConfirmed Boolean @default(false)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Brain } from "lucide-react";
+import { LEGAL, isSet } from "@/lib/legalConfig";
 
 const footerLinks = {
   Product: [
@@ -16,8 +17,12 @@ const footerLinks = {
   Support: [
     { label: "Help Center", href: "/help" },
     { label: "Contact Us", href: "/contact" },
+  ],
+  Legal: [
     { label: "Privacy Policy", href: "/privacy" },
     { label: "Terms of Service", href: "/terms" },
+    { label: "Cookie Policy", href: "/cookies" },
+    { label: "Refund Policy", href: "/refund" },
   ],
 };
 
@@ -26,7 +31,7 @@ export function SiteFooter() {
     <footer className="bg-gray-950 text-gray-300">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 pb-8">
         {/* Top grid */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-10 mb-12">
+        <div className="grid grid-cols-2 md:grid-cols-6 gap-10 mb-12">
           {/* Brand */}
           <div className="col-span-2 md:col-span-2">
             <Link href="/" className="inline-flex items-center gap-2 mb-4 group">
@@ -63,8 +68,28 @@ export function SiteFooter() {
         </div>
 
         {/* Bottom bar */}
-        <div className="border-t border-gray-800 pt-8 text-xs text-gray-300 text-center sm:text-left">
+        {/* Operator identity: required on the site itself by the IT
+            (Intermediary Guidelines) Rules 2021 and, for anything sold, the
+            Consumer Protection (E-Commerce) Rules 2020. Reads from
+            legalConfig.ts — unfilled fields show as such rather than
+            silently disappearing. */}
+        <div className="border-t border-gray-800 pt-8 text-xs text-gray-300 text-center sm:text-left space-y-2">
           <p>© {new Date().getFullYear()} GetAhead AI. All rights reserved. Built for students across India.</p>
+          <p>
+            Operated by {isSet(LEGAL.legalEntityName) ? LEGAL.legalEntityName : "[legal entity — to be confirmed]"}
+            {isSet(LEGAL.registeredAddress) ? `, ${LEGAL.registeredAddress}` : ""}
+            {" · "}
+            Grievance officer:{" "}
+            {isSet(LEGAL.grievanceOfficer.name) ? LEGAL.grievanceOfficer.name : "[name — to be confirmed]"}
+            {isSet(LEGAL.grievanceOfficer.email) ? (
+              <>
+                {", "}
+                <a href={`mailto:${LEGAL.grievanceOfficer.email}`} className="underline hover:text-white">
+                  {LEGAL.grievanceOfficer.email}
+                </a>
+              </>
+            ) : null}
+          </p>
         </div>
       </div>
     </footer>

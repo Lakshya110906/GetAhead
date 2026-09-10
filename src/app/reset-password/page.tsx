@@ -67,7 +67,7 @@ function ResetPasswordForm() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-6 bg-paper">
+    <main id="main-content" tabIndex={-1} className="min-h-screen flex items-center justify-center p-6 bg-paper">
       <motion.div
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
@@ -183,7 +183,7 @@ function ResetPasswordForm() {
           </form>
         )}
       </motion.div>
-    </div>
+    </main>
   );
 }
 

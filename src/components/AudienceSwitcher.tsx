@@ -33,7 +33,7 @@ const AUDIENCES = [
   {
     id: "institutions",
     tab: "Institutions",
-    claim: "One marking standard applied consistently across every section and subject.",
+    claim: "One marking rubric applied to every section and subject.",
     points: [
       "Role-based access, so departments see only their own data",
       "An audit trail on every evaluation, with the rubric version it used",

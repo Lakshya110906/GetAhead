@@ -41,6 +41,7 @@ export default function CoachingCentersPage() {
     <div className="min-h-screen bg-paper">
       {/* Navbar */}
       <SiteHeader />
+      <main id="main-content" tabIndex={-1}>
 
       {/* Hero */}
       <section className="pt-32 pb-20 bg-paper">
@@ -56,7 +57,7 @@ export default function CoachingCentersPage() {
                 <span className="text-ink">Results in minutes.</span>
               </h1>
               <p className="text-xl text-graphite leading-relaxed mb-8">
-                GetAhead AI turns your coaching center&apos;s mock test grading from a multi-day bottleneck into a same-day, AI-powered workflow — consistent, fast, and insightful.
+                GetAhead AI turns your coaching center&apos;s mock test grading from a multi-day bottleneck into a same-day, AI-powered workflow — fast, detailed, and auditable.
               </p>
               <div className="flex flex-col sm:flex-row gap-3">
                 <Link href="/signup" className="inline-flex items-center justify-center gap-2 bg-ink text-paper font-semibold px-6 py-3 rounded-xl hover:opacity-90 transition-opacity shadow-lg">
@@ -269,6 +270,7 @@ export default function CoachingCentersPage() {
         </div>
       </section>
 
+      </main>
       <SiteFooter />
     </div>
   );

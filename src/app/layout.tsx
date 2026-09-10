@@ -116,6 +116,15 @@ export default function RootLayout({
         />
       </head>
       <body className="antialiased">
+        {/* WCAG 2.4.1 (Bypass Blocks): visually hidden until focused, so a
+            keyboard or screen-reader user can jump past the site header.
+            Every page's primary region carries id="main-content". */}
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[100] focus:rounded-lg focus:bg-ink focus:px-4 focus:py-2 focus:text-paper focus:shadow-lg"
+        >
+          Skip to main content
+        </a>
         <Providers>{children}</Providers>
       </body>
     </html>

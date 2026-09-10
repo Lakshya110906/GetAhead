@@ -518,7 +518,7 @@ export default function AdminPage() {
         </nav>
 
         {/* Content View Panel */}
-        <main className="flex-1 overflow-y-auto p-6 space-y-6">
+        <main id="main-content" tabIndex={-1} className="flex-1 overflow-y-auto p-6 space-y-6">
           {/* TAB 1: OVERVIEW */}
           {activeTab === "overview" && stats && (
             <div className="space-y-6 animate-fadeIn">

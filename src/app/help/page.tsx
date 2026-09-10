@@ -235,6 +235,7 @@ export default function HelpCenterPage() {
     <div className="min-h-screen bg-paper">
       {/* Navbar */}
       <SiteHeader />
+      <main id="main-content" tabIndex={-1}>
 
       {/* Hero + Search */}
       <section className="pt-32 pb-16 bg-fixed-ink">
@@ -396,6 +397,7 @@ export default function HelpCenterPage() {
         </nav>
       </div>
 
+      </main>
       <SiteFooter />
     </div>
   );
