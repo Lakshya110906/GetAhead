@@ -3,6 +3,7 @@ import { requireAdmin } from "@/lib/requireAdmin";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
 import { reportApiError } from "@/lib/apiError";
+import { deleteBlobFiles } from "@/lib/blobCleanup";
 
 export async function GET(request: NextRequest) {
   const auth = await requireAdmin();
@@ -66,9 +67,21 @@ export async function POST(request: NextRequest) {
     const ip = request.headers.get("x-forwarded-for") || request.headers.get("x-real-ip") || "127.0.0.1";
 
     if (action === "delete") {
+      // The file and the cached grading live outside the row — see
+      // delete-account/route.ts for why both must go with it.
+      const evaluation = await prisma.evaluation.findUnique({
+        where: { id },
+        select: { fileUrl: true, fileKey: true, contentHash: true },
+      });
       await prisma.evaluation.delete({
         where: { id },
       });
+      if (evaluation?.contentHash) {
+        await prisma.gradingCache.deleteMany({ where: { contentHash: evaluation.contentHash } });
+      }
+      if (evaluation) {
+        await deleteBlobFiles([evaluation], { route: "POST /api/admin/evaluations", evaluationId: id });
+      }
       await prisma.auditLog.create({
         data: { action: "EVALUATION_DELETE", details: `Deleted evaluation ${id}`, ip },
       });

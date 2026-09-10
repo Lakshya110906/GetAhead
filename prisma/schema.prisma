@@ -146,6 +146,10 @@ model Evaluation {
   // instead of re-grading — see evaluationWorker.ts. gradedFromCache records
   // which happened, so the UI can disclose it rather than hide it.
   gradedFromCache    Boolean @default(false)
+  // The GradingCache key this evaluation's result lives under, so account
+  // deletion can erase the cached extraction/result too — the cache row has
+  // no user link of its own, and DPDP erasure has to reach it.
+  contentHash        String?
   // Set by PATCH .../regrade (an explicit, user-initiated action, never
   // automatic) to force a fresh live grading call for this run even though a
   // cache entry exists — and to overwrite that entry with the fresh result
@@ -197,6 +201,7 @@ model Evaluation {
   @@index([status])
   @@index([createdAt])
   @@index([status, nextAttemptAt])
+  @@index([contentHash])
 }
 
 // Content-addressed store for a completed grading pipeline result — keyed on

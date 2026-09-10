@@ -27,27 +27,29 @@ export const metadata: Metadata = {
 };
 
 // Every row below is a cookie or storage key that actually exists in this
-// codebase (NextAuth's three cookies from auth.ts; the two localStorage keys
-// from ThemeProvider.tsx and SubjectSelector.tsx). If a new one is added,
+// codebase (NextAuth 4.24's three default cookies — with the __Secure-/
+// __Host- prefixes it applies over HTTPS, i.e. on the live site; the two
+// localStorage keys from ThemeProvider.tsx and SubjectSelector.tsx). If a new one is added,
 // add it here in the same change — a cookie policy that lists fewer
 // cookies than the site sets is the exact thing this page exists to avoid.
 const COOKIES = [
   {
-    name: "next-auth.session-token",
+    name: "__Secure-next-auth.session-token",
     kind: "Cookie",
-    purpose: "Keeps you signed in. Encrypted, HttpOnly, Secure, SameSite=Lax — not readable by JavaScript.",
+    purpose:
+      "Keeps you signed in. Encrypted, HttpOnly, Secure, SameSite=Lax — not readable by JavaScript. (On a local development build without HTTPS the same cookie is named next-auth.session-token.)",
     duration: "15 minutes, refreshed while you're active",
     category: "Strictly necessary",
   },
   {
-    name: "next-auth.csrf-token",
+    name: "__Host-next-auth.csrf-token",
     kind: "Cookie",
     purpose: "Protects sign-in and sign-out forms against cross-site request forgery.",
     duration: "Session",
     category: "Strictly necessary",
   },
   {
-    name: "next-auth.callback-url",
+    name: "__Secure-next-auth.callback-url",
     kind: "Cookie",
     purpose: "Remembers which page to return you to after signing in.",
     duration: "Session",

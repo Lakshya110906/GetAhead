@@ -7,6 +7,8 @@ import { prisma } from "@/lib/prisma";
 import { revokeAllUserSessions } from "@/lib/sessionRevocation";
 import { zodErrorResponse } from "@/lib/zodError";
 import { reportApiError } from "@/lib/apiError";
+import { deleteBlobFiles } from "@/lib/blobCleanup";
+import { logger } from "@/lib/logger";
 
 // Backs the privacy policy's "permanently deleted within 7 days" and
 // "Deletion — request permanent deletion of your account" commitments.
@@ -49,7 +51,30 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Collect what lives OUTSIDE the cascade before the row goes: the
+    // uploaded files sit in Vercel Blob (not the database), and each
+    // evaluation's cached extraction/result sits in GradingCache keyed only
+    // by content hash. Neither is reached by prisma.user.delete, and both
+    // hold the actual answer-sheet content — leaving them behind would make
+    // "permanently deleted" a lie about the most sensitive data we hold.
+    const evaluations = await prisma.evaluation.findMany({
+      where: { userId },
+      select: { fileUrl: true, fileKey: true, contentHash: true },
+    });
+
     await prisma.user.delete({ where: { id: userId } });
+
+    const hashes = evaluations.map((e) => e.contentHash).filter((h): h is string => Boolean(h));
+    if (hashes.length > 0) {
+      // Shared by design (an identical upload by anyone hits the same row),
+      // so this may also evict a row another account was reusing — that
+      // costs them one re-grade; erasure wins.
+      await prisma.gradingCache.deleteMany({ where: { contentHash: { in: hashes } } });
+    }
+    const blobs = await deleteBlobFiles(evaluations, { route: "POST /api/user/delete-account", userId });
+    if (blobs.failed > 0) {
+      logger.error("Account deleted but some uploaded files could not be removed from storage", { userId, failed: blobs.failed });
+    }
 
     // Same revocation change-password already does: the JWT session strategy
     // has no per-request DB lookup, so without this the deleted user's

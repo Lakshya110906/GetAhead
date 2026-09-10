@@ -172,8 +172,9 @@ export default function PrivacyPage() {
                 </thead>
                 <tbody className="divide-y divide-rule">
                   {[
-                    { name: "next-auth.session-token", purpose: "Authenticates your session, including admin access where applicable. HttpOnly, Secure, SameSite=Lax.", duration: "15 minutes, refreshed while active" },
-                    { name: "next-auth.csrf-token", purpose: "Protects against CSRF attacks on authentication forms.", duration: "Session" },
+                    { name: "__Secure-next-auth.session-token", purpose: "Authenticates your session, including admin access where applicable. HttpOnly, Secure, SameSite=Lax. (Named next-auth.session-token without the prefix in local development.)", duration: "15 minutes, refreshed while active" },
+                    { name: "__Host-next-auth.csrf-token", purpose: "Protects against CSRF attacks on authentication forms.", duration: "Session" },
+                    { name: "__Secure-next-auth.callback-url", purpose: "Remembers which page to return you to after signing in.", duration: "Session" },
                   ].map((row) => (
                     <tr key={row.name} className="bg-surface">
                       <td className="px-4 py-3 font-mono text-xs text-ink">{row.name}</td>
@@ -222,11 +223,11 @@ export default function PrivacyPage() {
             <p className="text-ink leading-relaxed mb-4">We retain your data for as long as your account is active. Specifically:</p>
             <ul className="list-disc pl-6 space-y-2 text-ink">
               <li>Account data and evaluations are retained indefinitely while your account is active.</li>
-              <li>When you delete your account (Settings → Security → Danger zone), all associated data (evaluations, reports, question papers, sessions) is permanently deleted immediately — well within our 7-day commitment.</li>
+              <li>When you delete your account (Settings → Security → Danger zone), all associated data (evaluations, reports, question papers, sessions, uploaded files) is permanently deleted immediately — well within our 7-day commitment.</li>
               <li>Audit logs are retained for 12 months, then automatically purged by a scheduled job.</li>
               <li>Error logs are retained for 30 days, then automatically purged by the same scheduled job.</li>
-              <li>Uploaded answer-sheet files are deleted from file storage when you delete the evaluation or your account.</li>
-              <li>Support tickets are retained for as long as needed to resolve them and for 12 months afterwards, so we can handle follow-ups.</li>
+              <li>When you delete your account, the uploaded answer-sheet files themselves are removed from our file storage, and the cached copy of each sheet&apos;s extracted text and grading is erased as well — not only the database rows.</li>
+              <li>Support tickets are kept as a support record even if you later delete your account (they are unlinked from it), and are automatically deleted 12 months after they are resolved or closed.</li>
             </ul>
           </section>
 

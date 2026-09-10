@@ -211,6 +211,7 @@ async function runJob(id: string): Promise<void> {
         totalTokens: usage.totalTokens,
         gradedFromCache,
         bypassGradingCache: false,
+        contentHash,
       },
     });
     logger.info("Job persisted", { jobId: id, stage: "persist", status: "SUCCEEDED" });

@@ -18,6 +18,7 @@ drive almost everything below.
 | Cookie consent banner | ✅ Not required — only strictly-necessary cookies + two functional localStorage keys; no analytics, ads, or third-party embeds. Documented in `/cookies`. Re-check the moment any analytics is added. | `src/app/cookies/page.tsx` |
 | Affirmative signup consent, recorded per account | ✅ Two required checkboxes (terms+privacy; 18+ or guardian consent), enforced server-side, stored as `User.consentAcceptedAt / consentVersion / ageConsentConfirmed` | `src/app/signup`, `src/app/api/auth/signup`, `prisma/schema.prisma` |
 | Data minimisation | ✅ Signup collects name, email, password, role only. Support tickets keep IP/UA for abuse detection (disclosed). | — |
+| Erasure actually erases | ✅ Account deletion now also deletes the uploaded files from Vercel Blob and the cached extraction/grading rows (neither was reached by the DB cascade before); closed support tickets are purged after 12 months by the retention cron. | `src/lib/blobCleanup.ts`, `src/app/api/user/delete-account`, `src/app/api/cron/purge-old-logs` |
 | Analytics / tracking | ✅ None. Sentry error reports only, with request bodies/headers stripped and content keys redacted. | `instrumentation*.ts`, `src/lib/errorTracking.ts` |
 | Third-party embeds | ✅ None. Fonts self-hosted via `next/font` (no runtime request to Google). | `src/app/layout.tsx` |
 | Fake reviews / testimonials | ✅ None exist. "Trusted by students and teachers" removed from login. | — |
