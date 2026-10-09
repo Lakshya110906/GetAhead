@@ -199,6 +199,34 @@ function AgentCard({
 
 // ─────────────────────────────────────────────────────────────────────────────
 
+// How long the job may sit with no observable forward progress — no step
+// change, no status change — before the client stops waiting and says so.
+// A dead server-side job used to spin the UI forever.
+const NO_PROGRESS_TIMEOUT_MS = 90_000;
+
+interface ProgressClock {
+  /** Record that the job just moved forward. */
+  mark(): void;
+  /** Milliseconds since the last mark(); 0 before the first one. */
+  stalledForMs(): number;
+}
+
+// Wall-clock bookkeeping for the poll loop. Deliberately outside the
+// component: it is not React state, nothing renders from it, and keeping
+// the Date.now() reads out of the component body means the poll loop is
+// not doing impure work anywhere the render phase could reach.
+function createProgressClock(): ProgressClock {
+  let last = 0;
+  return {
+    mark() {
+      last = Date.now();
+    },
+    stalledForMs() {
+      return last === 0 ? 0 : Date.now() - last;
+    },
+  };
+}
+
 export default function GeneratePaperPage() {
   const [subject, setSubject] = useState("");
   const [grade, setGrade] = useState("");
@@ -235,7 +263,12 @@ export default function GeneratePaperPage() {
   // all (a dead server-side stream just spun the UI forever).
   const [jobId, setJobId] = useState<string | null>(null);
   const pollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const lastProgressRef = useRef<number>(Date.now());
+  // createProgressClock() is pure (it reads no clock until mark() is
+  // called), so unlike the previous useRef(Date.now()) this initializer is
+  // safe to run during render.
+  const progressRef = useRef<ProgressClock | null>(null);
+  if (progressRef.current === null) progressRef.current = createProgressClock();
+  const progress = progressRef.current;
   const lastStepRef = useRef<string | null>(null);
   const [cancelling, setCancelling] = useState(false);
   // Backoff + ceiling state for the poll loop (section 3/4 of the connection
@@ -282,15 +315,14 @@ export default function GeneratePaperPage() {
   // Printable Exam Metadata
   const [institutionName, setInstitutionName] = useState("");
   const [courseCode, setCourseCode] = useState("");
-  const [timeAllowed, setTimeAllowed] = useState(() => computeTimeAllowed(30));
-  const [timeAllowedTouched, setTimeAllowedTouched] = useState(false);
+  // Derived, not synced: time allowed tracks total marks until the user
+  // types their own value, after which theirs wins. Previously this was two
+  // pieces of state kept in step by an effect that called setState on every
+  // totalMarks change — a cascading render, and the classic "adjusting state
+  // in an effect" anti-pattern. null means "not edited yet".
+  const [timeAllowedEdit, setTimeAllowedEdit] = useState<string | null>(null);
+  const timeAllowed = timeAllowedEdit ?? computeTimeAllowed(totalMarks);
   const [instructions, setInstructions] = useState("1. All questions are compulsory.\n2. Write your Candidate Name and Roll Number clearly at the top right.");
-
-  // Time allowed must track total marks, not sit at a fixed default — but
-  // once the user has typed their own value, stop overwriting it.
-  useEffect(() => {
-    if (!timeAllowedTouched) setTimeAllowed(computeTimeAllowed(totalMarks));
-  }, [totalMarks, timeAllowedTouched]);
 
   const handleTypeChange = (type: string) => {
     if (questionTypes.includes(type)) {
@@ -362,7 +394,6 @@ export default function GeneratePaperPage() {
   // loop inside it. Polling also gets us a real client-side timeout for
   // free: a streamed connection that silently dies gives the client nothing
   // to react to, which is why the UI used to spin forever.
-  const NO_PROGRESS_TIMEOUT_MS = 90_000;
   const POLL_INTERVAL_MS = 2000;
   const POLL_INTERVAL_MAX_MS = 8000;
   const MAX_CONSECUTIVE_POLL_FAILURES = 5; // ~1+2+4+8+8s of backoff before giving up
@@ -445,7 +476,7 @@ export default function GeneratePaperPage() {
       // Step transitions drive both the log stream and the stuck-job timer.
       if (view.step !== lastStepRef.current) {
         lastStepRef.current = view.step;
-        lastProgressRef.current = Date.now();
+        progress.mark();
         const entry = STEP_LOG[view.step as string];
         if (entry) addLog(entry.agent, { type: "log", message: entry.message });
       }
@@ -460,6 +491,11 @@ export default function GeneratePaperPage() {
         addLog("repair", { type: "done", message: "Review complete. Paper validated against your request." });
         setPaper(view.paper);
         setPaperDbId(view.savedPaperId);
+        // Backs the "Logs" view tab. getJobView returns these now; before it
+        // did, these setters were never called anywhere and the tab was
+        // permanently empty.
+        setPlannerPlan(view.plannerPlan ?? null);
+        setGeneratorDraft(view.generatorDraft ?? null);
         setRepairAttemptLogs(view.repairAttempts || null);
         setStatus("complete");
         return;
@@ -485,7 +521,7 @@ export default function GeneratePaperPage() {
       // moved forward (no step change, no status change) in a while, this
       // is exactly the "stuck generation" case that used to be a dead end.
       // Tell the user instead of spinning forever.
-      if (Date.now() - lastProgressRef.current > NO_PROGRESS_TIMEOUT_MS) {
+      if (progress.stalledForMs() > NO_PROGRESS_TIMEOUT_MS) {
         stopPolling();
         setError(
           "This is taking much longer than expected and doesn't seem to be making progress. It may still finish in the background — you can wait and refresh, or cancel and try again."
@@ -533,7 +569,7 @@ export default function GeneratePaperPage() {
     setPaper(null);
     setJobId(null);
     lastStepRef.current = null;
-    lastProgressRef.current = Date.now();
+    progress.mark();
     consecutivePollFailuresRef.current = 0;
     pollAttemptCountRef.current = 0;
     setPlannerStatus("idle"); setGeneratorStatus("idle"); setReviewerStatus("idle");
@@ -709,7 +745,7 @@ export default function GeneratePaperPage() {
     setStatus("generating");
     setJobId(null);
     lastStepRef.current = null;
-    lastProgressRef.current = Date.now();
+    progress.mark();
     consecutivePollFailuresRef.current = 0;
     pollAttemptCountRef.current = 0;
     setPlannerStatus("idle"); setGeneratorStatus("idle"); setReviewerStatus("idle");
@@ -1162,7 +1198,7 @@ ${JSON.stringify(paper)}
                   <input
                     type="text"
                     value={timeAllowed}
-                    onChange={(e) => { setTimeAllowed(e.target.value); setTimeAllowedTouched(true); }}
+                    onChange={(e) => setTimeAllowedEdit(e.target.value)}
                     placeholder="e.g. 3 Hours"
                     className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50 hover:bg-surface focus:bg-surface focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-xs"
                   />
@@ -1322,7 +1358,7 @@ ${JSON.stringify(paper)}
             <button
               onClick={() => {
                 setStatus("generating");
-                lastProgressRef.current = Date.now();
+                progress.mark();
                 pollAttemptCountRef.current = 0;
                 if (jobId) pollJob(jobId);
               }}
@@ -1355,7 +1391,7 @@ ${JSON.stringify(paper)}
               onClick={() => {
                 setStatus("generating");
                 consecutivePollFailuresRef.current = 0;
-                lastProgressRef.current = Date.now();
+                progress.mark();
                 if (jobId) pollJob(jobId);
               }}
               className="px-6 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm shadow-md transition-colors"
@@ -1563,7 +1599,7 @@ ${JSON.stringify(paper)}
                     <input
                       type="text"
                       value={timeAllowed}
-                      onChange={(e) => setTimeAllowed(e.target.value)}
+                      onChange={(e) => setTimeAllowedEdit(e.target.value)}
                       onBlur={handleMetadataBlur}
                       className="bg-transparent border border-transparent hover:border-gray-200 focus:border-blue-500 focus:bg-surface focus:outline-none rounded px-1 text-xs transition-all w-32"
                     />

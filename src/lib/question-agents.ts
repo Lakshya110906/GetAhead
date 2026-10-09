@@ -543,8 +543,6 @@ export function conformDraftToPlan(draft: GeneratedPaperShape, plan: PlannerPlan
   return { ...draft, sections };
 }
 
-const SCHEMA_TYPE_TO_LABEL: Record<string, string> = { MCQ: "MCQ", Short: "Short Answer", Long: "Long Answer" };
-
 /**
  * The planner prompt tells the model which question types are allowed, but a
  * prompt instruction is not enforcement — confirmed live: a request for

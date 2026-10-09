@@ -490,6 +490,14 @@ export async function getJobView(jobId: string, userId: string) {
     quotaRefunded: job.quotaRefunded,
     retryWorthwhile: job.retryWorthwhile,
     paper: job.finalPaper ? JSON.parse(job.finalPaper) : null,
+    // The planner's allocation and the generator's pre-review draft back the
+    // "Logs" tab on the generate-paper page, and are what gets persisted
+    // alongside the finished paper. They were stored on the row but never
+    // returned here, so the client's setPlannerPlan/setGeneratorDraft were
+    // never called and that tab always read "No planner logs found" — the
+    // data existed the whole time and simply never left the server.
+    plannerPlan: job.plannerPlan ? JSON.parse(job.plannerPlan) : null,
+    generatorDraft: job.draftPaper ? JSON.parse(job.draftPaper) : null,
     savedPaperId: job.savedPaperId,
     createdAt: job.createdAt,
     updatedAt: job.updatedAt,

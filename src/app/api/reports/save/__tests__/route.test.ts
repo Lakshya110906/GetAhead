@@ -18,7 +18,6 @@ vi.mock("@/lib/prisma", () => ({
 vi.mock("@/lib/apiError", () => ({ reportApiError: vi.fn(() => new Response(JSON.stringify({ error: "failed" }), { status: 500 })) }));
 
 const USER_A = "user_A";
-const USER_B = "user_B";
 const EVALUATION_B = "evaluation_owned_by_B";
 
 function sessionFor(userId: string) {

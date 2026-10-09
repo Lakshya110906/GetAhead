@@ -23,7 +23,6 @@ describe("correctPlanMarks", () => {
 
   // Reproduces the exact live-observed bug: a plan totalling 29 when 30 was requested.
   it("never leaves a 1-mark shortfall uncorrected (the exact reported off-by-one)", () => {
-    const plan: PlannerPlan = { sections: [section({ marksPerQuestion: 10, questionCount: 2 })] }; // 20, needs +10 to hit 30... use a case that isn't evenly divisible
     const skewedPlan: PlannerPlan = {
       sections: [
         section({ marksPerQuestion: 3, questionCount: 3 }), // 9
