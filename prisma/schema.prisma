@@ -145,6 +145,13 @@ model Evaluation {
   // content hash already has a GradingCache entry reuses that stored result
   // instead of re-grading — see evaluationWorker.ts. gradedFromCache records
   // which happened, so the UI can disclose it rather than hide it.
+  // Human-in-the-loop marking. The AI's own output in aiResponse is NEVER
+  // rewritten — a teacher's disagreement is layered on top of it, as JSON
+  // keyed by question number: { "3": { marks, note, adjustedAt } }. The
+  // totals above (obtainedMarks/percentage) are recomputed from the
+  // effective marks so analytics and the dashboard, which read those
+  // columns, stay consistent without knowing about overrides at all.
+  markOverrides      String? @db.LongText
   gradedFromCache    Boolean @default(false)
   // The GradingCache key this evaluation's result lives under, so account
   // deletion can erase the cached extraction/result too — the cache row has

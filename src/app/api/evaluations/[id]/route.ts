@@ -9,6 +9,9 @@ import { logger } from "@/lib/logger";
 import { NOT_AN_ANSWER_SHEET_MESSAGE, MODEL_ID as EVAL_MODEL_ID } from "@/lib/answerSheetGrading";
 import { consumeQuota, QuotaExceededError } from "@/lib/quota";
 import { assertQuotaHeadroom, QuotaHeadroomError, PreviewEnvironmentBlockedError } from "@/lib/geminiQuotaState";
+import { zodErrorResponse } from "@/lib/zodError";
+import { markOverrideSchema, parseMarkOverrides, applyOverride, recomputeTotals } from "@/lib/markOverrides";
+import type { QuestionGrade } from "@/lib/answerSheetSchema";
 
 export const maxDuration = 60;
 
@@ -84,6 +87,12 @@ export async function GET(
     // and the tutor's context (built elsewhere from the same row) can cite
     // the same data the report displays, never a separate summary that could
     // drift from it.
+    // Marks a person set, layered over the AI's. Applied here too, not just
+    // in /api/reports/[id]: obtainedMarks below comes from the column, which
+    // already carries the effective total, so returning the AI's raw
+    // per-question marks alongside it would have the two disagree about the
+    // same sheet.
+    const overrides = parseMarkOverrides(job.markOverrides);
     let questionGrades = null;
     let unreadableQuestions: number[] = [];
     let subjectMismatch = null;
@@ -91,7 +100,10 @@ export async function GET(
     if (job.aiResponse) {
       try {
         const parsed = JSON.parse(job.aiResponse);
-        questionGrades = parsed.questionGrades ?? null;
+        questionGrades = (parsed.questionGrades as QuestionGrade[] | undefined)?.map((g) => {
+          const o = overrides[String(g.questionNumber)];
+          return o ? { ...g, marksAwarded: o.marks, marksAdjustedByUser: true, aiMarksAwarded: g.marksAwarded } : g;
+        }) ?? null;
         unreadableQuestions = parsed.unreadableQuestions ?? [];
         subjectMismatch = parsed.subjectMismatch ?? null;
         gradeMismatch = parsed.gradeMismatch ?? null;
@@ -112,6 +124,7 @@ export async function GET(
         unreadableQuestions,
         subjectMismatch,
         gradeMismatch,
+        markOverrides: overrides,
         strengths: job.strengths ? JSON.parse(job.strengths) : [],
         weaknesses: job.weaknesses ? JSON.parse(job.weaknesses) : [],
         recommendations: job.recommendations ? JSON.parse(job.recommendations) : [],
@@ -140,7 +153,50 @@ export async function PATCH(
       return NextResponse.json({ error: "Evaluation not found" }, { status: 404 });
     }
 
-    const { action } = await request.json();
+    const body = await request.json();
+    const { action } = body;
+
+    if (action === "override-mark") {
+      // Human-in-the-loop: a person disagreeing with one of the AI's marks.
+      // Only a graded sheet can be re-marked, and aiResponse — the model's
+      // own record — is never touched; see markOverrides.ts.
+      if (job.status !== "SUCCEEDED" || !job.aiResponse) {
+        return NextResponse.json({ error: "Only a completed evaluation can be re-marked." }, { status: 409 });
+      }
+
+      const parsed = markOverrideSchema.safeParse(body);
+      if (!parsed.success) {
+        return zodErrorResponse(parsed.error);
+      }
+
+      let grades: QuestionGrade[];
+      try {
+        grades = (JSON.parse(job.aiResponse).questionGrades ?? []) as QuestionGrade[];
+      } catch {
+        return NextResponse.json({ error: "This evaluation's grading record could not be read." }, { status: 500 });
+      }
+
+      const applied = applyOverride(parseMarkOverrides(job.markOverrides), grades, parsed.data);
+      if (!applied.ok) {
+        return NextResponse.json({ error: applied.error }, { status: 400 });
+      }
+
+      const totals = recomputeTotals(grades, applied.overrides);
+      const hasAny = Object.keys(applied.overrides).length > 0;
+      await prisma.evaluation.update({
+        where: { id },
+        data: {
+          markOverrides: hasAny ? JSON.stringify(applied.overrides) : null,
+          // Analytics and the dashboard read these columns directly, so they
+          // must carry the effective marks or the report and the charts would
+          // disagree about the same sheet.
+          obtainedMarks: totals.obtainedMarks,
+          percentage: totals.percentage,
+        },
+      });
+
+      return NextResponse.json({ ...totals, markOverrides: applied.overrides });
+    }
 
     if (action === "cancel") {
       if (job.status !== "QUEUED") {

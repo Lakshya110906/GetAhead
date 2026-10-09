@@ -27,6 +27,10 @@ import {
   Brain,
   RotateCcw,
   Info,
+  Pencil,
+  Undo2,
+  Check,
+  X as XIcon,
 } from "lucide-react";
 
 // Without a `loading` component, the tutor panel's chunk-load window (the
@@ -94,6 +98,9 @@ interface EvaluationData {
   // freshly graded — gradedFromCache says which, so it can be disclosed
   // rather than hidden.
   gradedFromCache: boolean;
+  // Question number -> the mark a person set, replacing the AI's. The AI's
+  // own marks in questionGrades are never rewritten.
+  markOverrides: Record<string, { marks: number; note?: string; adjustedAt: string }>;
   createdAt: string;
 }
 
@@ -131,6 +138,16 @@ export default function EvaluationPage() {
   // sanctioned way to get a different mark for an unchanged file.
   const [regrading, setRegrading] = useState(false);
   const [regradeError, setRegradeError] = useState("");
+
+  // Re-marking: which question is open for editing, the value being typed,
+  // and whether only the questions that lost marks are shown. On a 20-question
+  // paper the lost-marks view is the one a teacher actually wants first.
+  const [editingQ, setEditingQ] = useState<number | null>(null);
+  const [editMarks, setEditMarks] = useState("");
+  const [editNote, setEditNote] = useState("");
+  const [savingMark, setSavingMark] = useState(false);
+  const [markError, setMarkError] = useState("");
+  const [onlyLost, setOnlyLost] = useState(false);
   const regradePollRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const fetchReport = useCallback(() => {
@@ -149,6 +166,7 @@ export default function EvaluationPage() {
             subjectMismatch: d.subjectMismatch || null,
             gradeMismatch: d.gradeMismatch || null,
             gradedFromCache: d.gradedFromCache || false,
+            markOverrides: d.markOverrides || {},
           });
           setLoadError(false);
         } else {
@@ -184,6 +202,44 @@ export default function EvaluationPage() {
       if (regradePollRef.current) clearTimeout(regradePollRef.current);
     };
   }, []);
+
+  // marks === null clears the override and restores the AI's mark.
+  const saveMark = async (questionNumber: number, marks: number | null, note: string) => {
+    if (!id) return;
+    setSavingMark(true);
+    setMarkError("");
+    try {
+      const res = await fetch(`/api/evaluations/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "override-mark", questionNumber, marks, note: note.trim() || undefined }),
+      });
+      const d = await res.json();
+      if (!res.ok) {
+        setMarkError(d.error || "Couldn't save that mark.");
+        return;
+      }
+      // The server is the one that recomputed the totals; trust its numbers
+      // rather than recomputing the same sum a second way on the client.
+      setData((prev) =>
+        prev
+          ? {
+              ...prev,
+              obtainedMarks: d.obtainedMarks,
+              totalMarks: d.totalMarks,
+              percentage: d.percentage,
+              markOverrides: d.markOverrides || {},
+            }
+          : prev
+      );
+      setEditingQ(null);
+      setEditNote("");
+    } catch {
+      setMarkError("Couldn't reach the server to save that mark.");
+    } finally {
+      setSavingMark(false);
+    }
+  };
 
   const handleRegrade = async () => {
     if (!id || regrading) return;
@@ -351,6 +407,14 @@ export default function EvaluationPage() {
   const pct = data.percentage ?? 0;
   const grade = getGrade(pct);
   const breakdown = data.marksBreakdown || [];
+  const allGrades = data.questionGrades || [];
+  const overrideCount = Object.keys(data.markOverrides || {}).length;
+  // "Lost marks" is judged on the mark in force, so a question re-marked to
+  // full marks drops out of the filter, and one re-marked down joins it.
+  const marksInForce = (q: { questionNumber: number; marksAwarded: number }) =>
+    data.markOverrides?.[String(q.questionNumber)]?.marks ?? q.marksAwarded;
+  const lostCount = allGrades.filter((q) => marksInForce(q) < q.marksAvailable).length;
+  const visibleGrades = onlyLost ? allGrades.filter((q) => marksInForce(q) < q.marksAvailable) : allGrades;
 
   return (
     <div className="flex flex-col lg:flex-row gap-6 relative max-w-7xl mx-auto">
@@ -453,6 +517,11 @@ export default function EvaluationPage() {
             <span className="text-sm font-mono tabular-nums text-graphite">
               ({data.obtainedMarks}/{data.totalMarks} marks)
             </span>
+            {overrideCount > 0 && (
+              <span className="text-xs text-blue-700 bg-blue-50 border border-blue-200 px-2.5 py-1 rounded-lg">
+                Includes {overrideCount} mark{overrideCount === 1 ? "" : "s"} you set
+              </span>
+            )}
           </div>
           {breakdown.length > 0 && (
             <span className="text-xs font-mono tabular-nums text-graphite bg-surface-2 px-2.5 py-1 rounded-lg">
@@ -518,14 +587,37 @@ export default function EvaluationPage() {
           card list. */}
       {data.questionGrades && data.questionGrades.length > 0 ? (
         <div className="bg-surface rounded-2xl border border-rule card-shadow-md p-4 sm:p-6">
-          <h2 className="text-base font-bold text-ink mb-1" style={{ fontFamily: "var(--font-display)" }}>
-            Question-by-question
-          </h2>
-          <p className="text-xs text-graphite mb-5">
-            Every mark, grounded in what you actually wrote — not a summary.
-          </p>
+          <div className="flex flex-wrap items-start justify-between gap-3 mb-5">
+            <div className="min-w-0">
+              <h2 className="text-base font-bold text-ink mb-1" style={{ fontFamily: "var(--font-display)" }}>
+                Question-by-question
+              </h2>
+              <p className="text-xs text-graphite">
+                Every mark, grounded in what you actually wrote. The AI marks first — change any mark you disagree with.
+              </p>
+            </div>
+            {lostCount > 0 && (
+              <button
+                onClick={() => setOnlyLost((v) => !v)}
+                aria-pressed={onlyLost}
+                className={`no-print inline-flex items-center gap-2 text-xs font-medium px-3 py-1.5 rounded-xl border transition-colors flex-shrink-0 ${
+                  onlyLost ? "bg-blue-50 border-blue-200 text-blue-700" : "border-rule bg-surface text-graphite hover:bg-paper"
+                }`}
+              >
+                {onlyLost ? <Check aria-hidden="true" className="w-3.5 h-3.5" /> : null}
+                Only questions that lost marks ({lostCount})
+              </button>
+            )}
+          </div>
+
+          {markError && (
+            <div role="alert" className="no-print mb-4 bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-2.5 text-xs">
+              {markError}
+            </div>
+          )}
+
           <div className="divide-y divide-rule">
-            {data.questionGrades.map((q) => {
+            {visibleGrades.map((q) => {
               const isCorrect = q.errorType === "correct";
               // Same consistency guard as displayErrorCategory() server-side
               // (answerSheetGrading.ts): a category with no incorrectPoints
@@ -536,7 +628,12 @@ export default function EvaluationPage() {
                 q.errorType === "incorrect" ? (category ?? "Incorrect") :
                 q.errorType === "unreadable" ? "Unreadable" :
                 q.errorType === "blank" ? "Blank" : "Correct";
-              const markColor = isCorrect ? "var(--tick)" : "var(--examiner)";
+              const override = data.markOverrides?.[String(q.questionNumber)];
+              const shownMarks = override ? override.marks : q.marksAwarded;
+              // Colour follows the mark actually in force, not the AI's
+              // label: a question re-marked to full marks should read green.
+              const markColor = shownMarks >= q.marksAvailable ? "var(--tick)" : isCorrect ? "var(--tick)" : "var(--examiner)";
+              const isEditing = editingQ === q.questionNumber;
               return (
                 <div key={q.questionNumber} className="py-5 first:pt-0 last:pb-0">
                   <div className="flex items-start gap-4">
@@ -547,9 +644,14 @@ export default function EvaluationPage() {
                         className="w-11 h-11 rounded-full border-2 flex items-center justify-center font-mono tabular-nums text-sm font-bold"
                         style={{ borderColor: markColor, color: markColor }}
                       >
-                        {q.marksAwarded}/{q.marksAvailable}
+                        {shownMarks}/{q.marksAvailable}
                       </div>
                       <span className="text-xxs font-mono text-graphite">Q{q.questionNumber}</span>
+                      {override && (
+                        <span className="text-xxs font-mono text-graphite text-center leading-tight" title={`The AI marked this ${q.marksAwarded}/${q.marksAvailable}`}>
+                          was {q.marksAwarded}
+                        </span>
+                      )}
                     </div>
 
                     <div className="min-w-0 flex-1">
@@ -608,6 +710,83 @@ export default function EvaluationPage() {
                       >
                         {q.feedback}
                       </p>
+
+                      {override?.note && (
+                        <p className="mt-2 text-xs text-ink bg-surface-2 border border-rule rounded-lg px-3 py-2">
+                          <span className="font-semibold">Your note: </span>
+                          {override.note}
+                        </p>
+                      )}
+
+                      <div className="no-print mt-3">
+                        {isEditing ? (
+                          <div className="flex flex-wrap items-center gap-2 bg-surface-2 border border-rule rounded-xl p-3">
+                            <label htmlFor={`mark-${q.questionNumber}`} className="text-xs font-semibold text-ink">
+                              Marks
+                            </label>
+                            <input
+                              id={`mark-${q.questionNumber}`}
+                              type="number"
+                              min={0}
+                              max={q.marksAvailable}
+                              step="0.5"
+                              value={editMarks}
+                              onChange={(e) => setEditMarks(e.target.value)}
+                              className="w-20 px-2 py-1.5 rounded-lg border border-rule bg-surface text-sm font-mono tabular-nums focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                            />
+                            <span className="text-xs text-graphite font-mono">/ {q.marksAvailable}</span>
+                            <input
+                              type="text"
+                              value={editNote}
+                              onChange={(e) => setEditNote(e.target.value)}
+                              placeholder="Why (optional)"
+                              aria-label={`Note for question ${q.questionNumber}`}
+                              className="flex-1 min-w-[10rem] px-2.5 py-1.5 rounded-lg border border-rule bg-surface text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                            />
+                            <button
+                              onClick={() => {
+                                const v = Number(editMarks);
+                                if (!Number.isFinite(v)) { setMarkError("Enter a number of marks."); return; }
+                                saveMark(q.questionNumber, v, editNote);
+                              }}
+                              disabled={savingMark}
+                              className="inline-flex items-center gap-1.5 bg-ink text-paper text-xs font-semibold px-3 py-1.5 rounded-lg hover:opacity-90 disabled:opacity-60"
+                            >
+                              <Check aria-hidden="true" className="w-3.5 h-3.5" /> Save
+                            </button>
+                            <button
+                              onClick={() => { setEditingQ(null); setMarkError(""); }}
+                              className="inline-flex items-center gap-1.5 border border-rule text-graphite text-xs font-medium px-3 py-1.5 rounded-lg hover:bg-surface"
+                            >
+                              <XIcon aria-hidden="true" className="w-3.5 h-3.5" /> Cancel
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-3">
+                            <button
+                              onClick={() => {
+                                setEditingQ(q.questionNumber);
+                                setEditMarks(String(shownMarks));
+                                setEditNote(override?.note ?? "");
+                                setMarkError("");
+                              }}
+                              className="inline-flex items-center gap-1.5 text-xs font-medium text-graphite hover:text-ink transition-colors"
+                            >
+                              <Pencil aria-hidden="true" className="w-3.5 h-3.5" />
+                              {override ? "Change this mark" : "Disagree with this mark?"}
+                            </button>
+                            {override && (
+                              <button
+                                onClick={() => saveMark(q.questionNumber, null, "")}
+                                disabled={savingMark}
+                                className="inline-flex items-center gap-1.5 text-xs font-medium text-graphite hover:text-ink transition-colors disabled:opacity-60"
+                              >
+                                <Undo2 aria-hidden="true" className="w-3.5 h-3.5" /> Restore AI mark
+                              </button>
+                            )}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>

@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { reportApiError } from "@/lib/apiError";
+import { parseMarkOverrides } from "@/lib/markOverrides";
 
 export async function GET(
   _req: NextRequest,
@@ -47,6 +48,9 @@ export async function GET(
       unreadableQuestions: parsedAiResponse?.unreadableQuestions ?? [],
       subjectMismatch: parsedAiResponse?.subjectMismatch ?? null,
       gradeMismatch: parsedAiResponse?.gradeMismatch ?? null,
+      // The person's own marks, layered over the AI's. Parsed here so the
+      // report page never has to deal with a malformed blob.
+      markOverrides: parseMarkOverrides(evaluation.markOverrides),
       strengths: evaluation.strengths ? JSON.parse(evaluation.strengths) : [],
       weaknesses: evaluation.weaknesses ? JSON.parse(evaluation.weaknesses) : [],
       recommendations: evaluation.recommendations
