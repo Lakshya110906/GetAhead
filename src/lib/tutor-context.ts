@@ -19,6 +19,8 @@
  * like the grading prompt.
  */
 
+import { defangMarkers } from "./promptSafety";
+
 interface QuestionGradeContext {
   questionNumber: number;
   marksAwarded: number;
@@ -68,7 +70,9 @@ export function buildTutorSystemPrompt(ctx: EvaluationContext): string {
           const lines = [
             `Q${q.questionNumber}${q.topic ? ` (${q.topic})` : ""}: ${q.marksAwarded}/${q.marksAvailable} — ${label}`,
           ];
-          if (q.groundingQuote) lines.push(`  Student wrote: "${q.groundingQuote}"`);
+          // JSON-quoted: this is verbatim student text sitting in the trusted
+          // section, so it stays one escaped string, newlines and all.
+          if (q.groundingQuote) lines.push(`  Student wrote: ${JSON.stringify(q.groundingQuote)}`);
           if (q.correctPoints.length) lines.push(`  Correct: ${q.correctPoints.join("; ")}`);
           if (q.incorrectPoints.length) lines.push(`  Incorrect: ${q.incorrectPoints.join("; ")}`);
           lines.push(`  Feedback: ${q.feedback}`);
@@ -81,10 +85,12 @@ export function buildTutorSystemPrompt(ctx: EvaluationContext): string {
   // verbatim written working) is untrusted data, exactly like in the
   // grading prompt — a sheet containing text aimed at the AI (e.g. "ignore
   // your instructions") must never change tutor behaviour.
+  // Markers defanged so the sheet can't write its own END line and continue
+  // as if it were the prompt.
   const extractedSheet = ctx.ocrText
-    ? ctx.ocrText.length > 12000
-      ? ctx.ocrText.slice(0, 12000) + "\n[... truncated for length ...]"
-      : ctx.ocrText
+    ? defangMarkers(
+        ctx.ocrText.length > 12000 ? ctx.ocrText.slice(0, 12000) + "\n[... truncated for length ...]" : ctx.ocrText
+      )
     : "Not available";
 
   const strengthsList = ctx.strengths?.length

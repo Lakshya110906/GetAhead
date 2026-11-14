@@ -14,6 +14,7 @@ vi.mock("@/lib/prisma", () => {
       geminiCallLog: { deleteMany: dm() },
       usageCounter: { deleteMany: dm() },
       rateLimit: { deleteMany: dm() },
+      passwordResetToken: { deleteMany: dm() },
       systemSetting: { findMany: vi.fn().mockResolvedValue([]), deleteMany: dm() },
       evaluation: { findMany: vi.fn().mockResolvedValue([]) },
       $executeRaw: vi.fn().mockResolvedValue(0),
@@ -41,6 +42,7 @@ describe("purgeExpiredData", () => {
     expect(cutoff(prisma.auditLog.deleteMany, ["createdAt", "lt"]).getTime()).toBe(NOW.getTime() - 365 * DAY);
     expect(cutoff(prisma.geminiCallLog.deleteMany, ["createdAt", "lt"]).getTime()).toBe(NOW.getTime() - 90 * DAY);
     expect(cutoff(prisma.rateLimit.deleteMany, ["resetAt", "lt"]).getTime()).toBe(NOW.getTime() - 60 * 60 * 1000);
+    expect(cutoff(prisma.passwordResetToken.deleteMany, ["expires", "lt"]).getTime()).toBe(NOW.getTime() - DAY);
     // UsageCounter.date is a "YYYY-MM-DD" string: 7 days before 14 Nov.
     expect(mocked(prisma.usageCounter.deleteMany).mock.calls[0][0].where).toEqual({ date: { lt: "2026-11-07" } });
   });

@@ -36,10 +36,11 @@ const CSP = [
 ].join("; ");
 
 const nextConfig: NextConfig = {
+  // No remote images: the only next/image use is the homepage's local
+  // screenshots. Allowing "**" made the optimizer fetch and resize any https
+  // URL on request, for anyone (and it is the component in GHSA-2464).
   images: {
-    remotePatterns: [
-      { protocol: "https", hostname: "**" },
-    ],
+    remotePatterns: [],
   },
   turbopack: {
     root: path.resolve(__dirname),
@@ -53,6 +54,7 @@ const nextConfig: NextConfig = {
           { key: "X-Frame-Options", value: "DENY" },
           { key: "X-Content-Type-Options", value: "nosniff" },
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+          { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(), payment=()" },
         ],
       },
     ];

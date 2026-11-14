@@ -51,12 +51,18 @@ export async function POST(request: NextRequest) {
     const email = parsed.data.email.trim().toLowerCase();
     const password = parsed.data.password;
 
+    // The address reserved for the env-configured admin account can't be
+    // registered: signup doesn't verify email ownership, so letting anyone
+    // create it was the first step of an admin takeover (see auth.ts). Same
+    // response as an existing account, so this reveals nothing more.
+    const reservedAdminEmail = process.env.ADMIN_EMAIL?.trim().toLowerCase();
+
     // Check if user already exists
     const existingUser = await prisma.user.findUnique({
       where: { email },
     });
 
-    if (existingUser) {
+    if (existingUser || (reservedAdminEmail && email === reservedAdminEmail)) {
       return NextResponse.json(
         { error: "An account with this email already exists" },
         { status: 409 }

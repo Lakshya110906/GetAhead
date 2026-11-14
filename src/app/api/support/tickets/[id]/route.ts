@@ -44,7 +44,13 @@ export async function GET(_req: NextRequest, { params }: RouteParams) {
     }
 
     const isAdmin = userRole === "ADMIN";
-    const isOwner = ticket.userId === userId || ticket.email.toLowerCase() === session.user.email?.toLowerCase();
+    // Ownership is the account id only. This also accepted a match on the
+    // ticket's email, but neither signup nor a profile email change verifies
+    // the address: anyone could register with a stranger's email and read
+    // every ticket that stranger filed while signed out (demonstrated
+    // against a local test database, Nov 2026). An unverified email is not
+    // proof of identity. Signed-out tickets stay visible to admins.
+    const isOwner = ticket.userId !== null && ticket.userId === userId;
     const denied = requireOwnership(isOwner || isAdmin, "Ticket not found");
     if (denied) return denied;
 
@@ -82,7 +88,13 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
 
     // Admins can also reply here, but they should usually use the admin route.
     const isAdmin = userRole === "ADMIN";
-    const isOwner = ticket.userId === userId || ticket.email.toLowerCase() === session.user.email?.toLowerCase();
+    // Ownership is the account id only. This also accepted a match on the
+    // ticket's email, but neither signup nor a profile email change verifies
+    // the address: anyone could register with a stranger's email and read
+    // every ticket that stranger filed while signed out (demonstrated
+    // against a local test database, Nov 2026). An unverified email is not
+    // proof of identity. Signed-out tickets stay visible to admins.
+    const isOwner = ticket.userId !== null && ticket.userId === userId;
     const denied = requireOwnership(isOwner || isAdmin, "Ticket not found");
     if (denied) return denied;
 

@@ -1,16 +1,21 @@
 import type { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
-import { randomUUID } from "crypto";
+import { createHash, randomBytes, timingSafeEqual } from "crypto";
 import { prisma } from "@/lib/prisma";
-import { isSessionRevoked, revokeSessionToken } from "@/lib/sessionRevocation";
+import { isRevokedAt, revokeAllUserSessions } from "@/lib/sessionRevocation";
 
-// Short-lived on purpose: this is the token's own natural expiry, which
-// bounds how long a revoked-but-KV-unreachable session could still work.
-// Sign-out / password change / suspension invalidate immediately via the
-// KV revocation list (see sessionRevocation.ts) rather than waiting for
-// this to elapse — the expiry is just the fallback safety net.
+// An idle timeout, not a lifetime: next-auth re-issues the token with a new
+// expiry on every session read, so a session in use never reaches it.
+// SESSION_ABSOLUTE_MAX_MS is the lifetime: after it, sign in again however
+// active the session is. Revocation (password change, suspension...) is
+// checked on every request in the jwt callback below.
 const SESSION_MAX_AGE_SECONDS = 15 * 60;
+const SESSION_ABSOLUTE_MAX_MS = 7 * 24 * 60 * 60 * 1000;
+// A cost-12 hash of a random string nobody knows, matching real hashes' cost.
+// Made on first use, not at import, to keep it off every cold start.
+let dummyPasswordHash: Promise<string> | undefined;
+const getDummyPasswordHash = () => (dummyPasswordHash ??= bcrypt.hash(randomBytes(16).toString("hex"), 12));
 
 export const authOptions: NextAuthOptions = {
   session: {
@@ -50,7 +55,7 @@ export const authOptions: NextAuthOptions = {
           where: { email },
         });
 
-        if (adminEmail && adminPassword && email === adminEmail && credentials.password === adminPassword) {
+        if (adminEmail && adminPassword && email === adminEmail && secretsEqual(credentials.password, adminPassword)) {
           if (!user) {
             const hashedPassword = await bcrypt.hash(adminPassword, 12);
             user = await prisma.user.create({
@@ -63,15 +68,21 @@ export const authOptions: NextAuthOptions = {
             });
           } else if (user.role !== "ADMIN") {
             // The reserved admin email can end up attached to a pre-existing,
-            // non-admin account (e.g. someone signed up normally with this
-            // address before it was ever used to log in as admin). Matching
-            // the real ADMIN_PASSWORD here is exactly the credential that's
-            // supposed to grant admin access, so correct the role rather than
-            // silently signing the operator into a STUDENT session.
+            // non-admin account — signup doesn't verify email ownership, so
+            // anyone who knows the address could create it first, with a
+            // password of their choosing. Promoting that row while keeping its
+            // password hash (as this used to) handed admin to whoever created
+            // it: they could then sign in through the ordinary password check
+            // below with their own password and get role ADMIN. Promotion now
+            // also replaces the password with ADMIN_PASSWORD's hash and revokes
+            // every existing session, so the only credential that reaches this
+            // admin account is the operator's. Signup also refuses this address
+            // outright (api/auth/signup), so this branch should never run.
             user = await prisma.user.update({
               where: { id: user.id },
-              data: { role: "ADMIN" },
+              data: { role: "ADMIN", password: await bcrypt.hash(adminPassword, 12) },
             });
+            await revokeAllUserSessions(user.id);
           }
           return {
             id: user.id,
@@ -83,6 +94,9 @@ export const authOptions: NextAuthOptions = {
         }
 
         if (!user || !user.password) {
+          // Same bcrypt cost as a real check, so response time doesn't tell
+          // an unknown email apart from a wrong password.
+          await bcrypt.compare(credentials.password, await getDummyPasswordHash());
           throw new Error("Invalid credentials");
         }
 
@@ -115,47 +129,57 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        // Fresh sign-in: mint a new session identity. jti lets sign-out
-        // revoke exactly this token; iat (our own, not relying on the
-        // library's internal one) is what per-user revocation compares
-        // against.
+        // Fresh sign-in. authTime is our own claim: next-auth rewrites iat
+        // and jti every time it re-issues the token, so neither can say when
+        // this session actually began.
         token.id = user.id;
         token.role = (user as { role?: string }).role;
-        token.jti = randomUUID();
-        token.iat = Math.floor(Date.now() / 1000);
+        token.authTime = Date.now();
+        return token;
       }
+      if (!token.id) return token;
+
+      // Every request: the session must still belong to a live, unsuspended
+      // user and must not predate a revocation. One primary-key read; it
+      // also picks up role changes without waiting for a new sign-in.
+      // Tokens issued before authTime existed fall back to iat (seconds).
+      const authTimeMs = typeof token.authTime === "number" ? token.authTime : ((token.iat as number | undefined) ?? 0) * 1000;
+      const current = await prisma.user.findUnique({
+        where: { id: token.id as string },
+        select: { role: true, suspended: true, sessionsValidAfter: true },
+      });
+      const ended =
+        !current ||
+        current.suspended ||
+        current.role === "SUSPENDED" ||
+        isRevokedAt(authTimeMs, current.sessionsValidAfter) ||
+        Date.now() - authTimeMs > SESSION_ABSOLUTE_MAX_MS;
+      if (ended) return {};
+
+      token.role = current.role;
       return token;
     },
     async session({ session, token }) {
-      if (session.user && token.id) {
-        const revoked = await isSessionRevoked(
-          token.jti as string | undefined,
-          token.id as string,
-          token.iat as number | undefined
-        );
-
-        if (revoked) {
-          return {
-            ...session,
-            user: undefined,
-            expires: new Date(0).toISOString(),
-          };
-        }
-
-        // Role/id come straight from the token — no MySQL query on the hot
-        // path. A role change or suspension takes effect immediately anyway
-        // because it revokes the token in KV (see revokeAllUserSessions),
-        // forcing a fresh sign-in that mints a token with the new role.
+      if (!token.id) {
+        // Ended in the jwt callback above. An empty object is what both
+        // getServerSession and the client's useSession read as "no session"
+        // (next-auth next/index.js, client/_utils.js: Object.keys(...).length).
+        return {} as typeof session;
+      }
+      if (session.user) {
         (session.user as { id?: string }).id = token.id as string;
         (session.user as { role?: string }).role = token.role as string;
       }
       return session;
     },
   },
-  events: {
-    async signOut({ token }) {
-      const jti = (token as { jti?: string } | null)?.jti;
-      if (jti) await revokeSessionToken(jti);
-    },
-  },
 };
+
+// Constant-time comparison for the env-configured admin password. Hashing both
+// sides first gives equal-length buffers, which timingSafeEqual requires, and
+// avoids leaking the secret's length through an early length mismatch.
+function secretsEqual(a: string, b: string): boolean {
+  const ha = createHash("sha256").update(a).digest();
+  const hb = createHash("sha256").update(b).digest();
+  return timingSafeEqual(ha, hb);
+}

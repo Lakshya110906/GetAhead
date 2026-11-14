@@ -23,6 +23,10 @@ model User {
   role          String    @default("STUDENT")
   avatar        String?
   suspended     Boolean   @default(false)
+  // Every session signed in before this instant is rejected (password
+  // change/reset, suspension, role change, account takeover clean-up).
+  // Checked on each request in auth.ts's jwt callback.
+  sessionsValidAfter DateTime?
   notificationPreferences String? @db.Text // JSON: { evaluationCompletion, featureUpdates, weeklyProgress, pushNotifications }
   // Consent record (Digital Personal Data Protection Act 2023, s.6): when
   // this person affirmatively agreed to the terms + privacy policy at

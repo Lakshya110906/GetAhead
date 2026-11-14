@@ -88,8 +88,17 @@ export async function GET(request: NextRequest) {
     // it got into the table.
     const savedReports = await prisma.savedReport.findMany({
       where: { userId, evaluation: { userId } },
+      // Only what the saved-reports list displays, plus what the guard below
+      // reads. This used to include the whole row — public file URL, OCR
+      // text, raw model output, extraction checkpoint — none of which the
+      // list uses. Data minimisation, not an access-control change.
       include: {
-        evaluation: true
+        evaluation: {
+          select: {
+            id: true, subject: true, grade: true, examType: true, status: true, modelId: true,
+            percentage: true, obtainedMarks: true, totalMarks: true, createdAt: true,
+          },
+        },
       },
       orderBy: {
         createdAt: "desc"

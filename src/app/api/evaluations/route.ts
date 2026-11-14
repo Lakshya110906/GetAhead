@@ -115,19 +115,6 @@ export async function POST(request: NextRequest) {
       throw err;
     }
 
-    // Per-user daily quota, enforced server-side before any paid call.
-    try {
-      await consumeQuota(userId, "EVALUATION");
-    } catch (err) {
-      if (err instanceof QuotaExceededError) {
-        return NextResponse.json(
-          { error: err.message, quotaExceeded: true, limit: err.limit, resetsAt: err.resetsAt.toISOString() },
-          { status: 429 }
-        );
-      }
-      throw err;
-    }
-
     // fileUrl is client-supplied and, until here, only validated as "is a
     // URL" (zod's .url()) — fetching it server-side with no further check
     // is an SSRF primitive: a client could point it at an internal-only
@@ -141,7 +128,10 @@ export async function POST(request: NextRequest) {
     } catch {
       return NextResponse.json({ error: "That file URL isn't valid. Try uploading again." }, { status: 400 });
     }
-    if (!parsedFileUrl.hostname.endsWith(".public.blob.vercel-storage.com")) {
+    // Our own store only, not any Vercel Blob store: a file in someone
+    // else's store is outside what account deletion and the orphan reaper
+    // can ever remove.
+    if (parsedFileUrl.protocol !== "https:" || parsedFileUrl.hostname !== ownBlobHost()) {
       return NextResponse.json({ error: "That file URL isn't valid. Try uploading again." }, { status: 400 });
     }
     // The hostname check above only rules out a non-Blob URL (the SSRF
@@ -163,6 +153,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Couldn't read the uploaded file. Try uploading again." }, { status: 502 });
     }
     const bytes = new Uint8Array(await fileRes.arrayBuffer());
+    // fileSize above is what the client says. This is what it is; the upload
+    // token caps it too, but this is the copy that gets graded and stored.
+    if (bytes.length > MAX_UPLOAD_BYTES) {
+      return NextResponse.json(
+        { error: `That file is too large (${(bytes.length / 1024 / 1024).toFixed(1)}MB). The limit is ${MAX_UPLOAD_BYTES / 1024 / 1024}MB — try scanning at a lower resolution.` },
+        { status: 413 }
+      );
+    }
 
     try {
       assertDeclaredTypeMatches(bytes, fileType);
@@ -186,6 +184,22 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Per-user daily quota, enforced server-side before any paid call. Taken
+    // only once the file has passed every check above: it used to be taken
+    // before them, so a rejected file (wrong type, broken PDF, too many
+    // pages) still cost one of the day's evaluations, with no refund.
+    try {
+      await consumeQuota(userId, "EVALUATION");
+    } catch (err) {
+      if (err instanceof QuotaExceededError) {
+        return NextResponse.json(
+          { error: err.message, quotaExceeded: true, limit: err.limit, resetsAt: err.resetsAt.toISOString() },
+          { status: 429 }
+        );
+      }
+      throw err;
+    }
+
     const job = await prisma.evaluation.create({
       data: {
         userId,
@@ -196,7 +210,7 @@ export async function POST(request: NextRequest) {
         originalFileName: fileName,
         fileUrl,
         fileKey,
-        fileSize,
+        fileSize: bytes.length,
         fileType,
         pageCount,
       },
@@ -220,4 +234,12 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     return reportApiError({ code: "EVAL_ENQUEUE_FAILED", error, route: "POST /api/evaluations", userId });
   }
+}
+
+// The public hostname of the Blob store this deployment writes to: the store
+// id inside BLOB_READ_WRITE_TOKEN ("vercel_blob_rw_<storeId>_<secret>"),
+// lowercased, e.g. cfazauzjtxomnsne.public.blob.vercel-storage.com.
+function ownBlobHost(): string | null {
+  const storeId = process.env.BLOB_READ_WRITE_TOKEN?.split("_")[3];
+  return storeId ? `${storeId.toLowerCase()}.public.blob.vercel-storage.com` : null;
 }

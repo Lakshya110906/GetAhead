@@ -21,6 +21,19 @@ export async function GET(
 
     const evaluation = await prisma.evaluation.findFirst({
       where: { id, userId },
+      // The report page renders marks and feedback, never these. Spreading
+      // the whole row used to send them to the browser: the file's storage
+      // URL and key, the full OCR transcript, the raw model output, the
+      // extraction checkpoint and internal error text.
+      omit: {
+        fileUrl: true,
+        fileKey: true,
+        ocrText: true,
+        rawModelResponse: true,
+        extractionCheckpoint: true,
+        contentHash: true,
+        lastError: true,
+      },
     });
 
     if (!evaluation) {

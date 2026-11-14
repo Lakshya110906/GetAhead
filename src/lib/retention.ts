@@ -21,6 +21,8 @@ export const RETENTION = {
   // A row past resetAt is dead to rateLimit.ts; the hour is a margin, not a requirement.
   rateLimitGraceHours: 1,
   alertDedupeDays: 7,
+  // Reset links live an hour; the day after expiry is only a margin.
+  resetTokenGraceDays: 1,
   // A GradingCache row is written moments BEFORE its evaluation records the
   // contentHash that references it (evaluationWorker.ts runJob). The age
   // guard means the purge can never remove a row in that window.
@@ -41,6 +43,7 @@ export interface PurgeCounts {
   geminiCallLogs: number;
   usageCounters: number;
   rateLimits: number;
+  resetTokens: number;
   alertDedupeKeys: number;
   orphanCacheRows: number;
 }
@@ -48,7 +51,7 @@ export interface PurgeCounts {
 export async function purgeExpiredData(now: Date = new Date()): Promise<PurgeCounts> {
   const at = (ms: number) => new Date(now.getTime() - ms);
 
-  const [errorLogs, auditLogs, closedTickets, geminiCallLogs, usageCounters, rateLimits] = await Promise.all([
+  const [errorLogs, auditLogs, closedTickets, geminiCallLogs, usageCounters, rateLimits, resetTokens] = await Promise.all([
     prisma.errorLog.deleteMany({ where: { createdAt: { lt: at(RETENTION.errorLogDays * DAY) } } }),
     prisma.auditLog.deleteMany({ where: { createdAt: { lt: at(RETENTION.auditLogDays * DAY) } } }),
     prisma.supportTicket.deleteMany({
@@ -58,6 +61,7 @@ export async function purgeExpiredData(now: Date = new Date()): Promise<PurgeCou
     // date is a "YYYY-MM-DD" string; ISO dates sort lexically in date order.
     prisma.usageCounter.deleteMany({ where: { date: { lt: utcDate(at(RETENTION.usageCounterDays * DAY)) } } }),
     prisma.rateLimit.deleteMany({ where: { resetAt: { lt: at(RETENTION.rateLimitGraceHours * HOUR) } } }),
+    prisma.passwordResetToken.deleteMany({ where: { expires: { lt: at(RETENTION.resetTokenGraceDays * DAY) } } }),
   ]);
 
   const alertDedupeKeys = await purgeAlertDedupeKeys(at(RETENTION.alertDedupeDays * DAY));
@@ -78,6 +82,7 @@ export async function purgeExpiredData(now: Date = new Date()): Promise<PurgeCou
     geminiCallLogs: geminiCallLogs.count,
     usageCounters: usageCounters.count,
     rateLimits: rateLimits.count,
+    resetTokens: resetTokens.count,
     alertDedupeKeys,
     orphanCacheRows,
   };

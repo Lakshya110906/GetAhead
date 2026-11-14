@@ -5,6 +5,7 @@ import { z } from "zod";
 import { reportApiError } from "@/lib/apiError";
 import { zodErrorResponse } from "@/lib/zodError";
 import { revokeAllUserSessions } from "@/lib/sessionRevocation";
+import { hashResetToken } from "@/lib/passwordResetToken";
 
 const resetPasswordSchema = z.object({
   token: z.string().min(1, "Token is required"),
@@ -22,9 +23,11 @@ export async function POST(request: NextRequest) {
 
     const { token, password } = parsed.data;
 
-    // Find valid token
+    // Stored hashed (see passwordResetToken.ts). Links issued before that
+    // change stored the raw value and simply stop working; they expired
+    // within the hour anyway.
     const resetToken = await prisma.passwordResetToken.findUnique({
-      where: { token },
+      where: { token: hashResetToken(token) },
     });
 
     if (!resetToken || resetToken.used || resetToken.expires < new Date()) {
@@ -49,17 +52,23 @@ export async function POST(request: NextRequest) {
     // Hash new password
     const hashedPassword = await bcrypt.hash(password, 12);
 
-    // Update user password and invalidate token
-    await prisma.$transaction([
-      prisma.user.update({
-        where: { id: user.id },
-        data: { password: hashedPassword },
-      }),
-      prisma.passwordResetToken.update({
-        where: { id: resetToken.id },
+    // Consuming the link is conditional on it still being unused, inside the
+    // same transaction as the password change: two submissions of one link
+    // used to both pass the check above and both set a password. Every
+    // other outstanding link for this email is burned too.
+    const consumed = await prisma.$transaction(async (tx) => {
+      const claimed = await tx.passwordResetToken.updateMany({
+        where: { id: resetToken.id, used: false, expires: { gte: new Date() } },
         data: { used: true },
-      }),
-    ]);
+      });
+      if (claimed.count !== 1) return false;
+      await tx.passwordResetToken.updateMany({ where: { email: resetToken.email, used: false }, data: { used: true } });
+      await tx.user.update({ where: { id: user.id }, data: { password: hashedPassword } });
+      return true;
+    });
+    if (!consumed) {
+      return NextResponse.json({ error: "Password reset link is invalid or has expired." }, { status: 400 });
+    }
 
     // Same reasoning as change-password: if the account was compromised,
     // the attacker's existing session must not survive the legitimate

@@ -2,13 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { getToken } from "next-auth/jwt";
 import { rateLimit } from "@/lib/rateLimit";
 
-// Edge rate limiting, keyed by IP and (when signed in) by user — the
-// privacy policy claims "Rate limiting on all authentication endpoints",
-// and this is the code that's supposed to make that true. It only actually
-// does, though, when KV_REST_API_URL/KV_REST_API_TOKEN are configured —
-// rateLimit() fails OPEN (allows every request) without them, and as of
-// this audit neither is set in any Vercel environment. Until a real KV
-// store is provisioned, this file exists but the claim doesn't hold.
+// Rate limiting, keyed by IP and (when signed in) by user — the privacy
+// policy claims "Rate limiting on all authentication endpoints", and this
+// is the code that makes that true. KV has never been configured, so
+// rateLimit() uses its database counter; if no limiter can be reached the
+// request is refused with a 503 rather than let through.
 // (Renamed from middleware.ts: this Next.js version deprecated that file
 // convention in favor of proxy.ts — see node_modules/next/dist/docs.)
 
@@ -19,6 +17,13 @@ function clientIp(request: NextRequest): string {
   const forwarded = request.headers.get("x-forwarded-for");
   if (forwarded) return forwarded.split(",")[0].trim();
   return request.headers.get("x-real-ip") || "unknown";
+}
+
+function limiterUnavailable() {
+  return NextResponse.json(
+    { error: "This is temporarily unavailable. Please try again in a minute." },
+    { status: 503, headers: { "Retry-After": "60" } }
+  );
 }
 
 function tooManyRequests(resetAt: number) {
@@ -49,14 +54,14 @@ export async function proxy(request: NextRequest) {
 
   const ipResult = await rateLimit(`${routeTag}:ip:${ip}`, limit, windowSeconds);
   if (!ipResult.allowed) {
-    return tooManyRequests(ipResult.resetAt);
+    return ipResult.unavailable ? limiterUnavailable() : tooManyRequests(ipResult.resetAt);
   }
 
   const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET }).catch(() => null);
   if (token?.id) {
     const userResult = await rateLimit(`${routeTag}:user:${token.id}`, limit, windowSeconds);
     if (!userResult.allowed) {
-      return tooManyRequests(userResult.resetAt);
+      return userResult.unavailable ? limiterUnavailable() : tooManyRequests(userResult.resetAt);
     }
   }
 

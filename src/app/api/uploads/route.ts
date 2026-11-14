@@ -38,7 +38,7 @@ export async function POST(request: Request): Promise<NextResponse> {
         // client (src/app/upload/page.tsx) constructs that prefix itself,
         // but only this check stops it from claiming someone else's.
         const requiredPrefix = `answer-sheets/${userId}/`;
-        if (!pathname.startsWith(requiredPrefix)) {
+        if (!pathname.startsWith(requiredPrefix) || !isSafeFileName(pathname.slice(requiredPrefix.length))) {
           throw new Error("Upload path must be scoped to your own account.");
         }
         return {
@@ -60,4 +60,17 @@ export async function POST(request: Request): Promise<NextResponse> {
   } catch (error) {
     return reportApiError({ code: "UPLOAD_AUTH_FAILED", error, route: "POST /api/uploads", userId, status: 400 });
   }
+}
+
+// A prefix check alone accepted "answer-sheets/<you>/../<someone else>/x.pdf"
+// (found Nov 2026 by a cross-user test): the string starts with your folder,
+// and a URL or path resolver later collapses the ".." into theirs. What may
+// follow the user's folder is exactly one plain file name: no further "/",
+// no "\\", no "." or ".." segment, no control characters, bounded length.
+export function isSafeFileName(name: string): boolean {
+  if (name.length === 0 || name.length > 200) return false;
+  if (name === "." || name === "..") return false;
+  if (/[\/\\]/.test(name)) return false;
+  if (/[\u0000-\u001f\u007f]/.test(name)) return false;
+  return true;
 }

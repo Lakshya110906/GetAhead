@@ -21,51 +21,73 @@ export interface RateLimitResult {
   remaining: number;
   limit: number;
   resetAt: number; // epoch ms
+  // Set when no limiter could be reached at all and the request was refused
+  // for that reason, not because the caller went over the limit.
+  unavailable?: boolean;
 }
 
 // Confirmed live: neither KV_REST_API_URL nor KV_REST_API_TOKEN has ever
-// been set in any Vercel environment, which means every call site of this
-// module — proxy.ts's edge rate limiting on every auth endpoint plus
-// evaluation-enqueue — has been silently failing open since the day it
-// shipped. The privacy policy's "Rate limiting on all authentication
-// endpoints" claim has not been true. This fallback uses the same
-// RateLimit table already proven out by the per-route checks in
-// signup/forgot-password, so real enforcement exists with zero new
-// infrastructure to provision. Not as fast as KV under heavy concurrency
-// (read-then-conditional-write, not an atomic INCR — a narrow race can let
-// a burst exceed `limit` by a handful of requests under true concurrent
-// load), but that's a precision tradeoff, not the difference between
-// having a limit and not having one at all.
+// been set in any Vercel environment, so this database counter is the
+// limiter actually in use everywhere (proxy.ts on every auth endpoint and
+// evaluation-enqueue, signup, forgot-password, the tutor).
+//
+// It used to read the row and then write it, so concurrent requests all saw
+// the same count and a burst could run well past `limit`; and any database
+// error let the request through. Now a request inside a live window is an
+// atomic increment read back in the same transaction, so each request sees
+// its own position in the window. Starting a new window is a conditional reset, retried
+// once if another request got there first. Errors refuse the request.
 async function dbFallbackRateLimit(key: string, limit: number, windowSeconds: number): Promise<RateLimitResult> {
   const now = new Date();
-  const resetAtDate = new Date(now.getTime() + windowSeconds * 1000);
+  const freshResetAt = new Date(now.getTime() + windowSeconds * 1000);
 
   try {
-    const existing = await prisma.rateLimit.findUnique({ where: { key } });
-    if (!existing || existing.resetAt < now) {
-      await prisma.rateLimit.upsert({
-        where: { key },
-        create: { key, count: 1, resetAt: resetAtDate },
-        update: { count: 1, resetAt: resetAtDate },
+    for (let attempt = 0; attempt < 2; attempt++) {
+      // One transaction: the UPDATE row-locks until commit, so the read
+      // after it sees exactly this request's count, not a later racer's.
+      const bumped = await prisma.$transaction(async (tx) => {
+        const updated = await tx.rateLimit.updateMany({
+          where: { key, resetAt: { gte: now } },
+          data: { count: { increment: 1 } },
+        });
+        return updated.count === 1 ? tx.rateLimit.findUnique({ where: { key } }) : null;
       });
-      return { allowed: true, remaining: limit - 1, limit, resetAt: resetAtDate.getTime() };
+      if (bumped) {
+        const count = bumped.count;
+        return { allowed: count <= limit, remaining: Math.max(0, limit - count), limit, resetAt: bumped.resetAt.getTime() };
+      }
+
+      // No live window. Restart an expired one, or create the first one.
+      const restarted = await prisma.rateLimit.updateMany({
+        where: { key, resetAt: { lt: now } },
+        data: { count: 1, resetAt: freshResetAt },
+      });
+      if (restarted.count === 1) {
+        return { allowed: true, remaining: limit - 1, limit, resetAt: freshResetAt.getTime() };
+      }
+      try {
+        await prisma.rateLimit.create({ data: { key, count: 1, resetAt: freshResetAt } });
+        return { allowed: true, remaining: limit - 1, limit, resetAt: freshResetAt.getTime() };
+      } catch (err) {
+        // Another request created or restarted the window between our
+        // checks: go round once more and count against it.
+        if ((err as { code?: string }).code !== "P2002") throw err;
+      }
     }
-    if (existing.count >= limit) {
-      return { allowed: false, remaining: 0, limit, resetAt: existing.resetAt.getTime() };
-    }
-    await prisma.rateLimit.update({ where: { key }, data: { count: { increment: 1 } } });
-    return { allowed: true, remaining: Math.max(0, limit - existing.count - 1), limit, resetAt: existing.resetAt.getTime() };
+    throw new Error(`rate limit window for ${key} kept changing under contention`);
   } catch (err) {
-    console.error("[rateLimit] database fallback error, failing open:", err);
-    return { allowed: true, remaining: limit, limit, resetAt: Date.now() + windowSeconds * 1000 };
+    console.error("[rateLimit] database limiter error, refusing the request:", err);
+    return { allowed: false, remaining: 0, limit, resetAt: Date.now() + windowSeconds * 1000, unavailable: true };
   }
 }
 
 /**
  * Allows up to `limit` requests per `windowSeconds` for the given key.
  * Uses KV when configured (one INCR + one EXPIRE — two round trips worst
- * case, one in the common case); falls back to the database counter above
- * otherwise. Either way this is real enforcement, not a no-op.
+ * case, one in the common case), and the database counter above otherwise
+ * or when KV errors. If neither can be reached the request is refused with
+ * `unavailable: true`: these limits guard sign-in and paid model calls, and
+ * the routes behind them need the database anyway.
  */
 export async function rateLimit(key: string, limit: number, windowSeconds: number): Promise<RateLimitResult> {
   if (!kvConfigured()) {
@@ -81,8 +103,8 @@ export async function rateLimit(key: string, limit: number, windowSeconds: numbe
     const resetAt = (Math.floor(Date.now() / (windowSeconds * 1000)) + 1) * windowSeconds * 1000;
     return { allowed: count <= limit, remaining: Math.max(0, limit - count), limit, resetAt };
   } catch (err) {
-    console.error("[rateLimit] KV error, failing open:", err);
-    return { allowed: true, remaining: limit, limit, resetAt: Date.now() + windowSeconds * 1000 };
+    console.error("[rateLimit] KV error, using the database limiter instead:", err);
+    return dbFallbackRateLimit(key, limit, windowSeconds);
   }
 }
 

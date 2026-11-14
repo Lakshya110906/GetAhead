@@ -168,7 +168,9 @@ export default function UploadPage() {
       // rewrites) that this prefix actually matches the caller's real,
       // server-verified session — a client can request its own prefix
       // here, but not anyone else's.
-      const blob = await upload(`answer-sheets/${userId}/${file.name}`, file, {
+      // Must satisfy isSafeFileName() in /api/uploads: one plain segment.
+      const safeName = file.name.replace(/[^A-Za-z0-9._ -]/g, "_").replace(/^\.+/, "").slice(0, 150) || "answer-sheet";
+      const blob = await upload(`answer-sheets/${userId}/${safeName}`, file, {
         access: "public",
         handleUploadUrl: "/api/uploads",
         contentType,

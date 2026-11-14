@@ -11,36 +11,13 @@ import { timedGeminiCall } from "@/lib/geminiCallLog";
 import { DAILY_QUOTA_PATTERN, PER_MINUTE_QUOTA_PATTERN, AUTH_ERROR_PATTERN } from "@/lib/geminiErrorPatterns";
 import { assertQuotaHeadroom, QuotaHeadroomError, PreviewEnvironmentBlockedError } from "@/lib/geminiQuotaState";
 import { userStillExists } from "@/lib/requireLiveUser";
+import { rateLimit } from "@/lib/rateLimit";
 
 const TUTOR_MODEL_ID = "gemini-2.5-flash";
 
 export const maxDuration = 120;
 
 type RouteParams = { params: Promise<{ evaluationId: string }> };
-
-// Simple rate limiting: 30 messages per 60 seconds per user
-async function checkRateLimit(userId: string): Promise<boolean> {
-  const key = `tutor:${userId}`;
-  const now = new Date();
-  const resetAt = new Date(now.getTime() + 60 * 1000);
-
-  try {
-    const existing = await prisma.rateLimit.findUnique({ where: { key } });
-    if (!existing) {
-      await prisma.rateLimit.create({ data: { key, count: 1, resetAt } });
-      return true;
-    }
-    if (existing.resetAt < now) {
-      await prisma.rateLimit.update({ where: { key }, data: { count: 1, resetAt } });
-      return true;
-    }
-    if (existing.count >= 30) return false;
-    await prisma.rateLimit.update({ where: { key }, data: { count: { increment: 1 } } });
-    return true;
-  } catch {
-    return true; // Fail open if DB error
-  }
-}
 
 export async function POST(req: NextRequest, { params }: RouteParams) {
   const session = await getServerSession(authOptions);
@@ -66,9 +43,14 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
   // Rate limit (bursts) and daily quota (total spend), same as every other
   // Gemini-calling feature — the rate limit alone stops a burst, not a day
   // of steady-paced messages.
-  const allowed = await checkRateLimit(userId);
-  if (!allowed) {
-    return new Response(JSON.stringify({ error: "Rate limit exceeded. Please wait a moment." }), { status: 429 });
+  // 30 messages per 60s per user. This used to be its own copy of the
+  // database counter that let every message through on a database error;
+  // the shared limiter refuses instead (same "tutor:<userId>" key).
+  const limited = await rateLimit(`tutor:${userId}`, 30, 60);
+  if (!limited.allowed) {
+    return limited.unavailable
+      ? new Response(JSON.stringify({ error: "The tutor is temporarily unavailable. Please try again in a minute." }), { status: 503 })
+      : new Response(JSON.stringify({ error: "Rate limit exceeded. Please wait a moment." }), { status: 429 });
   }
   try {
     await assertQuotaHeadroom(TUTOR_MODEL_ID, 1);

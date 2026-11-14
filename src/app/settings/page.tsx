@@ -128,8 +128,8 @@ export default function SettingsPage() {
       setPasswordError("Current password is required");
       return;
     }
-    if (newPassword.length < 6) {
-      setPasswordError("New password must be at least 6 characters");
+    if (newPassword.length < 8) {
+      setPasswordError("New password must be at least 8 characters");
       return;
     }
     if (newPassword !== confirmPassword) {
@@ -148,10 +148,13 @@ export default function SettingsPage() {
       if (!res.ok) {
         setPasswordError(data.error || "Failed to update password");
       } else {
-        setPasswordSuccess("Password updated successfully!");
+        // Changing the password ends every session, this one included, so
+        // say so and sign out cleanly instead of failing on the next click.
+        setPasswordSuccess("Password updated. Signing you out of every device; sign in again with your new password.");
         setCurrentPassword("");
         setNewPassword("");
         setConfirmPassword("");
+        setTimeout(() => signOut({ callbackUrl: "/login" }), 2500);
       }
     } catch {
       setPasswordError("Couldn't reach the server to change your password. Check your connection and try again.");

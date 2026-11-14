@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { LOCK_STALE_MS } from "@/lib/paperJob";
 
 // TEST-ONLY: simulates a worker that was killed mid-step by force-aging a
 // job's lock, without going through processJobStep() at all — this is
@@ -24,7 +25,10 @@ export async function POST(request: NextRequest) {
 
   await prisma.paperGenerationJob.update({
     where: { id: jobId },
-    data: { status: "running", lockedAt: new Date(Date.now() - 60_000) }, // 60s old — well past the 20s staleness threshold
+    // Derived from the real threshold, not a literal: this was hard-coded to
+    // 60s when the lock went stale at 20s, and silently stopped simulating
+    // anything when LOCK_STALE_MS was raised to 90s.
+    data: { status: "running", lockedAt: new Date(Date.now() - LOCK_STALE_MS - 10_000) },
   });
 
   return NextResponse.json({ ok: true });
