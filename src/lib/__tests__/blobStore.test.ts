@@ -11,14 +11,14 @@ describe("blobStore", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     process.env.BLOB_READ_WRITE_TOKEN = "vercel_blob_rw_PubStore_pubsecret";
-    delete process.env.PRIVATE_BLOB_READ_WRITE_TOKEN;
+    delete process.env.PRIVATE_READ_WRITE_TOKEN;
   });
 
   it("uploads to the public store until a private one is connected, then to the private one", async () => {
     const { uploadStore } = await import("@/lib/blobStore");
     expect(uploadStore()).toMatchObject({ access: "public", host: "pubstore.public.blob.vercel-storage.com" });
 
-    process.env.PRIVATE_BLOB_READ_WRITE_TOKEN = "vercel_blob_rw_PrivStore_privsecret";
+    process.env.PRIVATE_READ_WRITE_TOKEN = "vercel_blob_rw_PrivStore_privsecret";
     expect(uploadStore()).toMatchObject({
       access: "private",
       host: "privstore.private.blob.vercel-storage.com",
@@ -27,7 +27,7 @@ describe("blobStore", () => {
   });
 
   it("recognises only https URLs in our own stores", async () => {
-    process.env.PRIVATE_BLOB_READ_WRITE_TOKEN = "vercel_blob_rw_PrivStore_privsecret";
+    process.env.PRIVATE_READ_WRITE_TOKEN = "vercel_blob_rw_PrivStore_privsecret";
     const { storeForUrl } = await import("@/lib/blobStore");
     expect(storeForUrl("https://pubstore.public.blob.vercel-storage.com/answer-sheets/u/a.pdf")?.access).toBe("public");
     expect(storeForUrl("https://privstore.private.blob.vercel-storage.com/answer-sheets/u/a.pdf")?.access).toBe("private");
@@ -38,7 +38,7 @@ describe("blobStore", () => {
   });
 
   it("reads a private file with the store's token instead of a plain fetch", async () => {
-    process.env.PRIVATE_BLOB_READ_WRITE_TOKEN = "vercel_blob_rw_PrivStore_privsecret";
+    process.env.PRIVATE_READ_WRITE_TOKEN = "vercel_blob_rw_PrivStore_privsecret";
     const blob = await import("@vercel/blob");
     mocked(blob.get).mockResolvedValue({ statusCode: 200, stream: new Response("PDF").body });
     const { readOwnBlob } = await import("@/lib/blobStore");

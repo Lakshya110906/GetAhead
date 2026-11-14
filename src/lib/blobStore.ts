@@ -2,8 +2,8 @@ import { get, type BlobAccessType } from "@vercel/blob";
 
 // Answer sheets were uploaded to a PUBLIC Blob store: anyone holding a
 // file's URL could open it, no session needed. New uploads now go to a
-// private store when one is connected (env PRIVATE_BLOB_READ_WRITE_TOKEN,
-// connected with the "PRIVATE_" env prefix so the SDK's default
+// private store when one is connected (env PRIVATE_READ_WRITE_TOKEN,
+// connected with the env prefix "PRIVATE", which replaces "BLOB", so the SDK's default
 // BLOB_READ_WRITE_TOKEN keeps pointing at the old public store). Files
 // already in the public store stay readable there until retention removes
 // them. Every call passes its token explicitly, which the SDK prefers over
@@ -23,7 +23,7 @@ function storeFor(token: string | undefined, access: BlobAccessType): BlobStore 
 }
 
 export function privateStore(): BlobStore | null {
-  return storeFor(process.env.PRIVATE_BLOB_READ_WRITE_TOKEN, "private");
+  return storeFor(process.env.PRIVATE_READ_WRITE_TOKEN, "private");
 }
 
 export function publicStore(): BlobStore | null {

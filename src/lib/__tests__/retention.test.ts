@@ -93,7 +93,7 @@ describe("reapOrphanUploads", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     process.env.BLOB_READ_WRITE_TOKEN = "vercel_blob_rw_PubStore_secret";
-    delete process.env.PRIVATE_BLOB_READ_WRITE_TOKEN;
+    delete process.env.PRIVATE_READ_WRITE_TOKEN;
   });
 
   const old = new Date(NOW.getTime() - 3 * DAY);
@@ -149,7 +149,7 @@ describe("two stores: the old public one and the private one new uploads use", (
   beforeEach(() => {
     vi.clearAllMocks();
     process.env.BLOB_READ_WRITE_TOKEN = "vercel_blob_rw_PubStore_pubsecret";
-    process.env.PRIVATE_BLOB_READ_WRITE_TOKEN = "vercel_blob_rw_PrivStore_privsecret";
+    process.env.PRIVATE_READ_WRITE_TOKEN = "vercel_blob_rw_PrivStore_privsecret";
   });
 
   it("deletes each file with its own store's token, and refuses a URL from a store that isn't ours", async () => {
