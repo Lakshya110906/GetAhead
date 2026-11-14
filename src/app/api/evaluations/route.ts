@@ -20,10 +20,13 @@ import { zodErrorResponse } from "@/lib/zodError";
 import { userStillExists } from "@/lib/requireLiveUser";
 
 // after() keeps the worker call running past the point the response is
-// sent, so this stays fast for the client while the real work (which can
-// legitimately take tens of seconds) happens in the background of the same
-// invocation. This route's own maxDuration needs headroom for that.
-export const maxDuration = 60;
+// sent, so this stays fast for the client while the real work happens in
+// the background of the same invocation — which means grading runs under
+// THIS route's maxDuration. It was 60s; a 19-page sheet's extraction alone
+// takes 45-55s, so every long sheet's first attempt was killed here before
+// grading began. 300s is the plan's own ceiling (Hobby + Fluid compute) and
+// must match WORKER_MAX_DURATION_S in evaluationWorker.ts.
+export const maxDuration = 300;
 
 const MAX_PAGES = 25;
 

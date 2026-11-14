@@ -623,7 +623,18 @@ export async function gradeAnswerSheetFromFile(
   // Section 2(d) experiment: extraction (vision) and grading (reasoning)
   // are different tasks and may not need the same model — this lets each
   // be overridden independently. Both default to the production model.
-  modelOverrides?: { extraction?: string; grading?: string }
+  modelOverrides?: { extraction?: string; grading?: string },
+  // Stage-1 checkpointing for the job worker (evaluationWorker.ts). If
+  // `extraction` is given, the extraction call is skipped and grading starts
+  // from it; otherwise, once a fresh extraction succeeds, `onExtracted` is
+  // awaited so the caller can persist it BEFORE grading begins. A function
+  // killed mid-grading then resumes at grading rather than repeating a
+  // 45-55s extraction call on a long sheet. Optional: every other caller
+  // (fixtures, harnesses, experiments) passes nothing and is unaffected.
+  checkpoint?: {
+    extraction?: ExtractionResult;
+    onExtracted?: (extraction: ExtractionResult) => Promise<void>;
+  }
 ): Promise<{ extraction: ExtractionResult; result: GradedAnswerSheet; usage: UsageAccumulator }> {
   // No key check here — it used to run unconditionally at this point, before
   // `replay` was ever consulted, which meant a replay-mode caller with every
@@ -635,7 +646,13 @@ export async function gradeAnswerSheetFromFile(
   // up here.
   const usage = new UsageAccumulator();
 
-  const extraction = await extractAnswerSheet(fileBytes, mimeType, usage, meta, replay, modelOverrides?.extraction);
+  let extraction: ExtractionResult;
+  if (checkpoint?.extraction) {
+    extraction = checkpoint.extraction;
+  } else {
+    extraction = await extractAnswerSheet(fileBytes, mimeType, usage, meta, replay, modelOverrides?.extraction);
+    if (checkpoint?.onExtracted) await checkpoint.onExtracted(extraction);
+  }
 
   if (extraction.questions.length === 0) {
     throw new NotAnAnswerSheetError();

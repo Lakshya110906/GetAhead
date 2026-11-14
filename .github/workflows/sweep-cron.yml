@@ -14,9 +14,16 @@ name: Frequent evaluation sweep (Vercel Hobby cron workaround)
 # secret is unset or doesn't match — see src/app/api/cron/*/route.ts — so a
 # missing/mismatched secret on either side breaks every run. There is no
 # unauthenticated fallback; do not remove the header.
+#
+# Cadence: every 30 minutes, chosen deliberately (Nov 2026). GitHub treats
+# schedules as best-effort and throttled the old "*/5" to ~11 runs a day,
+# roughly every 5 hours, over 1,126 runs — so the 5-minute value promised a
+# freshness that never happened. The sweep is a backstop behind the immediate
+# post-upload trigger; 30 minutes is plenty at this scale, and it keeps the
+# load on a small free-tier connection pool honest about what it is.
 on:
   schedule:
-    - cron: "*/5 * * * *"
+    - cron: "*/30 * * * *"
   workflow_dispatch: {}
 
 jobs:
@@ -36,7 +43,12 @@ jobs:
             echo "::error::sweep-evaluations returned HTTP $http_code (expected 2xx). See response body above — a 401 means CRON_SECRET is missing or doesn't match between this repo's secret and Vercel's production env var."
             exit 1
           fi
+      # always(): runs even when the sweep step failed. Without it, the one
+      # step whose job is to report stuck work was SKIPPED in every run of
+      # the 10-12 Nov 2026 incident — it went quiet in exactly the situation
+      # it exists for. The workflow still fails overall if the sweep did.
       - name: Check queue depth
+        if: always()
         run: |
           url="${{ vars.PRODUCTION_URL || 'https://get-ahead-five.vercel.app' }}/api/cron/queue-alert"
           http_code=$(curl -s -o /tmp/alert-body.txt -w "%{http_code}" \

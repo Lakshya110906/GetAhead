@@ -18,7 +18,22 @@ import type { ExtractionResult, GradedAnswerSheet } from "@/lib/answerSheetSchem
 // claimed it is presumed dead (function crashed, was killed mid-run, etc.) —
 // it becomes eligible to be re-claimed rather than being lost forever. This
 // is a dead-worker reclaim, not an error-driven retry.
-const STALE_PROCESSING_MS = 4 * 60 * 1000;
+//
+// MUST stay above the longest maxDuration of any route that runs a job
+// (WORKER_MAX_DURATION_S, 300s on the sweep, the enqueue route and the
+// retry/regrade route). If it were shorter, a job that is still legitimately
+// running would look dead and be claimed a second time — two workers
+// grading one sheet, and two sets of Gemini calls. It was 4 minutes when
+// those routes were capped at 60s; raising them to 300s without raising
+// this would have introduced exactly that race.
+export const WORKER_MAX_DURATION_S = 300;
+const STALE_PROCESSING_MS = (WORKER_MAX_DURATION_S + 60) * 1000;
+
+// Message for a job that kept dying before it could finish. Distinct from a
+// real grading failure so the user knows retrying the same file is the
+// thing that will NOT help without splitting it.
+export const ATTEMPTS_EXHAUSTED_MESSAGE =
+  "This answer sheet couldn't be finished in the time allowed after several attempts. If it's a long sheet, try uploading it in two parts.";
 
 // There is deliberately only ONE retry layer in this pipeline: the
 // per-question validation-repair loop inside gradeQuestionWithRepair
@@ -42,7 +57,42 @@ const STALE_PROCESSING_MS = 4 * 60 * 1000;
  * update (only succeeds if the row is still in the state we last saw it in),
  * so two overlapping workers can't both grab the same job.
  */
-async function claimNextJob(): Promise<string | null> {
+/**
+ * Moves every job that has used up its attempts to a terminal FAILED state
+ * and refunds the user's quota unit (none of this is the user's fault — the
+ * pipeline couldn't finish). Only a row that is not currently being worked
+ * on qualifies: QUEUED, or PROCESSING past the stale threshold. Each update
+ * is conditional on the row still being in the state we read, so two
+ * overlapping sweeps can't both retire the same job or refund it twice.
+ * Returns how many jobs it retired.
+ */
+export async function failExhaustedJobs(): Promise<number> {
+  const staleThreshold = new Date(Date.now() - STALE_PROCESSING_MS);
+  const exhausted = await prisma.evaluation.findMany({
+    where: {
+      attempts: { gte: prisma.evaluation.fields.maxAttempts },
+      OR: [{ status: "QUEUED" }, { status: "PROCESSING", startedAt: { lt: staleThreshold } }],
+    },
+    select: { id: true, status: true, userId: true, attempts: true },
+    take: 50,
+  });
+
+  let retired = 0;
+  for (const row of exhausted) {
+    const res = await prisma.evaluation.updateMany({
+      where: { id: row.id, status: row.status, attempts: row.attempts },
+      data: { status: "FAILED", finishedAt: new Date(), lastError: ATTEMPTS_EXHAUSTED_MESSAGE, extractionCheckpoint: null },
+    });
+    if (res.count === 1) {
+      retired++;
+      logger.warn("Job retired after exhausting its attempts", { jobId: row.id, stage: "sweep", attempts: row.attempts });
+      await refundQuota(row.userId, "EVALUATION");
+    }
+  }
+  return retired;
+}
+
+export async function claimNextJob(): Promise<string | null> {
   const now = new Date();
   const staleThreshold = new Date(now.getTime() - STALE_PROCESSING_MS);
 
@@ -52,6 +102,12 @@ async function claimNextJob(): Promise<string | null> {
         { status: "QUEUED", OR: [{ nextAttemptAt: null }, { nextAttemptAt: { lte: now } }] },
         { status: "PROCESSING", startedAt: { lt: staleThreshold } },
       ],
+      // maxAttempts existed on the row and was never checked here. A job
+      // that could never finish (a 19-page sheet against a 60s cap) was
+      // reclaimed 12 times in three days, oldest-first, blocking everything
+      // queued behind it. failExhaustedJobs() retires those rows; this keeps
+      // them from ever being claimed again in between.
+      attempts: { lt: prisma.evaluation.fields.maxAttempts },
     },
     orderBy: { queuedAt: "asc" },
     select: { id: true, status: true },
@@ -75,7 +131,7 @@ async function claimNextJob(): Promise<string | null> {
   return candidate.id;
 }
 
-async function runJob(id: string): Promise<void> {
+export async function runJob(id: string): Promise<void> {
   const job = await prisma.evaluation.findUnique({ where: { id } });
   if (!job) return;
 
@@ -123,7 +179,15 @@ async function runJob(id: string): Promise<void> {
       ({ extraction, result } = cached);
       gradedFromCache = true;
     } else {
-      logger.info("Sending to Gemini: extraction, then one grading call per question", { jobId: id, stage: "transcribe", subject: job.subject });
+      // Resume from a stage-1 checkpoint if a previous attempt on this exact
+      // input got that far. contentHash covers the file bytes, context,
+      // both prompt versions and the model, so a checkpoint from a
+      // different input or an older prompt is never reused.
+      const checkpointed = readExtractionCheckpoint(job.extractionCheckpoint, contentHash);
+      logger.info(
+        checkpointed ? "Resuming from extraction checkpoint, grading only" : "Sending to Gemini: extraction, then grading",
+        { jobId: id, stage: "transcribe", subject: job.subject }
+      );
       const graded = await gradeAnswerSheetFromFile(
         fileBytes,
         mimeType,
@@ -132,7 +196,19 @@ async function runJob(id: string): Promise<void> {
           grade,
           examType: job.examType,
         },
-        { correlationId: id, userId: job.userId ?? undefined }
+        { correlationId: id, userId: job.userId ?? undefined },
+        undefined,
+        undefined,
+        undefined,
+        {
+          extraction: checkpointed ?? undefined,
+          onExtracted: async (e) => {
+            await prisma.evaluation.update({
+              where: { id },
+              data: { extractionCheckpoint: JSON.stringify({ contentHash, extraction: e }) },
+            });
+          },
+        }
       );
       ({ result, extraction, usage } = graded);
       // Stored (or, on an explicit regrade, overwritten) so every future
@@ -212,6 +288,8 @@ async function runJob(id: string): Promise<void> {
         gradedFromCache,
         bypassGradingCache: false,
         contentHash,
+        // The full extraction is now in ocrText; the checkpoint has done its job.
+        extractionCheckpoint: null,
       },
     });
     logger.info("Job persisted", { jobId: id, stage: "persist", status: "SUCCEEDED" });
@@ -240,14 +318,6 @@ async function runJob(id: string): Promise<void> {
   }
 }
 
-/** Claims and runs exactly one due job, if any exists. Returns whether it did. */
-export async function processOneDueJob(): Promise<boolean> {
-  const id = await claimNextJob();
-  if (!id) return false;
-  await runJob(id);
-  return true;
-}
-
 /** Claims and runs one specific job — used for the immediate post-enqueue trigger. */
 export async function processSpecificJob(id: string): Promise<void> {
   const now = new Date();
@@ -258,4 +328,16 @@ export async function processSpecificJob(id: string): Promise<void> {
   if (claim.count === 0) return; // already claimed (e.g. by the sweep) or not queued anymore
   logger.info("Job claimed by immediate trigger", { jobId: id, stage: "claim" });
   await runJob(id);
+}
+
+/** Returns the checkpointed extraction only if it was made from this exact input. */
+function readExtractionCheckpoint(raw: string | null | undefined, contentHash: string): ExtractionResult | null {
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw) as { contentHash?: string; extraction?: ExtractionResult };
+    return parsed.contentHash === contentHash && parsed.extraction ? parsed.extraction : null;
+  } catch {
+    // A corrupt checkpoint costs one extra extraction call, never a failed job.
+    return null;
+  }
 }

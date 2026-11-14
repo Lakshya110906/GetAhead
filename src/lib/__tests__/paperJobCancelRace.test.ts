@@ -9,7 +9,8 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 // job has already been cancelled underneath it.
 
 vi.mock("@/lib/prisma", () => ({
-  prisma: { paperGenerationJob: { findUnique: vi.fn(), update: vi.fn() } },
+  // updateMany is the atomic lock acquisition in processJobStep; count 1 = this caller won the lock.
+  prisma: { paperGenerationJob: { findUnique: vi.fn(), update: vi.fn(), updateMany: vi.fn().mockResolvedValue({ count: 1 }) } },
 }));
 vi.mock("@/lib/quota", () => ({ refundQuota: vi.fn() }));
 vi.mock("@/lib/logger", () => ({ logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn() } }));

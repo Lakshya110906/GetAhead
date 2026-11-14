@@ -152,6 +152,13 @@ model Evaluation {
   // effective marks so analytics and the dashboard, which read those
   // columns, stay consistent without knowing about overrides at all.
   markOverrides      String? @db.LongText
+  // Stage-1 checkpoint: { contentHash, extraction } written the moment
+  // extraction succeeds, so a run killed during grading resumes at grading
+  // instead of paying for the same ~50s extraction call again. Only reused
+  // when contentHash matches (same file, context, prompt versions, model).
+  // Measured cost of not having it: a 19-page sheet was extracted 7 times
+  // over 10-13 Nov 2026, each result thrown away when the function died.
+  extractionCheckpoint String? @db.LongText
   gradedFromCache    Boolean @default(false)
   // The GradingCache key this evaluation's result lives under, so account
   // deletion can erase the cached extraction/result too — the cache row has

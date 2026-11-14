@@ -61,10 +61,14 @@ export function initialAgentStates(): AgentStates {
 }
 
 // A stale lock (worker died mid-step without releasing it) is recoverable
-// after this long — short enough that a real user isn't stuck waiting a
-// full cron cycle, long enough that two pollers don't both grab the same
-// step under normal latency.
-const LOCK_STALE_MS = 20_000;
+// after this long. It MUST exceed the longest a live step can run, or a
+// step still in flight looks dead and is started a second time. It was
+// 20s, while GeminiCallLog shows real steps at avg 17s and up to 53s
+// (reviewer 49s, repair 53s) — and the client fires /advance on every 2s
+// poll, so any step past 20s could be started again mid-flight: a second
+// Gemini call against the shared daily ceiling, racing the first's writes.
+// 90s clears the observed maximum and the 60s maxDuration of /advance.
+export const LOCK_STALE_MS = 90_000;
 const MAX_STEP_ATTEMPTS = 3;
 
 function backoffMs(attempt: number): number {
@@ -107,10 +111,39 @@ export async function processJobStep(jobId: string): Promise<void> {
     if (sinceUpdate < backoffMs(job.attemptCount - 1)) return;
   }
 
-  await prisma.paperGenerationJob.update({
-    where: { id: jobId },
-    data: { status: "running", lockedAt: new Date() },
+  const lockCutoff = new Date(Date.now() - LOCK_STALE_MS);
+  const unlocked = { OR: [{ lockedAt: null }, { lockedAt: { lt: lockCutoff } }] };
+
+  // attemptCount counts STARTED attempts of the current step (incremented
+  // when the lock is taken, below). Reaching the cap here, with no live
+  // lock, means every attempt died without reaching the catch block —
+  // killed by a timeout, which is exactly the case the catch's own cap
+  // never saw. Without this the step was retried forever.
+  if (job.attemptCount >= MAX_STEP_ATTEMPTS) {
+    const retired = await prisma.paperGenerationJob.updateMany({
+      where: { id: jobId, status: { in: ["queued", "running"] }, step: job.step, attemptCount: job.attemptCount, ...unlocked },
+      data: {
+        status: "failed",
+        error: "This paper couldn't be finished in the time allowed after several attempts. Please try generating it again.",
+        retryWorthwhile: true,
+        lockedAt: null,
+      },
+    });
+    if (retired.count === 1) await refundQuota(job.userId, "PAPER_GENERATION");
+    return;
+  }
+
+  // Taking the lock is ONE conditional write, not a check followed by an
+  // update. It succeeds only if the job is still exactly as read — same
+  // step, same attempt count, not locked by anyone live — so two concurrent
+  // /advance calls (the client fires one per poll) can't both win, and no
+  // caller ever runs a step from a stale snapshot of the row.
+  const acquired = await prisma.paperGenerationJob.updateMany({
+    where: { id: jobId, status: { in: ["queued", "running"] }, step: job.step, attemptCount: job.attemptCount, ...unlocked },
+    data: { status: "running", lockedAt: new Date(), attemptCount: { increment: 1 } },
   });
+  if (acquired.count === 0) return; // someone else took it, or the job moved on
+  const stepAttempt = job.attemptCount + 1;
 
   const config: PaperConfig = JSON.parse(job.config);
   const agentStates: AgentStates = JSON.parse(job.agentStates);
@@ -418,7 +451,8 @@ export async function processJobStep(jobId: string): Promise<void> {
     }
 
     const message = err instanceof Error ? err.message : String(err);
-    const newAttemptCount = job.attemptCount + 1;
+    // Already counted when the lock was taken; this attempt is that number.
+    const newAttemptCount = stepAttempt;
     logger.error(`Paper generation job ${jobId} failed at step "${job.step}" (attempt ${newAttemptCount}/${MAX_STEP_ATTEMPTS})`, {
       route: "processJobStep",
       jobId,
@@ -455,10 +489,9 @@ export async function processJobStep(jobId: string): Promise<void> {
  * this exists for what a poll wouldn't catch: the user closed the tab, or
  * the browser dropped one and never retried. Finds ONE job that's actually
  * due (queued outright, or "running" with a lock stale enough to mean its
- * worker died) and advances it a single step. Mirrors
- * processOneDueJob()/sweep-evaluations' shape deliberately — same pattern,
- * same reason: Hobby-plan crons only run once a day, so this is a coarse
- * backstop, not the primary driver.
+ * worker died) and advances it a single step. Called from the sweep's
+ * after(), never inline in a cron response. Hobby-plan crons only run once
+ * a day, so this is a coarse backstop, not the primary driver.
  */
 export async function processOneDuePaperJob(): Promise<boolean> {
   const staleCutoff = new Date(Date.now() - LOCK_STALE_MS);

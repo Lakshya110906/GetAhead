@@ -13,7 +13,9 @@ import { zodErrorResponse } from "@/lib/zodError";
 import { markOverrideSchema, parseMarkOverrides, applyOverride, recomputeTotals } from "@/lib/markOverrides";
 import type { QuestionGrade } from "@/lib/answerSheetSchema";
 
-export const maxDuration = 60;
+// retry/regrade run the grading job in after(), under this budget — see
+// WORKER_MAX_DURATION_S in evaluationWorker.ts, which this must match.
+export const maxDuration = 300;
 
 async function getOwnedJob(id: string, userId: string) {
   const job = await prisma.evaluation.findUnique({ where: { id } });
