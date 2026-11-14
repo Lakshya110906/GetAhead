@@ -226,6 +226,8 @@ export default function PrivacyPage() {
               <li>When you delete your account (Settings → Security → Danger zone), all associated data (evaluations, reports, question papers, sessions, uploaded files) is permanently deleted immediately — well within our 7-day commitment.</li>
               <li>Audit logs are retained for 12 months, then automatically purged by a scheduled job.</li>
               <li>Error logs are retained for 30 days, then automatically purged by the same scheduled job.</li>
+              <li>Technical records of each AI request (which model was called, how long it took, whether it succeeded, and the account it was made for) are deleted after 90 days. Daily usage counters are deleted after 7 days.</li>
+              <li>If you upload an answer sheet but it never becomes an evaluation — for example because it was rejected for size or page count, or because your daily limit was reached — the file is deleted from our storage within about a day.</li>
               <li>When you delete your account, the uploaded answer-sheet files themselves are removed from our file storage, and the cached copy of each sheet&apos;s extracted text and grading is erased as well — not only the database rows.</li>
               <li>Support tickets are kept as a support record even if you later delete your account (they are unlinked from it), and are automatically deleted 12 months after they are resolved or closed.</li>
             </ul>

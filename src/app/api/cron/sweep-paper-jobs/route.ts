@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse, after } from "next/server";
 import { processOneDuePaperJob } from "@/lib/paperJob";
 import { logger } from "@/lib/logger";
+import { recordCronRun } from "@/lib/cronRuns";
 
 // Steps run in after(), inside this invocation, so they get this budget.
 export const maxDuration = 300;
@@ -36,6 +37,7 @@ export async function GET(request: NextRequest) {
   const startedAt = Date.now();
   after(async () => {
     let processed = 0;
+    let crashed = false;
     for (let i = 0; i < BATCH_SIZE; i++) {
       if (BUDGET_MS - (Date.now() - startedAt) < MIN_STEP_HEADROOM_MS) break;
       try {
@@ -43,6 +45,7 @@ export async function GET(request: NextRequest) {
         if (!didWork) break;
         processed++;
       } catch (err) {
+        crashed = true;
         logger.error("Paper sweep step crashed", {
           stage: "sweep",
           message: err instanceof Error ? err.message : String(err),
@@ -51,6 +54,7 @@ export async function GET(request: NextRequest) {
       }
     }
     logger.info("Paper job sweep ran", { stage: "sweep", processed });
+    await recordCronRun("sweep-paper-jobs", !crashed, { processed });
   });
 
   return NextResponse.json({ ok: true, scheduled: true });

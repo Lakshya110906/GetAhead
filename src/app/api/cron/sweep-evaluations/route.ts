@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse, after } from "next/server";
 import { claimNextJob, failExhaustedJobs, runJob } from "@/lib/evaluationWorker";
 import { logger } from "@/lib/logger";
+import { recordCronRun } from "@/lib/cronRuns";
 
 // The grading work for claimed jobs runs in after(), inside this same
 // invocation, so it gets this route's full budget. Must match
@@ -51,25 +52,28 @@ export async function GET(request: NextRequest) {
     claimed.push(id);
   }
 
-  if (claimed.length > 0) {
-    after(async () => {
-      // Sequential, not parallel: each job makes Gemini calls against one
-      // shared daily ceiling, and the connection pool is small.
-      for (const id of claimed) {
-        try {
-          await runJob(id);
-        } catch (err) {
-          // runJob records its own failures on the row; this only catches
-          // something escaping it, so one bad job can't strand the next.
-          logger.error("Sweep background job crashed", {
-            stage: "sweep",
-            jobId: id,
-            message: err instanceof Error ? err.message : String(err),
-          });
-        }
+  // Always scheduled, even with nothing claimed, so the run is recorded
+  // (cronRuns.ts) only after its background work has actually finished.
+  after(async () => {
+    // Sequential, not parallel: each job makes Gemini calls against one
+    // shared daily ceiling, and the connection pool is small.
+    let crashed = 0;
+    for (const id of claimed) {
+      try {
+        await runJob(id);
+      } catch (err) {
+        // runJob records its own failures on the row; this only catches
+        // something escaping it, so one bad job can't strand the next.
+        crashed++;
+        logger.error("Sweep background job crashed", {
+          stage: "sweep",
+          jobId: id,
+          message: err instanceof Error ? err.message : String(err),
+        });
       }
-    });
-  }
+    }
+    await recordCronRun("sweep-evaluations", crashed === 0, { retired, claimed: claimed.length, crashed });
+  });
 
   logger.info("Sweep cron ran", { stage: "sweep", retired, claimed: claimed.length });
   return NextResponse.json({ ok: true, retired, claimed: claimed.length });

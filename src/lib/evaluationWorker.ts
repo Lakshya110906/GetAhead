@@ -27,7 +27,7 @@ import type { ExtractionResult, GradedAnswerSheet } from "@/lib/answerSheetSchem
 // those routes were capped at 60s; raising them to 300s without raising
 // this would have introduced exactly that race.
 export const WORKER_MAX_DURATION_S = 300;
-const STALE_PROCESSING_MS = (WORKER_MAX_DURATION_S + 60) * 1000;
+export const STALE_PROCESSING_MS = (WORKER_MAX_DURATION_S + 60) * 1000;
 
 // Message for a job that kept dying before it could finish. Distinct from a
 // real grading failure so the user knows retrying the same file is the

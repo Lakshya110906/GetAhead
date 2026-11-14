@@ -61,3 +61,11 @@ jobs:
             echo "::error::queue-alert returned HTTP $http_code (expected 2xx). See response body above — a 401 means CRON_SECRET is missing or doesn't match between this repo's secret and Vercel's production env var."
             exit 1
           fi
+          # Stuck work fails this step on purpose: GitHub's failure email is
+          # the paging channel this project has proven works (production has
+          # no RESEND_API_KEY, so the app's own alert email can't send).
+          stuck=$(jq -r '.stuck // 0' /tmp/alert-body.txt)
+          if [ "$stuck" != "0" ]; then
+            echo "::error::$stuck stuck job(s) — see the response body above (stuckProcessing / overdueQueued / stalledPapers)."
+            exit 1
+          fi

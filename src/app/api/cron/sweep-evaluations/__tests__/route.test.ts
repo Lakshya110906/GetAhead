@@ -18,6 +18,7 @@ vi.mock("@/lib/evaluationWorker", () => ({
   runJob: vi.fn(),
 }));
 vi.mock("@/lib/logger", () => ({ logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn() } }));
+vi.mock("@/lib/cronRuns", () => ({ recordCronRun: vi.fn() }));
 
 const mocked = <T>(fn: T) => fn as unknown as ReturnType<typeof vi.fn>;
 
@@ -49,6 +50,9 @@ describe("GET /api/cron/sweep-evaluations", () => {
     expect(captured).toHaveLength(1);
     await captured[0]();
     expect(mocked(worker.runJob).mock.calls.map((c) => c[0])).toEqual(["job_a", "job_b"]);
+    // Recorded only after the background work finished, as a success.
+    const { recordCronRun } = await import("@/lib/cronRuns");
+    expect(recordCronRun).toHaveBeenCalledWith("sweep-evaluations", true, { retired: 1, claimed: 2, crashed: 0 });
   });
 
   it("one job throwing does not strand the next", async () => {
@@ -62,9 +66,11 @@ describe("GET /api/cron/sweep-evaluations", () => {
     await captured[0]();
 
     expect(mocked(worker.runJob).mock.calls.map((c) => c[0])).toEqual(["bad", "good"]);
+    const { recordCronRun } = await import("@/lib/cronRuns");
+    expect(recordCronRun).toHaveBeenCalledWith("sweep-evaluations", false, { retired: 0, claimed: 2, crashed: 1 });
   });
 
-  it("schedules nothing when there is nothing to do", async () => {
+  it("with nothing to do, grades nothing but still records the run", async () => {
     const worker = await import("@/lib/evaluationWorker");
     mocked(worker.failExhaustedJobs).mockResolvedValue(0);
     mocked(worker.claimNextJob).mockResolvedValue(null);
@@ -73,7 +79,10 @@ describe("GET /api/cron/sweep-evaluations", () => {
     const res = await GET(req("Bearer test-secret"));
 
     expect(await res.json()).toEqual({ ok: true, retired: 0, claimed: 0 });
-    expect(captured).toHaveLength(0);
+    await captured[0]();
+    expect(worker.runJob).not.toHaveBeenCalled();
+    const { recordCronRun } = await import("@/lib/cronRuns");
+    expect(recordCronRun).toHaveBeenCalledWith("sweep-evaluations", true, { retired: 0, claimed: 0, crashed: 0 });
   });
 
   it("fails closed: wrong secret, missing header, or no CRON_SECRET configured", async () => {

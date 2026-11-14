@@ -12,6 +12,16 @@ const APP_NAME = "GetAhead AI";
 const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || "onboarding@resend.dev";
 const ADMIN_ALERT_EMAIL = process.env.ADMIN_ALERT_EMAIL || process.env.ADMIN_EMAIL;
 
+/**
+ * Whether an alert can actually be emailed. Production had no RESEND_API_KEY
+ * (confirmed Nov 2026), so every alert was "sent" through the build-time
+ * dummy key and failed silently. Callers report this instead of implying an
+ * email went out; the durable ErrorLog row is written either way.
+ */
+export function isAlertEmailConfigured(): boolean {
+  return Boolean(process.env.RESEND_API_KEY && ADMIN_ALERT_EMAIL);
+}
+
 export async function sendOpsAlert(type: string, message: string): Promise<void> {
   console.error(`[OPS ALERT: ${type}] ${message}`);
 
@@ -21,15 +31,19 @@ export async function sendOpsAlert(type: string, message: string): Promise<void>
     console.error("[OPS ALERT] failed to persist alert log:", err);
   }
 
-  if (!ADMIN_ALERT_EMAIL) {
-    console.warn("[OPS ALERT] ADMIN_ALERT_EMAIL not configured — alert was logged but not emailed.");
+  const to = ADMIN_ALERT_EMAIL;
+  if (!isAlertEmailConfigured() || !to) {
+    console.warn(
+      `[OPS ALERT] not emailed: ${!process.env.RESEND_API_KEY ? "RESEND_API_KEY" : "ADMIN_ALERT_EMAIL/ADMIN_EMAIL"} is not set. ` +
+        "The alert is recorded in ErrorLog (admin → System Logs)."
+    );
     return;
   }
 
   try {
     await resend.emails.send({
       from: `${APP_NAME} Ops <${FROM_EMAIL}>`,
-      to: ADMIN_ALERT_EMAIL,
+      to,
       subject: `[${type}] GetAhead AI ops alert`,
       html: `<p style="font-family:sans-serif;font-size:14px;color:#111;">${message}</p>`,
     });
