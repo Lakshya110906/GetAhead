@@ -19,6 +19,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Without an email provider nothing can be delivered, and the success
+    // message below would be untrue for everyone. Same answer for every
+    // address, so it says nothing about which accounts exist.
+    if (!process.env.RESEND_API_KEY) {
+      return NextResponse.json(
+        {
+          error: "Password reset emails aren't available right now. Contact us from the Contact page and we'll reset your password for you.",
+          emailUnavailable: true,
+        },
+        { status: 503 }
+      );
+    }
+
     const { email } = await request.json();
     if (!email || !email.includes("@")) {
       return NextResponse.json({ error: "Invalid email address" }, { status: 400 });

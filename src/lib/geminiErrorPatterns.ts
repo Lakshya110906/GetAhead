@@ -50,3 +50,33 @@ export function extractRetryDelay(err: unknown): { raw: string; ms: number } | n
   }
   return null;
 }
+
+export type FailureClass =
+  | "daily_quota"
+  | "rate_limit"
+  | "auth"
+  | "invalid_request"
+  | "transient"
+  | "not_answer_sheet"
+  | "validation_failed"
+  | "storage"
+  | "other";
+
+/**
+ * One label for why a background job failed, logged by both the evaluation
+ * worker and paperJob.ts so a failure can be filtered by cause across both.
+ * Named errors win; otherwise the same message patterns the retry logic uses.
+ */
+export function classifyFailure(err: unknown): FailureClass {
+  const name = err instanceof Error ? err.name : "";
+  const message = err instanceof Error ? err.message : String(err);
+  if (name === "DailyQuotaExhaustedError" || DAILY_QUOTA_PATTERN.test(message)) return "daily_quota";
+  if (name === "GeminiRateLimitError" || PER_MINUTE_QUOTA_PATTERN.test(message)) return "rate_limit";
+  if (name === "GeminiAuthError" || AUTH_ERROR_PATTERN.test(message)) return "auth";
+  if (name === "GeminiInvalidArgumentError" || INVALID_ARGUMENT_PATTERN.test(message)) return "invalid_request";
+  if (name === "NotAnAnswerSheetError" || name === "NoQuestionsFoundError") return "not_answer_sheet";
+  if (name === "GradingValidationFailedError" || name === "PaperValidationFailedError") return "validation_failed";
+  if (/download the uploaded file|storage returned/i.test(message)) return "storage";
+  if (RETRYABLE_ERROR_PATTERN.test(message)) return "transient";
+  return "other";
+}

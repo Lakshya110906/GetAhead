@@ -1223,7 +1223,7 @@ ${JSON.stringify(paper)}
               <GraduationCap className="w-5 h-5" />
               Generate question paper
             </button>
-            <SharedQuotaBadge />
+            <SharedQuotaBadge kind="paper" />
           </form>
         </div>
       )}

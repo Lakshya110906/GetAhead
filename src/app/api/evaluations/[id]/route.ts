@@ -8,7 +8,7 @@ import { reportApiError } from "@/lib/apiError";
 import { logger } from "@/lib/logger";
 import { NOT_AN_ANSWER_SHEET_MESSAGE, MODEL_ID as EVAL_MODEL_ID } from "@/lib/answerSheetGrading";
 import { consumeQuota, QuotaExceededError } from "@/lib/quota";
-import { assertQuotaHeadroom, QuotaHeadroomError, PreviewEnvironmentBlockedError } from "@/lib/geminiQuotaState";
+import { assertQuotaHeadroom, QuotaHeadroomError, PreviewEnvironmentBlockedError, PENDING_EVALUATION_REQUESTS } from "@/lib/geminiQuotaState";
 import { zodErrorResponse } from "@/lib/zodError";
 import { markOverrideSchema, parseMarkOverrides, applyOverride, recomputeTotals } from "@/lib/markOverrides";
 import type { QuestionGrade } from "@/lib/answerSheetSchema";
@@ -276,7 +276,7 @@ export async function PATCH(
       // brand new evaluation: Gemini's shared daily headroom, then this
       // user's own daily evaluation quota.
       try {
-        await assertQuotaHeadroom(EVAL_MODEL_ID, 2);
+        await assertQuotaHeadroom(EVAL_MODEL_ID, PENDING_EVALUATION_REQUESTS);
       } catch (err) {
         if (err instanceof QuotaHeadroomError) {
           return NextResponse.json(

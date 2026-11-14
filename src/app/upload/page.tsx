@@ -615,7 +615,7 @@ export default function UploadPage() {
                     Cancel
                   </button>
                 )}
-                {status === "idle" && <SharedQuotaBadge />}
+                {status === "idle" && <SharedQuotaBadge kind="evaluation" />}
               </div>
             )}
 

@@ -203,17 +203,28 @@ export async function assertQuotaHeadroom(model: string, requestsNeeded: number)
   if (isUnseparatedPreview()) {
     throw new PreviewEnvironmentBlockedError(requestsNeeded);
   }
-  const [usage, reserved] = await Promise.all([getModelUsageToday(model), pendingRequests()]);
-  // GeminiCallLog only holds calls already made. Work that is queued or
-  // running hasn't logged its calls yet, so without this, ten uploads in a
-  // row each saw the whole day's quota free and most then failed on
-  // Gemini's own 429. Two requests checking at the same instant can still
-  // both pass; Gemini's limit then stops one and its quota is refunded.
-  const remaining = Math.max(0, usage.remaining - reserved);
-  if (usage.level === "block" || remaining < requestsNeeded) {
-    throw new QuotaHeadroomError({ ...usage, remaining }, requestsNeeded);
+  const usage = await getSharedHeadroom(model);
+  if (usage.level === "block" || usage.remaining < requestsNeeded) {
+    throw new QuotaHeadroomError(usage, requestsNeeded);
   }
   return usage;
+}
+
+/**
+ * Today's usage with `remaining` net of work already queued or running.
+ * GeminiCallLog only holds calls already made; queued jobs haven't logged
+ * theirs yet, so without this ten uploads in a row each saw the whole day's
+ * quota free and most then failed on Gemini's own 429. The gate above and
+ * the user-facing badge (GET /api/quota-status) both read this, so the
+ * badge can never show room the gate would refuse. Two requests checking at
+ * the same instant can still both pass; Gemini's limit then stops one and
+ * its quota is refunded.
+ */
+export async function getSharedHeadroom(model: string): Promise<ModelQuotaUsage & { reserved: number }> {
+  const [usage, reserved] = await Promise.all([getModelUsageToday(model), pendingRequests()]);
+  const remaining = Math.max(0, usage.remaining - reserved);
+  const fractionUsed = usage.limit > 0 ? (usage.limit - remaining) / usage.limit : 0;
+  return { ...usage, remaining, fractionUsed, level: levelFor(fractionUsed), reserved };
 }
 
 // What each job type is gated for at enqueue (evaluations/route.ts,

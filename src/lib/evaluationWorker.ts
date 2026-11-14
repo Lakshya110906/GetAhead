@@ -11,7 +11,8 @@ import {
 import { computeGradingContentHash, lookupGradingCache, writeGradingCache } from "@/lib/gradingCache";
 import { refundQuota } from "@/lib/quota";
 import { readOwnBlob } from "@/lib/blobStore";
-import { logger } from "@/lib/logger";
+import { logger, type LogStage } from "@/lib/logger";
+import { classifyFailure } from "@/lib/geminiErrorPatterns";
 import { captureException } from "@/lib/errorTracking";
 import type { ExtractionResult, GradedAnswerSheet } from "@/lib/answerSheetSchema";
 
@@ -139,6 +140,9 @@ export async function runJob(id: string): Promise<void> {
   // The job may have been cancelled the instant before we claimed it.
   if (job.status !== "PROCESSING") return;
 
+  // Where a failure happened, for the failure log. It used to say "persist"
+  // whatever had actually failed.
+  let stage: LogStage = "download";
   try {
     if (!job.fileUrl) {
       throw new Error("No answer sheet file is attached to this job.");
@@ -174,6 +178,7 @@ export async function runJob(id: string): Promise<void> {
     let usage = new UsageAccumulator();
     let gradedFromCache = false;
 
+    stage = "transcribe";
     const cached = job.bypassGradingCache ? null : await lookupGradingCache(contentHash);
     if (cached) {
       logger.info("Reusing cached grading result — identical input already graded", { jobId: id, stage: "grade", subject: job.subject });
@@ -185,6 +190,7 @@ export async function runJob(id: string): Promise<void> {
       // both prompt versions and the model, so a checkpoint from a
       // different input or an older prompt is never reused.
       const checkpointed = readExtractionCheckpoint(job.extractionCheckpoint, contentHash);
+      if (checkpointed) stage = "grade";
       logger.info(
         checkpointed ? "Resuming from extraction checkpoint, grading only" : "Sending to Gemini: extraction, then grading",
         { jobId: id, stage: "transcribe", subject: job.subject }
@@ -204,6 +210,7 @@ export async function runJob(id: string): Promise<void> {
         {
           extraction: checkpointed ?? undefined,
           onExtracted: async (e) => {
+            stage = "grade";
             await prisma.evaluation.update({
               where: { id },
               data: { extractionCheckpoint: JSON.stringify({ contentHash, extraction: e }) },
@@ -219,6 +226,7 @@ export async function runJob(id: string): Promise<void> {
       await writeGradingCache({ contentHash, modelId: MODEL_ID, promptVersion, subject: job.subject, grade, examType: job.examType, extraction, result });
     }
 
+    stage = "persist";
     logger.info("Grading complete", {
       jobId: id,
       stage: "grade",
@@ -296,8 +304,9 @@ export async function runJob(id: string): Promise<void> {
     logger.info("Job persisted", { jobId: id, stage: "persist", status: "SUCCEEDED" });
   } catch (error) {
     const message = error instanceof Error ? error.message : "The evaluation failed for an unknown reason.";
-    logger.error("Evaluation job failed", { jobId: id, stage: "persist", attempt: job.attempts, error: message });
-    captureException(error, { jobId: id, stage: "persist", attempt: job.attempts, subject: job.subject });
+    const failure = classifyFailure(error);
+    logger.error("Evaluation job failed", { jobId: id, stage, failure, userId: job.userId, attempt: job.attempts, error: message });
+    captureException(error, { jobId: id, stage, failure, attempt: job.attempts, subject: job.subject });
 
     await prisma.evaluation.update({
       where: { id },

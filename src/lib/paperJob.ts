@@ -24,6 +24,7 @@ import { validatePaper, assignSectionLetters } from "@/lib/paperValidation";
 import { parseCustomInstructions } from "@/lib/paperConstraintParser";
 import { buildUserFacingValidationMessage } from "@/lib/paperUserMessages";
 import { logger } from "@/lib/logger";
+import { classifyFailure } from "@/lib/geminiErrorPatterns";
 import { captureException } from "@/lib/errorTracking";
 import type { PlannerPlan, GeneratedPaperShape } from "@/lib/questionPaperSchema";
 
@@ -146,6 +147,8 @@ export async function processJobStep(jobId: string): Promise<void> {
   const stepAttempt = job.attemptCount + 1;
 
   const config: PaperConfig = JSON.parse(job.config);
+  // Ties every GeminiCallLog row and log line to this job, as evaluations do.
+  const callMeta = { correlationId: jobId, userId: job.userId };
   const agentStates: AgentStates = JSON.parse(job.agentStates);
 
   try {
@@ -176,7 +179,7 @@ export async function processJobStep(jobId: string): Promise<void> {
       agentStates.planner = { status: "running", startedAt: new Date().toISOString() };
       await prisma.paperGenerationJob.update({ where: { id: jobId }, data: { agentStates: JSON.stringify(agentStates) } });
 
-      const rawPlan = await withRetry(() => runPlannerAgent(genAI, config), "Planner Agent", 1);
+      const rawPlan = await withRetry(() => runPlannerAgent(genAI, config, callMeta), "Planner Agent", 1);
       // A Gemini call can take several real seconds — long enough for a
       // user to cancel while this was in flight. Every write in this
       // function is a plain update-by-id with no status guard, so writing
@@ -207,7 +210,7 @@ export async function processJobStep(jobId: string): Promise<void> {
       agentStates.generator = { status: "running", startedAt: new Date().toISOString() };
       await prisma.paperGenerationJob.update({ where: { id: jobId }, data: { agentStates: JSON.stringify(agentStates) } });
 
-      const rawDraft = await withRetry(() => runGeneratorAgent(genAI, config, plan), "Generator Agent", 1);
+      const rawDraft = await withRetry(() => runGeneratorAgent(genAI, config, plan, callMeta), "Generator Agent", 1);
       if (await isCancelled(jobId)) return;
       const draft = conformDraftToPlan(rawDraft, plan, config.questionTypes);
       agentStates.generator = { status: "done", startedAt: agentStates.generator.startedAt, finishedAt: new Date().toISOString() };
@@ -233,7 +236,7 @@ export async function processJobStep(jobId: string): Promise<void> {
       agentStates.reviewer = { status: "running", startedAt: new Date().toISOString() };
       await prisma.paperGenerationJob.update({ where: { id: jobId }, data: { agentStates: JSON.stringify(agentStates) } });
 
-      const rawReviewed = await withRetry(() => runReviewerAgent(genAI, config, draft), "Reviewer Agent", 1);
+      const rawReviewed = await withRetry(() => runReviewerAgent(genAI, config, draft, callMeta), "Reviewer Agent", 1);
       if (await isCancelled(jobId)) return;
       // Reviewer's own prompt also says not to change question count/marks —
       // same non-enforcement risk as the generator step, so the same
@@ -286,6 +289,7 @@ export async function processJobStep(jobId: string): Promise<void> {
       logger.info(`Paper generation job ${jobId} validate attempt ${attemptNumber}: ${validation.valid ? "PASSED" : "FAILED"}${previousAttempt ? `, outputChanged=${outputChanged}` : ""}`, {
         route: "processJobStep",
         jobId,
+        stage: "paper:validate",
         step: "validate",
         attempt: attemptNumber,
         outputChanged,
@@ -389,7 +393,7 @@ export async function processJobStep(jobId: string): Promise<void> {
       const attemptLogs: RepairAttemptLog[] = JSON.parse(job.repairAttempts);
       const violations = attemptLogs[attemptLogs.length - 1]?.violations ?? [];
 
-      const rawRepaired = await withRetry(() => runRepairAgent(genAI, config, plan, draft, violations), "Repair Agent", 1);
+      const rawRepaired = await withRetry(() => runRepairAgent(genAI, config, plan, draft, violations, callMeta), "Repair Agent", 1);
       if (await isCancelled(jobId)) return;
       const repaired = conformDraftToPlan(rawRepaired, plan, config.questionTypes);
 
@@ -410,6 +414,8 @@ export async function processJobStep(jobId: string): Promise<void> {
         route: "processJobStep",
         jobId,
         userId: job.userId,
+        stage: `paper:${job.step}`,
+        failure: classifyFailure(err),
         step: job.step,
         message: err.message,
       });
@@ -439,6 +445,8 @@ export async function processJobStep(jobId: string): Promise<void> {
         route: "processJobStep",
         jobId,
         userId: job.userId,
+        stage: `paper:${job.step}`,
+        failure: classifyFailure(err),
         step: job.step,
         message,
       });
@@ -457,6 +465,8 @@ export async function processJobStep(jobId: string): Promise<void> {
       route: "processJobStep",
       jobId,
       userId: job.userId,
+      stage: `paper:${job.step}`,
+      failure: classifyFailure(err),
       step: job.step,
       attempt: newAttemptCount,
       message,

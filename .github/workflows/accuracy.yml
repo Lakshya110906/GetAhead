@@ -13,6 +13,7 @@ on:
     paths:
       - "src/lib/answerSheetGrading.ts"
       - "src/lib/answerSheetSchema.ts"
+      - "src/lib/promptSafety.ts"
       - "src/lib/paperValidation.ts"
       - "src/lib/question-agents.ts"
       - "src/lib/evaluationWorker.ts"
@@ -26,6 +27,7 @@ on:
     paths:
       - "src/lib/answerSheetGrading.ts"
       - "src/lib/answerSheetSchema.ts"
+      - "src/lib/promptSafety.ts"
       - "src/lib/paperValidation.ts"
       - "src/lib/question-agents.ts"
       - "src/lib/evaluationWorker.ts"

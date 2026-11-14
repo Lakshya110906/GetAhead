@@ -13,7 +13,10 @@ export type LogStage =
   | "grade"
   | "persist"
   | "worker-trigger"
-  | "sweep";
+  | "sweep"
+  // Paper generation steps (paperJob.ts JobStep), prefixed so they can't be
+  // confused with evaluation stages.
+  | `paper:${string}`;
 
 export interface LogContext {
   jobId?: string;

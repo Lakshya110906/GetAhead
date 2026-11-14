@@ -240,7 +240,7 @@ export default function CoachingCentersPage() {
               <Trophy className="w-12 h-12 text-orange-500 mb-4" />
               <h3 className="text-xl font-bold text-gray-900 mb-3">Competitive exam focus</h3>
               <p className="text-graphite mb-4 leading-relaxed text-sm">
-                GetAhead AI is built for the rigorous standards of JEE, NEET, and board examinations. We&apos;re building a golden set of real, teacher-marked answer sheets so grading accuracy can be measured and published rather than just asserted — see the current status on our homepage.
+                GetAhead AI is aimed at JEE, NEET and board-exam preparation. Its marks are a first pass, not a guarantee of consistency: the same answer graded twice can occasionally differ by a mark. We&apos;re building a golden set of real, teacher-marked answer sheets so grading accuracy can be measured and published rather than just asserted — see the current status on our homepage.
               </p>
               <p className="text-graphite leading-relaxed text-sm">
                 Students get feedback on every question, delivered in a fraction of the time a manually marked script would take.

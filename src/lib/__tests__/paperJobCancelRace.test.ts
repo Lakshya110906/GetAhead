@@ -70,4 +70,24 @@ describe("paperJob.ts — cancel racing an in-flight Gemini call", () => {
     expect(updateCalls.some((c) => c[0].data.step === "generator")).toBe(false);
     expect(updateCalls.some((c) => c[0].data.plannerPlan)).toBe(false);
   });
+
+  it("passes the job id and user to the agent, so its GeminiCallLog rows can be traced to the job", async () => {
+    const { prisma } = await import("@/lib/prisma");
+    const agents = await import("@/lib/question-agents");
+    const { processJobStep } = await import("@/lib/paperJob");
+    (prisma.paperGenerationJob.findUnique as ReturnType<typeof vi.fn>)
+      .mockResolvedValueOnce({
+        id: "job_trace", status: "running", step: "planner", lockedAt: null, attemptCount: 0, updatedAt: new Date(),
+        config: JSON.stringify({ subject: "Math", grade: "10th", topic: "algebra", difficulty: "Medium", totalMarks: 10, questionTypes: ["Short Answer"] }),
+        agentStates: JSON.stringify({ planner: { status: "queued" }, generator: { status: "queued" }, reviewer: { status: "queued" } }),
+        plannerPlan: null, draftPaper: null, repairAttempts: null, validationAttempt: 0, userId: "user_7",
+      })
+      .mockResolvedValueOnce({ status: "cancelled" });
+    (prisma.paperGenerationJob.update as ReturnType<typeof vi.fn>).mockResolvedValue({});
+
+    await processJobStep("job_trace");
+
+    expect((agents.runPlannerAgent as ReturnType<typeof vi.fn>).mock.calls[0][2]).toEqual({ correlationId: "job_trace", userId: "user_7" });
+  });
 });
+

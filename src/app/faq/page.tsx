@@ -39,7 +39,7 @@ const faqCategories = [
     faqs: [
       {
         q: "I forgot my password. How do I reset it?",
-        a: "On the login page, click 'Forgot Password?'. Enter your registered email address and we'll send a reset link within seconds. The link is valid for 1 hour. If you don't see the email, check your spam folder.",
+        a: "On the login page, click 'Forgot Password?'. Enter your registered email address and we'll email you a reset link, valid for 1 hour. If you don't see it, check your spam folder; if the page says reset emails aren't available, contact us and we'll reset it for you.",
       },
       {
         q: "Can I stay signed in across sessions?",
@@ -89,7 +89,7 @@ const faqCategories = [
       },
       {
         q: "Does it support handwritten answers?",
-        a: "Yes. Our OCR engine supports handwriting recognition. For best results, ensure your scan is clear, well-lit, and the handwriting is legible. Very messy or faded handwriting may result in lower OCR accuracy.",
+        a: "Yes. The same AI model that grades the sheet also reads the handwriting; there is no separate OCR engine. For best results, make sure the scan is clear, well-lit and legible. Very messy or faded handwriting is read less reliably, and questions it can't read are marked as unreadable rather than guessed.",
       },
       {
         q: "Which exam formats are supported?",
@@ -152,7 +152,7 @@ const faqCategories = [
     faqs: [
       {
         q: "How do I generate a question paper?",
-        a: "Go to Generate Paper in the sidebar. Select subject, grade (e.g., Class 12), difficulty (Easy, Medium, Hard), and total marks. Click Generate. A complete question paper is created in seconds.",
+        a: "Go to Generate Paper in the sidebar. Select subject, grade (e.g., Class 12), difficulty (Easy, Medium, Hard), and total marks. Click Generate. A complete question paper usually takes one to four minutes: it is planned, written and then reviewed in separate steps.",
       },
       {
         q: "Can I customise the generated paper?",

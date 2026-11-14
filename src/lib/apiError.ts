@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { headers } from "next/headers";
 import { logger } from "@/lib/logger";
 import { captureException } from "@/lib/errorTracking";
 
@@ -73,11 +74,13 @@ export async function reportApiError(opts: ReportOptions): Promise<NextResponse>
   const message = error instanceof Error ? error.message : String(error);
   const stack = error instanceof Error ? error.stack : undefined;
   const timestamp = new Date().toISOString();
+  const requestId = await currentRequestId();
 
   // 1. Full server-side log — every catch that reports through here logs
   // the real error, with enough context to find the request again.
   logger.error(`[${code}] ${route}${stage ? ` (${stage})` : ""}: ${message}`, {
     code,
+    requestId,
     route,
     userId,
     stack,
@@ -95,7 +98,7 @@ export async function reportApiError(opts: ReportOptions): Promise<NextResponse>
     await prisma.errorLog.create({
       data: {
         type: code,
-        message: `${route}${stage ? ` (${stage})` : ""}: ${message}`,
+        message: `${route}${stage ? ` (${stage})` : ""}${requestId ? ` [${requestId}]` : ""}: ${message}`,
         stack: stack || null,
         path: route,
       },
@@ -117,8 +120,20 @@ export async function reportApiError(opts: ReportOptions): Promise<NextResponse>
       error: ErrorCodes[code],
       code,
       timestamp,
+      // Quoted back in a support ticket, finds this exact failure in the logs.
+      ...(requestId ? { requestId } : {}),
       ...(isDev ? { devMessage: message, devStack: stack } : {}),
     },
     { status }
   );
+}
+
+// Vercel's id for this request (x-vercel-id), which its own log lines carry
+// too. Null outside a request (a script, a test) or when not on Vercel.
+async function currentRequestId(): Promise<string | null> {
+  try {
+    return (await headers()).get("x-vercel-id");
+  } catch {
+    return null;
+  }
 }

@@ -176,3 +176,34 @@ describe("assertQuotaHeadroom — work already queued counts against today's quo
     expect((prisma.paperGenerationJob.count as ReturnType<typeof vi.fn>).mock.calls[0][0].where.status.in).toEqual(["queued", "running"]);
   });
 });
+
+describe("getSharedHeadroom — what the badge shows is what the gate allows", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    process.env.VERCEL_ENV = "production";
+  });
+
+  it("subtracts queued work and reports block once nothing fits", async () => {
+    const { prisma } = await import("@/lib/prisma");
+    const { getSharedHeadroom, assertQuotaHeadroom } = await import("@/lib/geminiQuotaState");
+    (prisma.geminiCallLog.count as ReturnType<typeof vi.fn>).mockResolvedValue(12);
+    (prisma.evaluation.count as ReturnType<typeof vi.fn>).mockResolvedValue(4); // 8 reserved -> 0 left
+    (prisma.paperGenerationJob.count as ReturnType<typeof vi.fn>).mockResolvedValue(0);
+
+    const h = await getSharedHeadroom("gemini-2.5-flash");
+    expect(h).toMatchObject({ used: 12, reserved: 8, remaining: 0, level: "block" });
+    await expect(assertQuotaHeadroom("gemini-2.5-flash", 2)).rejects.toThrow();
+  });
+
+  it("when the badge would show one evaluation left, the gate lets exactly that one through", async () => {
+    const { prisma } = await import("@/lib/prisma");
+    const { getSharedHeadroom, assertQuotaHeadroom, PENDING_EVALUATION_REQUESTS } = await import("@/lib/geminiQuotaState");
+    (prisma.geminiCallLog.count as ReturnType<typeof vi.fn>).mockResolvedValue(14);
+    (prisma.evaluation.count as ReturnType<typeof vi.fn>).mockResolvedValue(2); // 14 + 4 = 18 of 20
+    (prisma.paperGenerationJob.count as ReturnType<typeof vi.fn>).mockResolvedValue(0);
+
+    const h = await getSharedHeadroom("gemini-2.5-flash");
+    expect(Math.floor(h.remaining / PENDING_EVALUATION_REQUESTS)).toBe(1);
+    await expect(assertQuotaHeadroom("gemini-2.5-flash", PENDING_EVALUATION_REQUESTS)).resolves.toBeDefined();
+  });
+});

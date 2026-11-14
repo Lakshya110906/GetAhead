@@ -9,7 +9,7 @@ import { processSpecificJob } from "@/lib/evaluationWorker";
 import { MAX_UPLOAD_BYTES } from "@/app/api/uploads/route";
 import { consumeQuota, QuotaExceededError } from "@/lib/quota";
 import { assertSpendGateOpen, SpendLimitReachedError } from "@/lib/spendControl";
-import { assertQuotaHeadroom, QuotaHeadroomError, PreviewEnvironmentBlockedError } from "@/lib/geminiQuotaState";
+import { assertQuotaHeadroom, QuotaHeadroomError, PreviewEnvironmentBlockedError, PENDING_EVALUATION_REQUESTS } from "@/lib/geminiQuotaState";
 import { MODEL_ID as EVAL_MODEL_ID } from "@/lib/answerSheetGrading";
 import { assertDeclaredTypeMatches } from "@/lib/fileSignature";
 import { logger } from "@/lib/logger";
@@ -102,7 +102,7 @@ export async function POST(request: NextRequest) {
     // blocks a request that would have been free — never the other
     // direction (letting one through that can't actually complete).
     try {
-      await assertQuotaHeadroom(EVAL_MODEL_ID, 2);
+      await assertQuotaHeadroom(EVAL_MODEL_ID, PENDING_EVALUATION_REQUESTS);
     } catch (err) {
       if (err instanceof QuotaHeadroomError) {
         return NextResponse.json(

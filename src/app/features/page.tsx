@@ -51,7 +51,7 @@ const features = [
     textColor: "text-blue-700",
     borderColor: "border-blue-100",
     what: "Upload any answer sheet — handwritten or typed — and the AI reads, understands, and evaluates every answer against your rubric, question by question.",
-    why: "Manual grading is time-consuming, inconsistent, and often subjective. AI evaluation is fast and applies the same rubric every time — and we're building a golden set of real, teacher-marked answer sheets to measure how close it lands to a real teacher's marks, rather than just claim it. We'll publish that accuracy figure as soon as it exists.",
+    why: "Manual grading is time-consuming, inconsistent, and often subjective. AI evaluation is fast and marks every sheet against the same rubric. It is not perfectly repeatable: grading the same answer again can occasionally differ by a mark, so an identical upload gets back its earlier result instead of a fresh grade — and we're building a golden set of real, teacher-marked answer sheets to measure how close it lands to a real teacher's marks, rather than just claim it. We'll publish that accuracy figure as soon as it exists.",
     benefits: [
       "Grade hundreds of sheets in the time it takes to grade one manually",
       "Consistent scoring — no fatigue, no bias",

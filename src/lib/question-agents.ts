@@ -612,7 +612,14 @@ function syllabusContext(config: PaperConfig): string {
 }
 
 // 1. Planner Agent
-export async function runPlannerAgent(genAI: GoogleGenerativeAI, config: PaperConfig): Promise<PlannerPlan> {
+// Which job and user a call belongs to, so GeminiCallLog rows from a paper
+// job can be traced like an evaluation's (paperJob.ts passes its job id).
+export interface AgentCallMeta {
+  correlationId?: string;
+  userId?: string;
+}
+
+export async function runPlannerAgent(genAI: GoogleGenerativeAI, config: PaperConfig, meta?: AgentCallMeta): Promise<PlannerPlan> {
   const generationConfig: GenerationConfigWithThinking = {
     responseMimeType: "application/json",
     responseSchema: GEMINI_PLANNER_RESPONSE_SCHEMA,
@@ -639,7 +646,7 @@ Determine the number of sections, the question type of each section, the marks p
 
 The sum of (marksPerQuestion × questionCount) across all sections must equal exactly ${config.totalMarks} — this is a hard requirement, not a target to approximate. Number sections in your own head as Section A, Section B, Section C... in order (the first section is always A; never start at B or later) — the exact final label is reassigned deterministically downstream, but your section order must be contiguous starting from the first section.`;
 
-  const parsed = await timedGeminiCall({ operation: "paper_planner", model: MODEL_ID }, async () => {
+  const parsed = await timedGeminiCall({ operation: "paper_planner", model: MODEL_ID, ...meta }, async () => {
     const result = await model.generateContent(prompt);
     return {
       value: JSON.parse(result.response.text()),
@@ -652,7 +659,7 @@ The sum of (marksPerQuestion × questionCount) across all sections must equal ex
 }
 
 // 2. Generator Agent
-export async function runGeneratorAgent(genAI: GoogleGenerativeAI, config: PaperConfig, plan: PlannerPlan): Promise<GeneratedPaperShape> {
+export async function runGeneratorAgent(genAI: GoogleGenerativeAI, config: PaperConfig, plan: PlannerPlan, meta?: AgentCallMeta): Promise<GeneratedPaperShape> {
   const generationConfig: GenerationConfigWithThinking = {
     responseMimeType: "application/json",
     responseSchema: GEMINI_PAPER_RESPONSE_SCHEMA,
@@ -686,7 +693,7 @@ For every question, provide:
 
 Write plain text only — no LaTeX, no markdown, no dollar signs; spell out formulas in words or plain characters (e.g. "H2O", "x^2" as "x squared" or "x^2").`;
 
-  const parsed = await timedGeminiCall({ operation: "paper_generator", model: MODEL_ID }, async () => {
+  const parsed = await timedGeminiCall({ operation: "paper_generator", model: MODEL_ID, ...meta }, async () => {
     const result = await model.generateContent(prompt);
     return {
       value: JSON.parse(result.response.text()),
@@ -741,7 +748,8 @@ Output the final question paper, with reviewNotes listing specifically what you 
 export async function runReviewerAgent(
   genAI: GoogleGenerativeAI,
   config: PaperConfig,
-  draft: GeneratedPaperShape
+  draft: GeneratedPaperShape,
+  meta?: AgentCallMeta
 ): Promise<GeneratedPaperShape> {
   const generationConfig: GenerationConfigWithThinking = {
     responseMimeType: "application/json",
@@ -753,7 +761,7 @@ export async function runReviewerAgent(
 
   const prompt = buildReviewerPrompt(config, draft);
 
-  const parsed = await timedGeminiCall({ operation: "paper_reviewer", model: MODEL_ID }, async () => {
+  const parsed = await timedGeminiCall({ operation: "paper_reviewer", model: MODEL_ID, ...meta }, async () => {
     const result = await model.generateContent(prompt);
     return {
       value: JSON.parse(result.response.text()),
@@ -775,7 +783,8 @@ export async function runRepairAgent(
   config: PaperConfig,
   plan: PlannerPlan,
   draft: GeneratedPaperShape,
-  violations: string[]
+  violations: string[],
+  meta?: AgentCallMeta
 ): Promise<GeneratedPaperShape> {
   const generationConfig: GenerationConfigWithThinking = {
     responseMimeType: "application/json",
@@ -801,7 +810,7 @@ ${JSON.stringify(draft)}
 
 Output the complete corrected paper (all sections and questions, not just the fixed ones), with reviewNotes describing what you changed to fix each violation.`;
 
-  const parsed = await timedGeminiCall({ operation: "paper_repair", model: MODEL_ID }, async () => {
+  const parsed = await timedGeminiCall({ operation: "paper_repair", model: MODEL_ID, ...meta }, async () => {
     const result = await model.generateContent(prompt);
     return {
       value: JSON.parse(result.response.text()),

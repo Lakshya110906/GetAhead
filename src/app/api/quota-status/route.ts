@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { getModelUsageToday } from "@/lib/geminiQuotaState";
+import { getSharedHeadroom, PENDING_EVALUATION_REQUESTS, PENDING_PAPER_REQUESTS } from "@/lib/geminiQuotaState";
 import { MODEL_ID as PAPER_MODEL_ID } from "@/lib/question-agents";
 
 // User-facing counterpart to /api/admin/quota — any signed-in user, not just
@@ -10,6 +10,8 @@ import { MODEL_ID as PAPER_MODEL_ID } from "@/lib/question-agents";
 // rule: a user must never be told they have quota left when the shared
 // Gemini ceiling is already exhausted. The per-user DAILY_QUOTA counters in
 // quota.ts are a separate, secondary limit — this is the real, binding one.
+// It reads the same headroom the enqueue gate does (queued work included),
+// so it can't show room the gate would refuse.
 export async function GET() {
   const session = await getServerSession(authOptions);
   if (!session?.user) {
@@ -18,15 +20,17 @@ export async function GET() {
 
   try {
     // Evaluation and paper generation both run on the same model today, so
-    // one lookup covers both — kept as an object (not a flat number) so the
-    // shape stays correct if that ever changes.
-    const usage = await getModelUsageToday(PAPER_MODEL_ID);
+    // one lookup covers both.
+    const usage = await getSharedHeadroom(PAPER_MODEL_ID);
+    const blocked = usage.level === "block";
     return NextResponse.json({
       model: usage.model,
       remaining: usage.remaining,
       limit: usage.limit,
       level: usage.level,
       resetsAt: usage.resetsAt,
+      evaluationsLeft: blocked ? 0 : Math.floor(usage.remaining / PENDING_EVALUATION_REQUESTS),
+      papersLeft: blocked ? 0 : Math.floor(usage.remaining / PENDING_PAPER_REQUESTS),
     });
   } catch (error) {
     console.error("Quota status fetch error:", error);

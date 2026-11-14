@@ -146,6 +146,18 @@ describe("runJob — extraction checkpoint", () => {
     (global.fetch as unknown) = vi.fn().mockResolvedValue({ ok: true, arrayBuffer: async () => new ArrayBuffer(8) });
   }
 
+  it("logs the stage that actually failed and why, not always \"persist\"", async () => {
+    const { prisma } = await import("@/lib/prisma");
+    const { logger } = await import("@/lib/logger");
+    const { runJob } = await import("@/lib/evaluationWorker");
+    setup(prisma as unknown as PrismaClient, null);
+    (global.fetch as unknown) = vi.fn().mockResolvedValue({ ok: false, status: 404 });
+
+    await runJob(job.id);
+
+    expect(mocked(logger.error).mock.calls[0][1]).toMatchObject({ jobId: job.id, stage: "download", failure: "storage", userId: "user_1" });
+  });
+
   it("resumes at grading when a checkpoint from this exact input exists — no second extraction call", async () => {
     const { prisma } = await import("@/lib/prisma");
     const { gradeAnswerSheetFromFile } = await import("@/lib/answerSheetGrading");

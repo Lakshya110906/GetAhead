@@ -6,7 +6,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { consumeQuota, QuotaExceededError } from "@/lib/quota";
 import { assertSpendGateOpen, SpendLimitReachedError } from "@/lib/spendControl";
-import { assertQuotaHeadroom, QuotaHeadroomError, PreviewEnvironmentBlockedError } from "@/lib/geminiQuotaState";
+import { assertQuotaHeadroom, QuotaHeadroomError, PreviewEnvironmentBlockedError, PENDING_PAPER_REQUESTS } from "@/lib/geminiQuotaState";
 import { MODEL_ID as PAPER_MODEL_ID } from "@/lib/question-agents";
 import { parseCustomInstructions, checkForConflict } from "@/lib/paperConstraintParser";
 import { suggestTopicCorrection } from "@/lib/topicSpellcheck";
@@ -161,7 +161,7 @@ export async function POST(request: NextRequest) {
     // mode this check exists to prevent. Reserving the worst case means a
     // job that starts is one that can actually finish.
     try {
-      await assertQuotaHeadroom(PAPER_MODEL_ID, 5);
+      await assertQuotaHeadroom(PAPER_MODEL_ID, PENDING_PAPER_REQUESTS);
     } catch (err) {
       if (err instanceof QuotaHeadroomError) {
         return NextResponse.json(
