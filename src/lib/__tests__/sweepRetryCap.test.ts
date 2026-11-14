@@ -1,6 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { PrismaClient } from "@prisma/client";
 
+// The worker only downloads files from one of our own Blob stores.
+process.env.BLOB_READ_WRITE_TOKEN = "vercel_blob_rw_TestStore_secret";
+
 // Regression cover for the 10-12 Nov 2026 sweep incident. One 19-page
 // answer sheet could not be graded inside a 60s function, and because
 // claimNextJob never checked maxAttempts it was reclaimed 12 times in three
@@ -108,7 +111,7 @@ describe("runJob — extraction checkpoint", () => {
   const job = {
     id: "eval_ckpt",
     status: "PROCESSING",
-    fileUrl: "https://example.test/sheet.pdf",
+    fileUrl: "https://teststore.public.blob.vercel-storage.com/answer-sheets/u1/sheet.pdf",
     fileType: "application/pdf",
     subject: "Chemistry",
     grade: "10th",

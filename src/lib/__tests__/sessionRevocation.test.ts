@@ -6,8 +6,9 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 // time, checked on every request in the jwt callback.
 
 vi.mock("@/lib/prisma", () => ({
-  prisma: { user: { findUnique: vi.fn(), updateMany: vi.fn() } },
+  prisma: { user: { findUnique: vi.fn(), updateMany: vi.fn() }, revokedSession: { upsert: vi.fn() } },
 }));
+vi.mock("@/lib/logger", () => ({ logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn() } }));
 
 const mocked = <T>(fn: T) => fn as unknown as ReturnType<typeof vi.fn>;
 const MIN = 60_000;
@@ -75,5 +76,49 @@ describe("session revocation", () => {
     const { authOptions } = await import("@/lib/auth");
     const s = await authOptions.callbacks!.session!({ session: { user: { name: "x" }, expires: "" }, token: {} } as never);
     expect(Object.keys(s)).toHaveLength(0);
+  });
+
+  it("signing out records this session's id, kept until the session would have expired", async () => {
+    const { prisma } = await import("@/lib/prisma");
+    const { authOptions } = await import("@/lib/auth");
+    const authTime = Date.now() - 5 * MIN;
+    await authOptions.events!.signOut!({ token: { id: "u1", sid: "s1", authTime } } as never);
+    const call = mocked(prisma.revokedSession.upsert).mock.calls[0][0];
+    expect(call.where).toEqual({ sid: "s1" });
+    expect(call.create).toMatchObject({ sid: "s1", userId: "u1" });
+    expect(call.create.expiresAt.getTime()).toBe(authTime + 7 * 24 * 60 * MIN);
+  });
+
+  it("a signed-out session ends even if a copy of its cookie is replayed", async () => {
+    const { prisma } = await import("@/lib/prisma");
+    mocked(prisma.user.findUnique).mockResolvedValue({
+      role: "STUDENT",
+      suspended: false,
+      sessionsValidAfter: null,
+      revokedSessions: [{ sid: "s1" }],
+    });
+    expect(await jwtCallback({ id: "u1", sid: "s1", authTime: Date.now() - MIN })).toEqual({});
+  });
+
+  it("another session of the same user carries on", async () => {
+    const { prisma } = await import("@/lib/prisma");
+    mocked(prisma.user.findUnique).mockResolvedValue({ role: "STUDENT", suspended: false, sessionsValidAfter: null, revokedSessions: [] });
+    const t = await jwtCallback({ id: "u1", sid: "s2", authTime: Date.now() - MIN });
+    expect(t.id).toBe("u1");
+    expect(mocked(prisma.user.findUnique).mock.calls[0][0].select.revokedSessions).toEqual({ where: { sid: "s2" }, select: { sid: true } });
+  });
+
+  it("a fresh sign-in gets its own session id", async () => {
+    const a = await jwtCallback({}, { id: "u1", role: "STUDENT" });
+    const b = await jwtCallback({}, { id: "u1", role: "STUDENT" });
+    expect(typeof a.sid).toBe("string");
+    expect(a.sid).not.toBe(b.sid);
+  });
+
+  it("sign-out still succeeds if recording the session fails", async () => {
+    const { prisma } = await import("@/lib/prisma");
+    mocked(prisma.revokedSession.upsert).mockRejectedValue(new Error("FK: user deleted"));
+    const { authOptions } = await import("@/lib/auth");
+    await expect(authOptions.events!.signOut!({ token: { id: "u1", sid: "s1", authTime: Date.now() } } as never)).resolves.toBeUndefined();
   });
 });

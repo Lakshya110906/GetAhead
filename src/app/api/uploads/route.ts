@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { handleUpload, type HandleUploadBody } from "@vercel/blob/client";
 import { authOptions } from "@/lib/auth";
 import { reportApiError } from "@/lib/apiError";
+import { uploadStore } from "@/lib/blobStore";
 
 // Real scanned answer sheets can be large; this is the ceiling enforced both
 // here (before the client is handed an upload token) and again server-side
@@ -10,6 +11,18 @@ import { reportApiError } from "@/lib/apiError";
 export const MAX_UPLOAD_BYTES = 20 * 1024 * 1024; // 20MB
 
 const ALLOWED_CONTENT_TYPES = ["application/pdf", "image/png", "image/jpeg"];
+
+// Which access level the browser must request: it has to match the store the
+// token below is issued for, and only the server knows which one is connected.
+export async function GET(): Promise<NextResponse> {
+  const session = await getServerSession(authOptions);
+  if (!session?.user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const store = uploadStore();
+  if (!store) return NextResponse.json({ error: "Uploads aren't configured." }, { status: 503 });
+  return NextResponse.json({ access: store.access });
+}
 
 // Handshake endpoint for @vercel/blob's client-upload flow: the browser posts
 // here first to get a short-lived, scoped token, then PUTs the file bytes
@@ -22,11 +35,14 @@ export async function POST(request: Request): Promise<NextResponse> {
   const userId = (session.user as { id: string }).id;
 
   const body = (await request.json()) as HandleUploadBody;
+  const store = uploadStore();
+  if (!store) return NextResponse.json({ error: "Uploads aren't configured." }, { status: 503 });
 
   try {
     const jsonResponse = await handleUpload({
       body,
       request,
+      token: store.token,
       onBeforeGenerateToken: async (pathname) => {
         // This does NOT rewrite the final path — @vercel/blob's handleUpload
         // (confirmed in 2.6.1 and still in 2.8.0, the latest) spreads the

@@ -15,6 +15,7 @@ vi.mock("@/lib/prisma", () => {
       usageCounter: { deleteMany: dm() },
       rateLimit: { deleteMany: dm() },
       passwordResetToken: { deleteMany: dm() },
+      revokedSession: { deleteMany: dm() },
       systemSetting: { findMany: vi.fn().mockResolvedValue([]), deleteMany: dm() },
       evaluation: { findMany: vi.fn().mockResolvedValue([]) },
       $executeRaw: vi.fn().mockResolvedValue(0),
@@ -43,6 +44,7 @@ describe("purgeExpiredData", () => {
     expect(cutoff(prisma.geminiCallLog.deleteMany, ["createdAt", "lt"]).getTime()).toBe(NOW.getTime() - 90 * DAY);
     expect(cutoff(prisma.rateLimit.deleteMany, ["resetAt", "lt"]).getTime()).toBe(NOW.getTime() - 60 * 60 * 1000);
     expect(cutoff(prisma.passwordResetToken.deleteMany, ["expires", "lt"]).getTime()).toBe(NOW.getTime() - DAY);
+    expect(cutoff(prisma.revokedSession.deleteMany, ["expiresAt", "lt"]).getTime()).toBe(NOW.getTime());
     // UsageCounter.date is a "YYYY-MM-DD" string: 7 days before 14 Nov.
     expect(mocked(prisma.usageCounter.deleteMany).mock.calls[0][0].where).toEqual({ date: { lt: "2026-11-07" } });
   });
@@ -90,7 +92,8 @@ describe("purgeExpiredData", () => {
 describe("reapOrphanUploads", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    process.env.BLOB_READ_WRITE_TOKEN = "test";
+    process.env.BLOB_READ_WRITE_TOKEN = "vercel_blob_rw_PubStore_secret";
+    delete process.env.PRIVATE_BLOB_READ_WRITE_TOKEN;
   });
 
   const old = new Date(NOW.getTime() - 3 * DAY);
@@ -113,21 +116,21 @@ describe("reapOrphanUploads", () => {
     mocked(blob.list).mockResolvedValue({
       hasMore: false,
       blobs: [
-        { url: "https://b/answer-sheets/u1/orphan.pdf", pathname: "answer-sheets/u1/orphan.pdf", uploadedAt: old },
-        { url: "https://b/answer-sheets/u1/kept-by-url.pdf", pathname: "answer-sheets/u1/kept-by-url.pdf", uploadedAt: old },
-        { url: "https://b/answer-sheets/u1/kept-by-key.pdf", pathname: "answer-sheets/u1/kept-by-key.pdf", uploadedAt: old },
-        { url: "https://b/answer-sheets/u1/in-flight.pdf", pathname: "answer-sheets/u1/in-flight.pdf", uploadedAt: fresh },
+        { url: "https://pubstore.public.blob.vercel-storage.com/answer-sheets/u1/orphan.pdf", pathname: "answer-sheets/u1/orphan.pdf", uploadedAt: old },
+        { url: "https://pubstore.public.blob.vercel-storage.com/answer-sheets/u1/kept-by-url.pdf", pathname: "answer-sheets/u1/kept-by-url.pdf", uploadedAt: old },
+        { url: "https://pubstore.public.blob.vercel-storage.com/answer-sheets/u1/kept-by-key.pdf", pathname: "answer-sheets/u1/kept-by-key.pdf", uploadedAt: old },
+        { url: "https://pubstore.public.blob.vercel-storage.com/answer-sheets/u1/in-flight.pdf", pathname: "answer-sheets/u1/in-flight.pdf", uploadedAt: fresh },
       ],
     });
     mocked(prisma.evaluation.findMany).mockResolvedValue([
-      { fileUrl: "https://b/answer-sheets/u1/kept-by-url.pdf", fileKey: null },
+      { fileUrl: "https://pubstore.public.blob.vercel-storage.com/answer-sheets/u1/kept-by-url.pdf", fileKey: null },
       { fileUrl: null, fileKey: "answer-sheets/u1/kept-by-key.pdf" },
     ]);
     mocked(blob.del).mockResolvedValue(undefined);
 
     const res = await reapOrphanUploads(NOW);
 
-    expect(mocked(blob.del).mock.calls[0][0]).toEqual(["https://b/answer-sheets/u1/orphan.pdf"]);
+    expect(mocked(blob.del).mock.calls[0][0]).toEqual(["https://pubstore.public.blob.vercel-storage.com/answer-sheets/u1/orphan.pdf"]);
     expect(res).toEqual({ found: 1, deleted: 1 });
   });
 
@@ -137,5 +140,48 @@ describe("reapOrphanUploads", () => {
     const { reapOrphanUploads } = await import("@/lib/blobCleanup");
     expect(await reapOrphanUploads(NOW)).toEqual({ found: 0, deleted: 0 });
     expect(blob.list).not.toHaveBeenCalled();
+  });
+});
+
+describe("two stores: the old public one and the private one new uploads use", () => {
+  const PUB = "https://pubstore.public.blob.vercel-storage.com";
+  const PRIV = "https://privstore.private.blob.vercel-storage.com";
+  beforeEach(() => {
+    vi.clearAllMocks();
+    process.env.BLOB_READ_WRITE_TOKEN = "vercel_blob_rw_PubStore_pubsecret";
+    process.env.PRIVATE_BLOB_READ_WRITE_TOKEN = "vercel_blob_rw_PrivStore_privsecret";
+  });
+
+  it("deletes each file with its own store's token, and refuses a URL from a store that isn't ours", async () => {
+    const blob = await import("@vercel/blob");
+    const { deleteBlobFiles } = await import("@/lib/blobCleanup");
+    mocked(blob.del).mockResolvedValue(undefined);
+
+    const res = await deleteBlobFiles(
+      [
+        { fileUrl: `${PUB}/answer-sheets/u1/a.pdf`, fileKey: null },
+        { fileUrl: `${PRIV}/answer-sheets/u1/b.pdf`, fileKey: null },
+        { fileUrl: "https://someoneelse.public.blob.vercel-storage.com/answer-sheets/u1/c.pdf", fileKey: null },
+      ],
+      {}
+    );
+
+    const calls = mocked(blob.del).mock.calls;
+    expect(calls).toContainEqual([[`${PRIV}/answer-sheets/u1/b.pdf`], { token: "vercel_blob_rw_PrivStore_privsecret" }]);
+    expect(calls).toContainEqual([[`${PUB}/answer-sheets/u1/a.pdf`], { token: "vercel_blob_rw_PubStore_pubsecret" }]);
+    expect(res).toEqual({ attempted: 3, failed: 1 });
+  });
+
+  it("the reaper lists both stores", async () => {
+    const blob = await import("@vercel/blob");
+    const { reapOrphanUploads } = await import("@/lib/blobCleanup");
+    mocked(blob.list).mockResolvedValue({ blobs: [], hasMore: false });
+
+    await reapOrphanUploads(NOW);
+
+    expect(mocked(blob.list).mock.calls.map((c) => c[0].token).sort()).toEqual([
+      "vercel_blob_rw_PrivStore_privsecret",
+      "vercel_blob_rw_PubStore_pubsecret",
+    ]);
   });
 });

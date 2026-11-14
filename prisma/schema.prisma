@@ -14,47 +14,48 @@ datasource db {
 }
 
 model User {
-  id            String    @id @default(cuid())
-  email         String    @unique
-  emailVerified DateTime?
-  name          String
-  password      String?
-  googleId      String?   @unique
-  role          String    @default("STUDENT")
-  avatar        String?
-  suspended     Boolean   @default(false)
+  id                      String    @id @default(cuid())
+  email                   String    @unique
+  emailVerified           DateTime?
+  name                    String
+  password                String?
+  googleId                String?   @unique
+  role                    String    @default("STUDENT")
+  avatar                  String?
+  suspended               Boolean   @default(false)
   // Every session signed in before this instant is rejected (password
   // change/reset, suspension, role change, account takeover clean-up).
   // Checked on each request in auth.ts's jwt callback.
-  sessionsValidAfter DateTime?
-  notificationPreferences String? @db.Text // JSON: { evaluationCompletion, featureUpdates, weeklyProgress, pushNotifications }
+  sessionsValidAfter      DateTime?
+  notificationPreferences String?   @db.Text // JSON: { evaluationCompletion, featureUpdates, weeklyProgress, pushNotifications }
   // Consent record (Digital Personal Data Protection Act 2023, s.6): when
   // this person affirmatively agreed to the terms + privacy policy at
   // signup, and which version (legalConfig.ts LEGAL.consentVersion) they
   // saw. Null for accounts created before this was recorded — those need
   // re-consent on next material policy change, not a silently assumed yes.
-  consentAcceptedAt DateTime?
-  consentVersion    String?
+  consentAcceptedAt       DateTime?
+  consentVersion          String?
   // Whether the person confirmed they are 18+, or that a parent/guardian
   // consented on their behalf. Under DPDP s.9 anyone under 18 is a child
   // whose data may only be processed with verifiable parental consent.
-  ageConsentConfirmed Boolean @default(false)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  ageConsentConfirmed     Boolean   @default(false)
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
 
-  evaluations    Evaluation[]
-  savedReports   SavedReport[]
-  feedbacks      Feedback[]
-  accounts       Account[]
-  sessions       Session[]
-  questionPapers QuestionPaper[]
+  evaluations         Evaluation[]
+  savedReports        SavedReport[]
+  feedbacks           Feedback[]
+  accounts            Account[]
+  sessions            Session[]
+  questionPapers      QuestionPaper[]
   paperGenerationJobs PaperGenerationJob[]
-  tutorConversations TutorConversation[]
-  supportTickets SupportTicket[]
-  assignedTickets SupportTicket[] @relation("AssignedTickets")
-  ticketNotes     TicketNote[]
-  ticketReplies   TicketReply[]
-  usageCounters   UsageCounter[]
+  tutorConversations  TutorConversation[]
+  supportTickets      SupportTicket[]
+  assignedTickets     SupportTicket[]      @relation("AssignedTickets")
+  ticketNotes         TicketNote[]
+  ticketReplies       TicketReply[]
+  usageCounters       UsageCounter[]
+  revokedSessions     RevokedSession[]
 }
 
 model Account {
@@ -103,6 +104,22 @@ model PasswordResetToken {
   @@index([token])
 }
 
+// One signed-out session. Signing out only clears the cookie in that browser;
+// without this, a copy of the cookie kept working until it idled out. Rows
+// are only needed until the session would have expired anyway (expiresAt),
+// then retention removes them.
+model RevokedSession {
+  sid       String   @id
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
 model RateLimit {
   id        String   @id @default(cuid())
   key       String   @unique
@@ -119,9 +136,9 @@ model RateLimit {
 // status is the job-state machine: QUEUED -> PROCESSING -> SUCCEEDED
 // (or -> FAILED after maxAttempts exhausted, or -> CANCELLED by the user).
 model Evaluation {
-  id            String  @id @default(cuid())
-  userId        String
-  user          User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   examType      String  @default("MCQ")
   subject       String
@@ -155,7 +172,7 @@ model Evaluation {
   // totals above (obtainedMarks/percentage) are recomputed from the
   // effective marks so analytics and the dashboard, which read those
   // columns, stay consistent without knowing about overrides at all.
-  markOverrides      String? @db.LongText
+  markOverrides        String? @db.LongText
   // Stage-1 checkpoint: { contentHash, extraction } written the moment
   // extraction succeeds, so a run killed during grading resumes at grading
   // instead of paying for the same ~50s extraction call again. Only reused
@@ -163,27 +180,27 @@ model Evaluation {
   // Measured cost of not having it: a 19-page sheet was extracted 7 times
   // over 10-13 Nov 2026, each result thrown away when the function died.
   extractionCheckpoint String? @db.LongText
-  gradedFromCache    Boolean @default(false)
+  gradedFromCache      Boolean @default(false)
   // The GradingCache key this evaluation's result lives under, so account
   // deletion can erase the cached extraction/result too — the cache row has
   // no user link of its own, and DPDP erasure has to reach it.
-  contentHash        String?
+  contentHash          String?
   // Set by PATCH .../regrade (an explicit, user-initiated action, never
   // automatic) to force a fresh live grading call for this run even though a
   // cache entry exists — and to overwrite that entry with the fresh result
   // afterward. This is the only sanctioned way to get a different grade for
   // an unchanged file: never by silently re-running until a "better" score
   // appears.
-  bypassGradingCache Boolean @default(false)
+  bypassGradingCache   Boolean @default(false)
 
   // --- Audit trail: every SUCCEEDED row must be traceable to exactly
   // what produced it. Without these, "why did this student get 3/5" is
   // unanswerable six months later, and a prompt/rubric change can't be
   // told apart from noise. ---
-  modelId          String?  // e.g. "gemini-2.0-flash"
-  promptVersion    String?  // sha256 (truncated) of the exact prompt templates used
-  rubricVersion    String?  // e.g. "rubric-2026-01-v1" — bumped whenever the rubric text changes
-  rawModelResponse String?  @db.LongText // the model's raw response, before parsing/validation
+  modelId          String? // e.g. "gemini-2.0-flash"
+  promptVersion    String? // sha256 (truncated) of the exact prompt templates used
+  rubricVersion    String? // e.g. "rubric-2026-01-v1" — bumped whenever the rubric text changes
+  rawModelResponse String? @db.LongText // the model's raw response, before parsing/validation
 
   // Token usage for this evaluation's model calls (transcription + grading
   // combined), captured from Gemini's usageMetadata. This is the basis for
@@ -193,26 +210,26 @@ model Evaluation {
   totalTokens      Int?
 
   originalFileName String?
-  fileUrl          String?  // public blob URL, fetched by the worker
-  fileKey          String?  // blob pathname/key, for deletion
+  fileUrl          String? // public blob URL, fetched by the worker
+  fileKey          String? // blob pathname/key, for deletion
   fileSize         Int?
   pageCount        Int?
   fileType         String?
   ocrText          String? @db.LongText
 
-  aiResponse       String? @db.LongText
-  marksBreakdown   String? @db.LongText
-  aiFeedback       String? @db.LongText
+  aiResponse     String? @db.LongText
+  marksBreakdown String? @db.LongText
+  aiFeedback     String? @db.LongText
 
-  strengths        String? @db.LongText
-  weaknesses       String? @db.LongText
-  recommendations  String? @db.LongText
+  strengths       String? @db.LongText
+  weaknesses      String? @db.LongText
+  recommendations String? @db.LongText
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  savedReports SavedReport[]
-  feedbacks    Feedback[]
+  savedReports      SavedReport[]
+  feedbacks         Feedback[]
   tutorConversation TutorConversation?
 
   @@index([userId])
@@ -321,13 +338,13 @@ model PaperGenerationJob {
   // Per-agent status for the progress UI to poll against — { planner: {status,startedAt,finishedAt,error}, generator: {...}, reviewer: {...} }
   agentStates String @db.LongText
 
-  repairAttempts String? @db.LongText // JSON: RepairAttemptLog[]
-  attemptCount   Int     @default(0) // retries of the CURRENT step
-  validationAttempt Int  @default(0) // which repair-loop attempt we're on (1-3)
+  repairAttempts    String? @db.LongText // JSON: RepairAttemptLog[]
+  attemptCount      Int     @default(0) // retries of the CURRENT step
+  validationAttempt Int     @default(0) // which repair-loop attempt we're on (1-3)
 
-  error         String? @db.Text // user-facing message — must never contain repair-prompt fragments
-  internalError String? @db.Text // full internal detail (raw violations, etc.) for logs/debugging only
-  quotaRefunded Boolean @default(false)
+  error           String? @db.Text // user-facing message — must never contain repair-prompt fragments
+  internalError   String? @db.Text // full internal detail (raw violations, etc.) for logs/debugging only
+  quotaRefunded   Boolean @default(false)
   retryWorthwhile Boolean @default(true)
 
   // Set when a worker claims the job; used to detect a worker that died
@@ -360,7 +377,7 @@ model AuditLog {
 
 model ErrorLog {
   id        String   @id @default(cuid())
-  type      String   // e.g. "APPLICATION", "AUTHENTICATION", "API", "DATABASE", "AI"
+  type      String // e.g. "APPLICATION", "AUTHENTICATION", "API", "DATABASE", "AI"
   message   String   @db.Text
   stack     String?  @db.Text
   path      String?
@@ -382,19 +399,19 @@ model SystemSetting {
 // ground truth: one row per model.generateContent() call, real or replayed.
 model GeminiCallLog {
   id               String   @id @default(cuid())
-  operation        String   // e.g. "paper_planner", "eval_grade_question", "tutor_chat"
-  model            String   // e.g. "gemini-2.5-flash"
-  agent            String?  // finer-grained than operation where relevant (e.g. question number for grading)
+  operation        String // e.g. "paper_planner", "eval_grade_question", "tutor_chat"
+  model            String // e.g. "gemini-2.5-flash"
+  agent            String? // finer-grained than operation where relevant (e.g. question number for grading)
   promptTokens     Int?
   completionTokens Int?
   totalTokens      Int?
   isRetry          Boolean  @default(false)
   attemptNumber    Int      @default(1)
   success          Boolean
-  errorType        String?  // "daily_quota" | "rate_limit" | "validation_failed" | "other" | null
+  errorType        String? // "daily_quota" | "rate_limit" | "validation_failed" | "other" | null
   durationMs       Int?
   replayed         Boolean  @default(false) // true when served from the record/replay cache, not a real call
-  correlationId    String?  // jobId / evaluationId, for tracing one operation's full call sequence
+  correlationId    String? // jobId / evaluationId, for tracing one operation's full call sequence
   userId           String?
   createdAt        DateTime @default(now())
 
@@ -422,55 +439,55 @@ model UsageCounter {
 }
 
 model TutorConversation {
-  id           String         @id @default(cuid())
+  id           String   @id @default(cuid())
   userId       String
-  evaluationId String         @unique
-  title        String         @default("AI Tutor Session")
-  createdAt    DateTime       @default(now())
-  updatedAt    DateTime       @updatedAt
+  evaluationId String   @unique
+  title        String   @default("AI Tutor Session")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
-  user         User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  evaluation   Evaluation     @relation(fields: [evaluationId], references: [id], onDelete: Cascade)
-  messages     TutorMessage[]
+  user       User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  evaluation Evaluation     @relation(fields: [evaluationId], references: [id], onDelete: Cascade)
+  messages   TutorMessage[]
 
   @@index([userId])
   @@index([evaluationId])
 }
 
 model TutorMessage {
-  id             String            @id @default(cuid())
+  id             String   @id @default(cuid())
   conversationId String
-  role           String            // "user" | "assistant"
-  content        String            @db.LongText
-  createdAt      DateTime          @default(now())
+  role           String // "user" | "assistant"
+  content        String   @db.LongText
+  createdAt      DateTime @default(now())
 
-  conversation   TutorConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  conversation TutorConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
 
   @@index([conversationId])
   @@index([createdAt])
 }
 
 model SupportTicket {
-  id           String        @id @default(cuid())
-  ticketNumber Int           @default(autoincrement()) @unique
+  id           String   @id @default(cuid())
+  ticketNumber Int      @unique @default(autoincrement())
   userId       String?
   name         String
   email        String
-  category     String        // "general" | "bug" | "feature" | "other"
+  category     String // "general" | "bug" | "feature" | "other"
   subject      String
-  message      String        @db.Text
-  status       String        @default("NEW") // "NEW" | "OPEN" | "IN_PROGRESS" | "WAITING_USER" | "RESOLVED" | "CLOSED"
-  priority     String        @default("LOW") // "LOW" | "MEDIUM" | "HIGH" | "CRITICAL"
+  message      String   @db.Text
+  status       String   @default("NEW") // "NEW" | "OPEN" | "IN_PROGRESS" | "WAITING_USER" | "RESOLVED" | "CLOSED"
+  priority     String   @default("LOW") // "LOW" | "MEDIUM" | "HIGH" | "CRITICAL"
   ip           String?
   userAgent    String?
   assignedToId String?
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
-  user         User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
-  assignedTo   User?         @relation("AssignedTickets", fields: [assignedToId], references: [id], onDelete: SetNull)
-  replies      TicketReply[]
-  notes        TicketNote[]
+  user       User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
+  assignedTo User?         @relation("AssignedTickets", fields: [assignedToId], references: [id], onDelete: SetNull)
+  replies    TicketReply[]
+  notes      TicketNote[]
 
   @@index([userId])
   @@index([assignedToId])
@@ -480,32 +497,31 @@ model SupportTicket {
 }
 
 model TicketReply {
-  id         String        @id @default(cuid())
+  id         String   @id @default(cuid())
   ticketId   String
   userId     String?
-  senderType String        // "USER" | "ADMIN"
-  content    String        @db.Text
-  createdAt  DateTime      @default(now())
+  senderType String // "USER" | "ADMIN"
+  content    String   @db.Text
+  createdAt  DateTime @default(now())
 
-  ticket     SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
-  user       User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
+  ticket SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  user   User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
 
   @@index([ticketId])
   @@index([createdAt])
 }
 
 model TicketNote {
-  id        String        @id @default(cuid())
+  id        String   @id @default(cuid())
   ticketId  String
   userId    String
-  content   String        @db.Text
-  createdAt DateTime      @default(now())
+  content   String   @db.Text
+  createdAt DateTime @default(now())
 
-  ticket    SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
-  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  ticket SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  user   User          @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([ticketId])
   @@index([userId])
   @@index([createdAt])
 }
-

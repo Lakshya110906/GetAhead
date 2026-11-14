@@ -44,6 +44,7 @@ export interface PurgeCounts {
   usageCounters: number;
   rateLimits: number;
   resetTokens: number;
+  revokedSessions: number;
   alertDedupeKeys: number;
   orphanCacheRows: number;
 }
@@ -51,7 +52,7 @@ export interface PurgeCounts {
 export async function purgeExpiredData(now: Date = new Date()): Promise<PurgeCounts> {
   const at = (ms: number) => new Date(now.getTime() - ms);
 
-  const [errorLogs, auditLogs, closedTickets, geminiCallLogs, usageCounters, rateLimits, resetTokens] = await Promise.all([
+  const [errorLogs, auditLogs, closedTickets, geminiCallLogs, usageCounters, rateLimits, resetTokens, revokedSessions] = await Promise.all([
     prisma.errorLog.deleteMany({ where: { createdAt: { lt: at(RETENTION.errorLogDays * DAY) } } }),
     prisma.auditLog.deleteMany({ where: { createdAt: { lt: at(RETENTION.auditLogDays * DAY) } } }),
     prisma.supportTicket.deleteMany({
@@ -62,6 +63,8 @@ export async function purgeExpiredData(now: Date = new Date()): Promise<PurgeCou
     prisma.usageCounter.deleteMany({ where: { date: { lt: utcDate(at(RETENTION.usageCounterDays * DAY)) } } }),
     prisma.rateLimit.deleteMany({ where: { resetAt: { lt: at(RETENTION.rateLimitGraceHours * HOUR) } } }),
     prisma.passwordResetToken.deleteMany({ where: { expires: { lt: at(RETENTION.resetTokenGraceDays * DAY) } } }),
+    // Past expiresAt the session couldn't be used anyway (7-day lifetime).
+    prisma.revokedSession.deleteMany({ where: { expiresAt: { lt: now } } }),
   ]);
 
   const alertDedupeKeys = await purgeAlertDedupeKeys(at(RETENTION.alertDedupeDays * DAY));
@@ -83,6 +86,7 @@ export async function purgeExpiredData(now: Date = new Date()): Promise<PurgeCou
     usageCounters: usageCounters.count,
     rateLimits: rateLimits.count,
     resetTokens: resetTokens.count,
+    revokedSessions: revokedSessions.count,
     alertDedupeKeys,
     orphanCacheRows,
   };

@@ -203,9 +203,30 @@ export async function assertQuotaHeadroom(model: string, requestsNeeded: number)
   if (isUnseparatedPreview()) {
     throw new PreviewEnvironmentBlockedError(requestsNeeded);
   }
-  const usage = await getModelUsageToday(model);
-  if (usage.level === "block" || usage.remaining < requestsNeeded) {
-    throw new QuotaHeadroomError(usage, requestsNeeded);
+  const [usage, reserved] = await Promise.all([getModelUsageToday(model), pendingRequests()]);
+  // GeminiCallLog only holds calls already made. Work that is queued or
+  // running hasn't logged its calls yet, so without this, ten uploads in a
+  // row each saw the whole day's quota free and most then failed on
+  // Gemini's own 429. Two requests checking at the same instant can still
+  // both pass; Gemini's limit then stops one and its quota is refunded.
+  const remaining = Math.max(0, usage.remaining - reserved);
+  if (usage.level === "block" || remaining < requestsNeeded) {
+    throw new QuotaHeadroomError({ ...usage, remaining }, requestsNeeded);
   }
   return usage;
+}
+
+// What each job type is gated for at enqueue (evaluations/route.ts,
+// papers/route.ts). Every feature calls the same model today, so pending
+// work counts against whichever model is asked about; if they diverge this
+// over-reserves, which blocks early rather than late.
+export const PENDING_EVALUATION_REQUESTS = 2;
+export const PENDING_PAPER_REQUESTS = 5;
+
+async function pendingRequests(): Promise<number> {
+  const [evaluations, papers] = await Promise.all([
+    prisma.evaluation.count({ where: { status: { in: ["QUEUED", "PROCESSING"] } } }),
+    prisma.paperGenerationJob.count({ where: { status: { in: ["queued", "running"] } } }),
+  ]);
+  return evaluations * PENDING_EVALUATION_REQUESTS + papers * PENDING_PAPER_REQUESTS;
 }

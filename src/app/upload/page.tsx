@@ -170,8 +170,13 @@ export default function UploadPage() {
       // here, but not anyone else's.
       // Must satisfy isSafeFileName() in /api/uploads: one plain segment.
       const safeName = file.name.replace(/[^A-Za-z0-9._ -]/g, "_").replace(/^\.+/, "").slice(0, 150) || "answer-sheet";
+      // New uploads go to a private store once one is connected; the server
+      // says which, since the request must match the store's access level.
+      const accessRes = await fetch("/api/uploads");
+      if (!accessRes.ok) throw new Error("Uploads are unavailable right now. Try again in a minute.");
+      const { access } = (await accessRes.json()) as { access: "public" | "private" };
       const blob = await upload(`answer-sheets/${userId}/${safeName}`, file, {
-        access: "public",
+        access,
         handleUploadUrl: "/api/uploads",
         contentType,
         onUploadProgress: ({ percentage }) => setUploadProgress(percentage),

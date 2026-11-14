@@ -11,9 +11,21 @@ import { prisma } from "@/lib/prisma";
 // against the token's own sign-in time (authTime), a claim next-auth never
 // rewrites. Every session for the user signed in before the cutoff ends on
 // its next request.
+//
+// Signing out ends one session the same way: its sid goes into
+// RevokedSession, also checked in the jwt callback.
 
 export async function revokeAllUserSessions(userId: string): Promise<void> {
   await prisma.user.updateMany({ where: { id: userId }, data: { sessionsValidAfter: new Date() } });
+}
+
+/** Ends one session. Kept until the session would have expired on its own. */
+export async function revokeSession(sid: string, userId: string, expiresAt: Date): Promise<void> {
+  await prisma.revokedSession.upsert({
+    where: { sid },
+    create: { sid, userId, expiresAt },
+    update: {},
+  });
 }
 
 /** True if a session signed in at `authTimeMs` was cut off by a later revocation. */

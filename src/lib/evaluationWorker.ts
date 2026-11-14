@@ -10,6 +10,7 @@ import {
 } from "@/lib/answerSheetGrading";
 import { computeGradingContentHash, lookupGradingCache, writeGradingCache } from "@/lib/gradingCache";
 import { refundQuota } from "@/lib/quota";
+import { readOwnBlob } from "@/lib/blobStore";
 import { logger } from "@/lib/logger";
 import { captureException } from "@/lib/errorTracking";
 import type { ExtractionResult, GradedAnswerSheet } from "@/lib/answerSheetSchema";
@@ -144,11 +145,11 @@ export async function runJob(id: string): Promise<void> {
     }
 
     logger.info("Downloading answer sheet", { jobId: id, stage: "download", userId: job.userId });
-    const fileRes = await fetch(job.fileUrl);
-    if (!fileRes.ok) {
-      throw new Error(`Couldn't download the uploaded file (storage returned ${fileRes.status}).`);
+    const file = await readOwnBlob(job.fileUrl);
+    if (!file.ok) {
+      throw new Error(`Couldn't download the uploaded file (storage returned ${file.status}).`);
     }
-    const fileBytes = Buffer.from(await fileRes.arrayBuffer());
+    const fileBytes = Buffer.from(file.bytes);
     const mimeType = job.fileType || "application/pdf";
     const grade = job.grade || "12th";
 

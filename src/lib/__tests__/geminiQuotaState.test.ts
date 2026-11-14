@@ -1,7 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 vi.mock("@/lib/prisma", () => ({
-  prisma: { geminiCallLog: { count: vi.fn() } },
+  prisma: {
+    geminiCallLog: { count: vi.fn() },
+    evaluation: { count: vi.fn().mockResolvedValue(0) },
+    paperGenerationJob: { count: vi.fn().mockResolvedValue(0) },
+  },
 }));
 
 describe("geminiQuotaState — simulated near-limit states", () => {
@@ -139,5 +143,36 @@ describe("geminiQuotaState — unseparated Preview deployment guard", () => {
     process.env.ALLOW_PREVIEW_GEMINI_CALLS = "true";
 
     await expect(assertQuotaHeadroom("gemini-2.5-flash", 2)).resolves.toBeDefined();
+  });
+});
+
+describe("assertQuotaHeadroom — work already queued counts against today's quota", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    process.env.VERCEL_ENV = "production";
+  });
+
+  it("refuses when queued jobs would use up what the call log still shows free", async () => {
+    const { prisma } = await import("@/lib/prisma");
+    const { assertQuotaHeadroom, QuotaHeadroomError } = await import("@/lib/geminiQuotaState");
+    (prisma.geminiCallLog.count as ReturnType<typeof vi.fn>).mockResolvedValue(0); // log: 20 free
+    (prisma.evaluation.count as ReturnType<typeof vi.fn>).mockResolvedValue(8); // 16 reserved
+    (prisma.paperGenerationJob.count as ReturnType<typeof vi.fn>).mockResolvedValue(1); // 5 reserved
+
+    const err = await assertQuotaHeadroom("gemini-2.5-flash", 2).catch((e) => e);
+    expect(err).toBeInstanceOf(QuotaHeadroomError);
+    expect(err.usage.remaining).toBe(0);
+  });
+
+  it("allows it when there's room after the queued work", async () => {
+    const { prisma } = await import("@/lib/prisma");
+    const { assertQuotaHeadroom } = await import("@/lib/geminiQuotaState");
+    (prisma.geminiCallLog.count as ReturnType<typeof vi.fn>).mockResolvedValue(4);
+    (prisma.evaluation.count as ReturnType<typeof vi.fn>).mockResolvedValue(3); // 4 + 6 reserved = 10 of 20
+    (prisma.paperGenerationJob.count as ReturnType<typeof vi.fn>).mockResolvedValue(0);
+
+    await expect(assertQuotaHeadroom("gemini-2.5-flash", 2)).resolves.toMatchObject({ used: 4 });
+    expect((prisma.evaluation.count as ReturnType<typeof vi.fn>).mock.calls[0][0].where.status.in).toEqual(["QUEUED", "PROCESSING"]);
+    expect((prisma.paperGenerationJob.count as ReturnType<typeof vi.fn>).mock.calls[0][0].where.status.in).toEqual(["queued", "running"]);
   });
 });

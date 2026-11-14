@@ -2,6 +2,9 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { withRetry, DailyQuotaExhaustedError, GeminiRateLimitError, GeminiAuthError, GeminiInvalidArgumentError } from "@/lib/question-agents";
 import type { ExtractionResult, GradedAnswerSheet } from "@/lib/answerSheetSchema";
 
+// The worker only downloads files from one of our own Blob stores.
+process.env.BLOB_READ_WRITE_TOKEN = "vercel_blob_rw_TestStore_secret";
+
 // ── RPD vs RPM vs auth vs invalid-argument classification ──────────────────
 // Regression coverage for the bug identified this session: DAILY_QUOTA_PATTERN
 // used to include the generic "exceeded your current quota" phrase, which
@@ -122,7 +125,7 @@ describe("evaluationWorker.ts — quota failure handling (parity with paperJob.t
     const job = {
       id: "eval_1",
       status: "PROCESSING",
-      fileUrl: "https://example.test/sheet.pdf",
+      fileUrl: "https://teststore.public.blob.vercel-storage.com/answer-sheets/u1/sheet.pdf",
       fileType: "application/pdf",
       subject: "Chemistry",
       grade: "10th",
@@ -182,7 +185,7 @@ describe("evaluationWorker.ts — grading cache", () => {
   const baseJob = {
     id: "eval_2",
     status: "PROCESSING",
-    fileUrl: "https://example.test/sheet.pdf",
+    fileUrl: "https://teststore.public.blob.vercel-storage.com/answer-sheets/u1/sheet.pdf",
     fileType: "application/pdf",
     subject: "Chemistry",
     grade: "10th",

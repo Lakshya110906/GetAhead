@@ -18,6 +18,7 @@ import { reportApiError } from "@/lib/apiError";
 import { normalizeEntryText } from "@/lib/normalizeText";
 import { zodErrorResponse } from "@/lib/zodError";
 import { userStillExists } from "@/lib/requireLiveUser";
+import { readOwnBlob, storeForUrl } from "@/lib/blobStore";
 
 // after() keeps the worker call running past the point the response is
 // sent, so this stays fast for the client while the real work happens in
@@ -120,8 +121,8 @@ export async function POST(request: NextRequest) {
     // is an SSRF primitive: a client could point it at an internal-only
     // address instead of an actual uploaded file. Every real fileUrl comes
     // from POST /api/uploads's handleUpload() call, which only ever hands
-    // back a *.public.blob.vercel-storage.com URL (see @vercel/blob's own
-    // docs), so anything else is never a legitimate upload.
+    // back a URL in one of our own Blob stores (blobStore.ts), so anything
+    // else is never a legitimate upload.
     let parsedFileUrl: URL;
     try {
       parsedFileUrl = new URL(fileUrl);
@@ -131,7 +132,7 @@ export async function POST(request: NextRequest) {
     // Our own store only, not any Vercel Blob store: a file in someone
     // else's store is outside what account deletion and the orphan reaper
     // can ever remove.
-    if (parsedFileUrl.protocol !== "https:" || parsedFileUrl.hostname !== ownBlobHost()) {
+    if (!storeForUrl(fileUrl)) {
       return NextResponse.json({ error: "That file URL isn't valid. Try uploading again." }, { status: 400 });
     }
     // The hostname check above only rules out a non-Blob URL (the SSRF
@@ -148,11 +149,11 @@ export async function POST(request: NextRequest) {
     // Download once, use for both the magic-byte check and (for PDFs) the
     // page-count check below — never trust the extension or the
     // client-supplied Content-Type for what a file actually is.
-    const fileRes = await fetch(fileUrl);
-    if (!fileRes.ok) {
+    const file = await readOwnBlob(fileUrl);
+    if (!file.ok) {
       return NextResponse.json({ error: "Couldn't read the uploaded file. Try uploading again." }, { status: 502 });
     }
-    const bytes = new Uint8Array(await fileRes.arrayBuffer());
+    const bytes = file.bytes;
     // fileSize above is what the client says. This is what it is; the upload
     // token caps it too, but this is the copy that gets graded and stored.
     if (bytes.length > MAX_UPLOAD_BYTES) {
@@ -234,12 +235,4 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     return reportApiError({ code: "EVAL_ENQUEUE_FAILED", error, route: "POST /api/evaluations", userId });
   }
-}
-
-// The public hostname of the Blob store this deployment writes to: the store
-// id inside BLOB_READ_WRITE_TOKEN ("vercel_blob_rw_<storeId>_<secret>"),
-// lowercased, e.g. cfazauzjtxomnsne.public.blob.vercel-storage.com.
-function ownBlobHost(): string | null {
-  const storeId = process.env.BLOB_READ_WRITE_TOKEN?.split("_")[3];
-  return storeId ? `${storeId.toLowerCase()}.public.blob.vercel-storage.com` : null;
 }

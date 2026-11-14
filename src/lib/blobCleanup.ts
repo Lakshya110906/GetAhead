@@ -1,6 +1,7 @@
 import { del, list } from "@vercel/blob";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
+import { ownStores, storeForUrl } from "@/lib/blobStore";
 
 // Deletes uploaded answer-sheet files from Vercel Blob. Before this existed,
 // nothing ever removed a file from storage: deleting an account cascaded
@@ -18,26 +19,50 @@ export async function deleteBlobFiles(
   const targets = files.map((f) => f.fileUrl || f.fileKey).filter((t): t is string => Boolean(t));
   if (targets.length === 0) return { attempted: 0, failed: 0 };
 
-  if (!process.env.BLOB_READ_WRITE_TOKEN) {
-    logger.error("Blob cleanup skipped: BLOB_READ_WRITE_TOKEN is not set — uploaded files were NOT deleted from storage", {
+  const stores = ownStores();
+  if (stores.length === 0) {
+    logger.error("Blob cleanup skipped: no Blob token is set — uploaded files were NOT deleted from storage", {
       ...context,
       count: targets.length,
     });
     return { attempted: targets.length, failed: targets.length };
   }
 
-  try {
-    await del(targets);
-    logger.info("Deleted uploaded files from storage", { ...context, count: targets.length });
-    return { attempted: targets.length, failed: 0 };
-  } catch (error) {
-    logger.error("Blob cleanup failed — uploaded files may remain in storage", {
-      ...context,
-      count: targets.length,
-      message: error instanceof Error ? error.message : String(error),
-    });
-    return { attempted: targets.length, failed: targets.length };
+  // A URL names its store. A bare pathname doesn't, so it's deleted from
+  // every store we own (deleting a missing file is a no-op). A URL in no
+  // store of ours can't be deleted by us at all.
+  const byHost = new Map<string, string[]>(stores.map((st) => [st.host, []]));
+  let failed = 0;
+  for (const t of targets) {
+    if (/^https?:/.test(t)) {
+      const store = storeForUrl(t);
+      if (store) byHost.get(store.host)!.push(t);
+      else failed++;
+    } else {
+      for (const list of byHost.values()) list.push(t);
+    }
   }
+
+  for (const store of stores) {
+    const list = byHost.get(store.host)!;
+    if (list.length === 0) continue;
+    try {
+      await del(list, { token: store.token });
+    } catch (error) {
+      failed += list.length;
+      logger.error("Blob cleanup failed — uploaded files may remain in storage", {
+        ...context,
+        store: store.access,
+        count: list.length,
+        message: error instanceof Error ? error.message : String(error),
+      });
+    }
+  }
+  failed = Math.min(failed, targets.length);
+  if (failed < targets.length) {
+    logger.info("Deleted uploaded files from storage", { ...context, count: targets.length - failed });
+  }
+  return { attempted: targets.length, failed };
 }
 
 // The only folder the app itself uploads answer sheets into (see
@@ -60,21 +85,24 @@ export const ORPHAN_UPLOAD_MIN_AGE_HOURS = 24;
  * operation" per 1,000 files (2,000/month included on Hobby); deletes are free.
  */
 export async function reapOrphanUploads(now: Date = new Date()): Promise<{ found: number; deleted: number }> {
-  if (!process.env.BLOB_READ_WRITE_TOKEN) {
-    logger.warn("Orphan upload reaper skipped: BLOB_READ_WRITE_TOKEN is not set", { stage: "sweep" });
+  const stores = ownStores();
+  if (stores.length === 0) {
+    logger.warn("Orphan upload reaper skipped: no Blob token is set", { stage: "sweep" });
     return { found: 0, deleted: 0 };
   }
 
   const cutoff = now.getTime() - ORPHAN_UPLOAD_MIN_AGE_HOURS * 60 * 60 * 1000;
   const candidates: { url: string; pathname: string }[] = [];
-  let cursor: string | undefined;
-  do {
-    const page = await list({ prefix: UPLOAD_PREFIX, cursor, limit: 1000 });
-    for (const b of page.blobs) {
-      if (new Date(b.uploadedAt).getTime() < cutoff) candidates.push({ url: b.url, pathname: b.pathname });
-    }
-    cursor = page.hasMore ? page.cursor : undefined;
-  } while (cursor);
+  for (const store of stores) {
+    let cursor: string | undefined;
+    do {
+      const page = await list({ prefix: UPLOAD_PREFIX, cursor, limit: 1000, token: store.token });
+      for (const b of page.blobs) {
+        if (new Date(b.uploadedAt).getTime() < cutoff) candidates.push({ url: b.url, pathname: b.pathname });
+      }
+      cursor = page.hasMore ? page.cursor : undefined;
+    } while (cursor);
+  }
 
   if (candidates.length === 0) return { found: 0, deleted: 0 };
 
@@ -92,7 +120,7 @@ export async function reapOrphanUploads(now: Date = new Date()): Promise<{ found
   if (orphans.length === 0) return { found: 0, deleted: 0 };
 
   const result = await deleteBlobFiles(
-    orphans.map((o) => ({ fileUrl: o.url, fileKey: o.pathname })),
+    orphans.map((o) => ({ fileUrl: o.url, fileKey: null })),
     { stage: "sweep", reason: "orphan-upload" }
   );
   return { found: orphans.length, deleted: result.attempted - result.failed };

@@ -1,9 +1,10 @@
 import type { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
-import { createHash, randomBytes, timingSafeEqual } from "crypto";
+import { createHash, randomBytes, randomUUID, timingSafeEqual } from "crypto";
 import { prisma } from "@/lib/prisma";
-import { isRevokedAt, revokeAllUserSessions } from "@/lib/sessionRevocation";
+import { logger } from "@/lib/logger";
+import { isRevokedAt, revokeAllUserSessions, revokeSession } from "@/lib/sessionRevocation";
 
 // An idle timeout, not a lifetime: next-auth re-issues the token with a new
 // expiry on every session read, so a session in use never reaches it.
@@ -126,6 +127,19 @@ export const authOptions: NextAuthOptions = {
       },
     }),
   ],
+  events: {
+    // Signing out clears the cookie in this browser only. Recording the
+    // session id ends any copy of the cookie too, on its next request.
+    async signOut({ token }) {
+      if (typeof token?.id === "string" && typeof token.sid === "string") {
+        const authTimeMs = typeof token.authTime === "number" ? token.authTime : Date.now();
+        // Never blocks the sign-out itself (e.g. the account was just deleted).
+        await revokeSession(token.sid, token.id, new Date(authTimeMs + SESSION_ABSOLUTE_MAX_MS)).catch((error) =>
+          logger.warn("Couldn't record a signed-out session", { message: error instanceof Error ? error.message : String(error) })
+        );
+      }
+    },
+  },
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
@@ -135,6 +149,8 @@ export const authOptions: NextAuthOptions = {
         token.id = user.id;
         token.role = (user as { role?: string }).role;
         token.authTime = Date.now();
+        // This session's own id, so signing out can end just this one.
+        token.sid = randomUUID();
         return token;
       }
       if (!token.id) return token;
@@ -144,15 +160,22 @@ export const authOptions: NextAuthOptions = {
       // also picks up role changes without waiting for a new sign-in.
       // Tokens issued before authTime existed fall back to iat (seconds).
       const authTimeMs = typeof token.authTime === "number" ? token.authTime : ((token.iat as number | undefined) ?? 0) * 1000;
+      const sid = typeof token.sid === "string" ? token.sid : null;
       const current = await prisma.user.findUnique({
         where: { id: token.id as string },
-        select: { role: true, suspended: true, sessionsValidAfter: true },
+        select: {
+          role: true,
+          suspended: true,
+          sessionsValidAfter: true,
+          revokedSessions: sid ? { where: { sid }, select: { sid: true } } : false,
+        },
       });
       const ended =
         !current ||
         current.suspended ||
         current.role === "SUSPENDED" ||
         isRevokedAt(authTimeMs, current.sessionsValidAfter) ||
+        (current.revokedSessions?.length ?? 0) > 0 ||
         Date.now() - authTimeMs > SESSION_ABSOLUTE_MAX_MS;
       if (ended) return {};
 
